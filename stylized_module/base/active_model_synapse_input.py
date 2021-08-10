@@ -1,10 +1,15 @@
 import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
 
+#Dependencies
+import h5py
 from neuron import h
 import pandas as pd
 import numpy as np
-import os
+
+#Project Imports
+import config.params as params
+import config.paths as paths
 from stylized_module.base.stylized_cell import Stylized_Cell
 from stylized_module.currents.ecp import EcpMod, newposition
 from stylized_module.currents.recorder import Recorder
@@ -236,3 +241,20 @@ class Simulation(object):
         """Return LFP array of the cell by index, channels-by-time"""
         return self.lfp[index].calc_ecp()
     
+
+"""
+Function to create and run a passive model simulation
+"""
+def run_am_simulation():
+    geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
+    h.tstop = params.AM_TSTOP
+    h.dt = params.AM_DT
+    hf = h5py.File(paths.SIMULATED_DATA_FILE, 'r')
+    groundtruth_lfp = np.array(hf.get('data'))
+    hf.close()
+    x0_trace = groundtruth_lfp[params.AM_START_IDX:params.AM_START_IDX+params.AM_WINDOW_SIZE,:]
+    sim = Simulation(geo_standard,params.AM_ELECTRODE_POSITION,loc_param=params.AM_FIXED_LOCATION_PARAMETERS)
+    sim.run()
+    t = sim.t()
+    t0 = t[:params.AM_WINDOW_SIZE]
+    return sim, params.AM_WINDOW_SIZE, x0_trace, t0

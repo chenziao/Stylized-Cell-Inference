@@ -24,4 +24,6 @@ PASSIVE_INFERENCE_RESULTS_DATA = os.path.join(PASSIVE_INFERENCE_RESULTS_ROOT,
                                             'ResultData/Results_ActiveGroundTruth_CNN_Passive_locOnly.h5')
 PASSIVE_INFERENCE_RESULTS_MATLAB_DATA = os.path.join(PASSIVE_INFERENCE_RESULTS_ROOT, 
                                             'ResultData/Results_ActiveGroundTruth_CNN_Passive_locOnly.mat')
-PASSIVE_INFERENCE_RESULTS_X0_MATLAB_DATA = os.path.join(ROOT_DIR, 'ResultData/x_0.mat')
+PASSIVE_INFERENCE_RESULTS_X0_MATLAB_DATA = os.path.join(PASSIVE_INFERENCE_RESULTS_ROOT, 'ResultData/x_0.mat')
+
+POSTERIOR_SAVE = os.path.join(ROOT_DIR, 'results/Posteriors/')
