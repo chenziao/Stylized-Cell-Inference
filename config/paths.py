@@ -9,6 +9,7 @@ MECHANISMS = os.path.join(ROOT_DIR, 'compiled/mechanisms')
 GEO_STANDARD = os.path.join(ROOT_DIR, 'config/geom_standard.csv')
 
 SIMULATED_DATA_FILE = os.path.join(ROOT_DIR, 'data/active_groundtruth.h5')
+MORPHOLOGY_DATA_FILE = os.path.join(ROOT_DIR, 'data/detailed_groundtruth.h5') #Allen Morphology Cell Data
 INVIVO_DATA_FILE = os.path.join(ROOT_DIR, 'data/cell360LFP.h5')
 
 PASSIVE_INFERENCE_RESULTS_ROOT = os.path.join(ROOT_DIR, 'results')
@@ -27,3 +28,5 @@ PASSIVE_INFERENCE_RESULTS_MATLAB_DATA = os.path.join(PASSIVE_INFERENCE_RESULTS_R
 PASSIVE_INFERENCE_RESULTS_X0_MATLAB_DATA = os.path.join(PASSIVE_INFERENCE_RESULTS_ROOT, 'ResultData/x_0.mat')
 
 POSTERIOR_SAVE = os.path.join(ROOT_DIR, 'results/Posteriors/')
+
+INFERENCER_SAVE = os.path.join(ROOT_DIR, 'results/Inferencers/')
