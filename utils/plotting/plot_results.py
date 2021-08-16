@@ -30,13 +30,14 @@ def plot_LFP_heatmap(t,elec_d,lfp,savefig=None,vlim='auto',fontsize=40,ticksize=
     elec_d: electrode distance (um). 1D array
     lfp: LFP traces (uV). If is 2D array, each column is a channel.
     savefig: if specified as string, save figure with the string as file name.
-    vlim: value limit for color map, using absolute value bound of lfp as default.
+    vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
     """
     lfp = np.asarray(lfp).T
     elec_d = np.asarray(elec_d)/1000
     if vlim == 'auto':
-        vlim = np.max(np.abs(lfp))
-        vlim = [-vlim,vlim]
+        vlim = 3*np.std(lfp)*np.array([-1,1])
+    elif vlim == 'max':
+        vlim = [np.min(lfp),np.max(lfp)]
     fig,ax = plt.subplots()
     pcm = plt.pcolormesh(t,elec_d,lfp,cmap=cmap,vmin=vlim[0],vmax=vlim[1])
     cbaxes = fig.add_axes(cbbox)
