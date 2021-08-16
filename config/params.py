@@ -63,4 +63,4 @@ IM_NUMBER_OF_SIMULATIONS = 5000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
-IM_GRAPHING_LABELS = [ r'x',r'y',r'$\theta$',r'h',r'$\phi$',r'$\lambda$']
+IM_GRAPHING_LABELS = [ r'x',r'y',r'h',r'$\phi$',r'apical',r'trunk',r'tuft',r'd',r'e',r'f']
