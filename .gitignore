@@ -2,3 +2,9 @@ __pycache__/
 .ipynb_checkpoints/
 sbi-logs/
 *.pkl
+backups/
+active_geo_params/
+active_location_params/
+passive_geo_params/
+passive_location_params/
+*.zip

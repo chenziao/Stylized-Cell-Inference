@@ -10,8 +10,18 @@ def plot_LFP_traces(t,lfp,savefig=None,fontsize=40,labelpad=-30,tick_length=15,n
     """
     t = np.asarray(t)
     lfp = np.asarray(lfp)
-    fig = plt.figure()
+    fig = plt.figure()#figsize=(15,15))
     ax = plt.plot(t,lfp)
+    legend_elements = []
+    if lfp.ndim == 2:
+        for j in range(lfp.shape[1]):
+            ax, = plt.plot(t,lfp[:,j])
+            legend_elements.append(ax)
+        # legend_elements = range(1, lfp.shape[1])
+        legend_labels = [str(i) for i in legend_elements]
+    else:
+        ax = plt.plot(t,lfp)
+    # plt.legend(legend_elements, legend_labels)
     plt.xlabel('ms',fontsize=fontsize)
     plt.ylabel('LFP (\u03bcV)',fontsize=fontsize,labelpad=labelpad)
     plt.locator_params(axis='both',nbins=nbins)
@@ -39,7 +49,7 @@ def plot_LFP_heatmap(t,elec_d,lfp,savefig=None,vlim='auto',fontsize=40,ticksize=
     elif vlim == 'max':
         vlim = [np.min(lfp),np.max(lfp)]
     fig,ax = plt.subplots()
-    pcm = plt.pcolormesh(t,elec_d,lfp,cmap=cmap,vmin=vlim[0],vmax=vlim[1])
+    pcm = plt.pcolormesh(t,elec_d,lfp,cmap=cmap,vmin=vlim[0],vmax=vlim[1],shading='auto')
     cbaxes = fig.add_axes(cbbox)
     cbar = fig.colorbar(pcm,ax=ax,ticks=np.linspace(vlim[0],vlim[1],nbins),cax=cbaxes)
     cbar.ax.tick_params(labelsize=ticksize)

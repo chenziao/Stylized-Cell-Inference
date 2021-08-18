@@ -12,6 +12,9 @@ from stylized_module.models.cnn import SummaryNet
 
 OSVERSION = platform.system()
 
+#GENERAL PARAMETERS USED ACROSS RUNS
+ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
+
 
 #GET GROUND TRUTH FROM ACTIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX GT
 GT_TSTOP = 20. # ms
@@ -50,17 +53,18 @@ IM_BUTTERWORTH_ORDER = 2 #2nd order
 IM_CRITICAL_FREQUENCY = 100 #100 Hz
 IM_BANDFILTER_TYPE = 'hp' #highpass
 IM_FILTER_SAMPLING_RATE = 40000 #40 kHz
-IM_Y_DISTANCE = PM_ELECTRODE_POSITION[:,1].ravel()
+IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_THETA_BOUNDS = [0,np.pi]
+#                       x          y            h       phi     sr      trl     trr         dr      tur         dl
 IM_PARAMETER_BOUNDS = [[10,200],[-2000,2000],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
 IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2
-IM_NUMBER_OF_SIMULATIONS = 5000
+IM_NUMBER_OF_SIMULATIONS = 20000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
-IM_GRAPHING_LABELS = [ r'x',r'y',r'h',r'$\phi$',r'apical',r'trunk',r'tuft',r'd',r'e',r'f']
+IM_GRAPHING_LABELS = [r'x',r'y',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'dendrite radius',r'tuft radius',r'dendride length']

@@ -30,3 +30,5 @@ PASSIVE_INFERENCE_RESULTS_X0_MATLAB_DATA = os.path.join(PASSIVE_INFERENCE_RESULT
 POSTERIOR_SAVE = os.path.join(ROOT_DIR, 'results/Posteriors/')
 
 INFERENCER_SAVE = os.path.join(ROOT_DIR, 'results/Inferencers/')
+
+IMAGE_SAVE = os.path.join(ROOT_DIR, 'results/ResultJPGs/')
