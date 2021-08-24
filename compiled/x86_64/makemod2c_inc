@@ -1,7 +1,7 @@
 
 ./AlphaSynapse1.c: ../mechanisms//AlphaSynapse1.mod
 	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
-	(cd "../mechanisms"; MODLUNIT=$(NRNUNITS) $(NOCMODL) AlphaSynapse1.mod -o "/home/matt/repos/neurolab_file_transfer/x86_64")
+	(cd "../mechanisms"; MODLUNIT=$(NRNUNITS) $(NOCMODL) AlphaSynapse1.mod -o "/home/matt/repos/Research/neurolab_file_transfer/compiled/x86_64")
 
 ./AlphaSynapse1.o: ./AlphaSynapse1.c
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
@@ -9,7 +9,7 @@
 
 ./NaTa_t.c: ../mechanisms//NaTa_t.mod
 	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
-	(cd "../mechanisms"; MODLUNIT=$(NRNUNITS) $(NOCMODL) NaTa_t.mod -o "/home/matt/repos/neurolab_file_transfer/x86_64")
+	(cd "../mechanisms"; MODLUNIT=$(NRNUNITS) $(NOCMODL) NaTa_t.mod -o "/home/matt/repos/Research/neurolab_file_transfer/compiled/x86_64")
 
 ./NaTa_t.o: ./NaTa_t.c
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
@@ -17,7 +17,7 @@
 
 ./SKv3_1.c: ../mechanisms//SKv3_1.mod
 	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
-	(cd "../mechanisms"; MODLUNIT=$(NRNUNITS) $(NOCMODL) SKv3_1.mod -o "/home/matt/repos/neurolab_file_transfer/x86_64")
+	(cd "../mechanisms"; MODLUNIT=$(NRNUNITS) $(NOCMODL) SKv3_1.mod -o "/home/matt/repos/Research/neurolab_file_transfer/compiled/x86_64")
 
 ./SKv3_1.o: ./SKv3_1.c
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"

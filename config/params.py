@@ -12,6 +12,8 @@ from stylized_module.models.cnn import SummaryNet
 
 OSVERSION = platform.system()
 
+ACTIVE_CELL = True
+
 #GENERAL PARAMETERS USED ACROSS RUNS
 ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
 
@@ -67,4 +69,4 @@ IM_NUMBER_OF_SIMULATIONS = 5000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
-IM_GRAPHING_LABELS = [r'x',r'y',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'dendrite radius',r'tuft radius',r'dendride length']
+IM_GRAPHING_LABELS = [r'x',r'y',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']

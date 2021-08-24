@@ -9,3 +9,6 @@ passive_geo_params/
 passive_location_params/
 *.zip
 compiled_graphs/
+*.h5
+*.mat
+*.pkl

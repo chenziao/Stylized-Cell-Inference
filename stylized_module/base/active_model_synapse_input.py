@@ -243,9 +243,10 @@ class Simulation(object):
     
 
 """
-Function to create and run a passive model simulation
+Function to create and run an active model simulation
 """
 def run_am_simulation():
+    h.nrn_load_dll(paths.COMPILED_LIBRARY)
     geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
     h.tstop = params.AM_TSTOP
     h.dt = params.AM_DT
