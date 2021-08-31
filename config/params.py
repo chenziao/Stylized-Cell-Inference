@@ -44,7 +44,7 @@ PM_SCALING_FACTOR = 1085. #2.55
 AM_TSTOP = 20.
 AM_DT = 0.025
 AM_ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-AM_START_IDX = 360
+AM_START_IDX = 390
 AM_WINDOW_SIZE = 96
 AM_TRUE_LOCATION_PARAMETERS = [80,350,3.0,0.9,1.27]
 AM_FIXED_LOCATION_PARAMETERS = [75,380,2.9,0.92,1.2]
@@ -62,6 +62,12 @@ IM_THETA_BOUNDS = [0,np.pi]
 IM_PARAMETER_BOUNDS = [[10,200],[-2000,2000],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
+
+# X~N(0,1)
+# Y = normcdf(X)
+# transform x -> y as uniform distribution. Do this in the simulation as a separate cumulative function
+# Inverse of CDM
+
 IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
 IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2

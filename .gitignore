@@ -12,3 +12,5 @@ compiled_graphs/
 *.h5
 *.mat
 *.pkl
+*.png
+*.jpg

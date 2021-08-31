@@ -14,6 +14,7 @@ from stylized_module.base.stylized_cell import Stylized_Cell
 from stylized_module.currents.ecp import EcpMod, newposition
 from stylized_module.currents.recorder import Recorder
 from stylized_module.currents.point_current import Point_current
+from utils.plotting.plot_results import plot_LFP_traces
 
 h.load_file('stdrun.hoc')
 
@@ -258,4 +259,6 @@ def run_am_simulation():
     sim.run()
     t = sim.t()
     t0 = t[:params.AM_WINDOW_SIZE]
+    # fig,ax = plot_LFP_traces(params.AM_DT*np.arange(groundtruth_lfp.shape[0]),groundtruth_lfp)
+    # fig,ax = plot_LFP_traces(np.arange(params.AM_START_IDX,params.AM_START_IDX+params.AM_WINDOW_SIZE),x0_trace)
     return sim, params.AM_WINDOW_SIZE, x0_trace, t0
