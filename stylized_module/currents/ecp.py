@@ -83,13 +83,13 @@ class EcpMod(object):
 def newposition(translate,rotate,old_position=[0.,0.,0.],move_frame=False):
     """
     Rotate and translate an object with old_position and calculate its new coordinates.
-    Rotate(alpha,h,phi): first rotate alpha about y-axis (spin), then rotate -arccos(h) about z-axis (elevation), then rotate phi about y axis (azimuth).
+    Rotate(alpha,h,phi): first rotate alpha about y-axis (spin), then rotate arccos(h) about x-axis (elevation), then rotate phi about y axis (azimuth).
     Finally translate the object by translate(x,y,z).
     If move_frame is True, use the object as reference frame and move the old reference frame, calculate new coordinates of the old_position.
     """
     translate = np.asarray(translate)
     old_position = np.asarray(old_position)
-    Rot = R.from_euler('yzy',[rotate[0],-np.arccos(rotate[1]),rotate[2]])
+    Rot = R.from_euler('yxy',[rotate[0],np.arccos(rotate[1]),rotate[2]])
     if move_frame:
         new_position = Rot.inv().apply(old_position-translate)
     else:

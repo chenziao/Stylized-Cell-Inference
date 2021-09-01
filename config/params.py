@@ -22,7 +22,7 @@ ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np
 GT_TSTOP = 20. # ms
 GT_DT = 0.025  # ms. does not allow change
 GT_ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-GT_LOCATION_PARAMETERS = [80,350,3.0,0.9,1.27]
+GT_LOCATION_PARAMETERS = [0,350,80,1.43,0.9,1.27]
 GT_GMAX = 0.0025
 GT_SCALE = 1.
 GT_BUTTERWORTH_ORDER = 2 #2nd order
@@ -46,8 +46,8 @@ AM_DT = 0.025
 AM_ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
 AM_START_IDX = 390
 AM_WINDOW_SIZE = 96
-AM_TRUE_LOCATION_PARAMETERS = [80,350,3.0,0.9,1.27]
-AM_FIXED_LOCATION_PARAMETERS = [75,380,2.9,0.92,1.2]
+AM_TRUE_LOCATION_PARAMETERS = [0,350,80,3.0,0.9,1.27]
+AM_FIXED_LOCATION_PARAMETERS = [0,380,75,2.9,0.92,1.2]
 
 
 #INFERENCE MODEL PARAMS ARE DENOTED WITH THE PREFIX IM
@@ -58,8 +58,8 @@ IM_FILTER_SAMPLING_RATE = 40000 #40 kHz
 IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_THETA_BOUNDS = [0,np.pi]
-#                       x          y            h       phi     sr      trl     trr         dr      tur         dl
-IM_PARAMETER_BOUNDS = [[10,200],[-2000,2000],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
+#                       y          z            h       phi     sr      trl     trr         dr      tur         dl
+IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 
@@ -75,4 +75,4 @@ IM_NUMBER_OF_SIMULATIONS = 5000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
-IM_GRAPHING_LABELS = [r'x',r'y',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']
+IM_GRAPHING_LABELS = [r'y',r'z',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']

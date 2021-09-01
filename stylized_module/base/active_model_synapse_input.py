@@ -116,12 +116,12 @@ class Synapse(Point_current):
         self.nc = h.NetCon(self.stim,syn,1,0,1)
 
 class Simulation(object):
-    def __init__(self,geometry,electrodes,loc_param=[0.,0.,0.,1.,0.],geo_param=[-1],biophys=[-1],gmax=0.015,scale=1.0,ncell=1):
+    def __init__(self,geometry,electrodes,loc_param=[0.,0.,0.,0.,1.,0.],geo_param=[-1],biophys=[-1],gmax=0.015,scale=1.0,ncell=1):
         """
         Initialize simulation object
         geometry: pandas dataframe of cell morphology properties
         electrodes: array of electrode coordinates, n-by-3
-        loc_param: location parameters, ncell-by-5 array, (x,y,theta,h,phi)
+        loc_param: location parameters, ncell-by-6 array, (x,y,z,theta,h,phi)
         geo_param: geometry parameters, ncell-by-k array, if not specified, use default properties in geometry
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
         gmax: maximum conductance of synapse, ncell-vector, if is single value, is constant for all cells
@@ -173,9 +173,9 @@ class Simulation(object):
         return param
     
     def set_loc_param(self,loc_param):
-        """Setup location parameters. loc_param ncell-by-5 array"""
+        """Setup location parameters. loc_param ncell-by-6 array"""
         loc_param = self.pack_parameters(loc_param,1,"loc_param")
-        self.loc_param = [(np.insert(loc_param[i,:2],2,0.),loc_param[i,2:]) for i in range(self.ncell)]
+        self.loc_param = [(loc_param[i,:3],loc_param[i,3:]),loc_param[i,2:]) for i in range(self.ncell)]
     
     def set_geo_param(self,geo_param):
         """Setup geometry parameters. geo_param ncell-by-k array, k entries of properties"""
