@@ -3,12 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SummaryNet(nn.Module):
-    def __init__(self, nelec, window_size):
+    def __init__(self, nelec, window_size, nstats):
         super(SummaryNet, self).__init__()
         
         self.nelec = nelec
         self.window_size = window_size
         self.nout = window_size*self.nelec
+        self.nstats = nstats
         
         # 96x96 -> 96x96
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=5, kernel_size=3, padding=1, padding_mode='replicate')
@@ -28,7 +29,7 @@ class SummaryNet(nn.Module):
         self.pool4 = nn.MaxPool2d(kernel_size=2)
         # Fully connected layer taking as input the 8 flattened output arrays from the maxpooling layer
         self.fc = nn.Linear(in_features=125, out_features=24) # 5*5*5=125
-        self.fc2 = nn.Linear(in_features=48, out_features=12)
+        self.fc2 = nn.Linear(in_features=24+self.nstats, out_features=12)
 
     def forward(self,x):
         x0 = x[:,self.nout:] # n x 24
