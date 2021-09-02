@@ -2,20 +2,24 @@ import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
 
 #Dependencies
-import platform
 import numpy as np
 import sbi.utils as utils
 import torch
 
 #Project Imports
+import config.paths as paths
 from stylized_module.models.cnn import SummaryNet
 
-OSVERSION = platform.system()
 
 ACTIVE_CELL = True
 
 #GENERAL PARAMETERS USED ACROSS RUNS
-ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
+# ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
+hf = h5py.File(paths.ELECTRODES,'r')
+elec_pos = np.array(hf.get('coord'))
+ELECTRODE_POSITION = np.column_stack((elec_pos,np.zeros(elec_pos.shape[0])))
+ELECTRODE_GRID = (np.array(hf.get('grid/x')),np.array(hf.get('grid/y')),np.zeros(1))
+
 
 
 #GET GROUND TRUTH FROM ACTIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX GT

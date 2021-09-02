@@ -1,12 +1,12 @@
 import os, sys
-sys.path.append(os.path.split(sys.path[0])[0])
-from config.params import OSVERSION
+import platform
 
 ROOT_DIR = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
-LIBRARY = 'nrnmech.dll' if OSVERSION == 'Windows' else 'libnrnmech.so'
+LIBRARY = 'nrnmech.dll' if platform.system() == 'Windows' else 'libnrnmech.so'
 COMPILED_LIBRARY = os.path.join(ROOT_DIR, 'compiled/x86_64/.libs', LIBRARY)
 MECHANISMS = os.path.join(ROOT_DIR, 'compiled/mechanisms')
 GEO_STANDARD = os.path.join(ROOT_DIR, 'config/geom_standard.csv')
+ELECTRODES = os.path.join(ROOT_DIR, 'config/Electrode2D.h5')
 
 SIMULATED_DATA_FILE = os.path.join(ROOT_DIR, 'data/active_groundtruth.h5')
 MORPHOLOGY_DATA_FILE = os.path.join(ROOT_DIR, 'data/detailed_groundtruth.h5') #Allen Morphology Cell Data

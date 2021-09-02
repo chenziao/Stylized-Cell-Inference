@@ -1,12 +1,15 @@
 import numpy as np
+#Project Imports
+import config.params as params
 
-def Grid_LFP(lfp,coord,x,y):
+def Grid_LFP(lfp,coord,grid_v):
     t = lfp.shape[0]
-    xx, yy = np.meshgrid(x,y)
+    xy = coord[:,:2]
+    xx, yy = np.meshgrid(grid_v[0],grid_v[1],indexing='ij')
     grid = np.column_stack((xx.ravel(),yy.ravel()))
     grid_lfp = np.empty((t,grid.shape[0]))
     for i in range(t):
-        grid_lfp[i,:] = griddata(coord,lfp[i,:],grid)
+        grid_lfp[i,:] = griddata(xy,lfp[i,:],grid)
     return grid_lfp, grid
 
 def Stats(lfp):
@@ -14,7 +17,7 @@ def Stats(lfp):
     Calculates summary statistics
     """
     lfp = np.asarray(lfp)
-    grid_shape = (4,190) # get it from config.params
+    grid_shape = tuple(v.size for v in params.ELECTRODE_GRID[:2])
     
     avg = np.mean(lfp,axis=0) # average voltage of each channel
     stdDev = np.std(lfp,axis=0) # stDev of the voltage of each channel
@@ -49,7 +52,6 @@ def Stats(lfp):
     return allStats
 
 def cat_output(lfp):
-    # get coord,x,y from config.params
-    lfp,_ = Grid_LFP(lfp,coord,x,y)
+    lfp,_ = Grid_LFP(lfp,params.ELECTRODE_POSITION,params.ELECTRODE_GRID)
     output = np.concatenate((lfp.ravel(),Stats(lfp)))
     return torch.from_numpy(output)
