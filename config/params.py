@@ -5,6 +5,7 @@ sys.path.append(os.path.split(sys.path[0])[0])
 import numpy as np
 import sbi.utils as utils
 import torch
+import h5py
 
 #Project Imports
 import config.paths as paths

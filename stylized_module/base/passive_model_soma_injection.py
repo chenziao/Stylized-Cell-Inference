@@ -51,7 +51,7 @@ class Cell(Stylized_Cell):
             return self.v_rec.as_numpy()
 
 class Simulation(object):
-    def __init__(self,geometry,electrodes,soma_injection,loc_param=[0.,0.，0.,0.,1.,0.],geo_param=[-1],scale=1.0,ncell=1):
+    def __init__(self,geometry,electrodes,soma_injection,loc_param=[0.,0.,0.,0.,1.,0.],geo_param=[-1],scale=1.0,ncell=1):
         """
         Initialize simulation object
         geometry: pandas dataframe of cell morphology properties

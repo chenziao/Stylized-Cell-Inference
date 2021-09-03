@@ -175,7 +175,7 @@ class Simulation(object):
     def set_loc_param(self,loc_param):
         """Setup location parameters. loc_param ncell-by-6 array"""
         loc_param = self.pack_parameters(loc_param,1,"loc_param")
-        self.loc_param = [(loc_param[i,:3],loc_param[i,3:]),loc_param[i,2:]) for i in range(self.ncell)]
+        self.loc_param = [(loc_param[i,:3],loc_param[i,3:],loc_param[i,2:]) for i in range(self.ncell)]
     
     def set_geo_param(self,geo_param):
         """Setup geometry parameters. geo_param ncell-by-k array, k entries of properties"""
