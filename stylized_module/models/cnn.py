@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SummaryNet(nn.Module):
-    def __init__(self, nelec, window_size, nstats=12):
+    def __init__(self, nelec, window_size, nstats=24):
         super(SummaryNet, self).__init__()
         
         self.nelec = nelec
