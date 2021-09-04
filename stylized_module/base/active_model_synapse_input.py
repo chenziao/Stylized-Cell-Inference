@@ -35,7 +35,6 @@ class Cell(Stylized_Cell):
     def set_channels(self):
         """Define biophysical properties, insert channels"""
         self.define_biophys_entries()
-        sections = self.all
         # common parameters
         for sec in self.all:
             sec.cm = 2.0
@@ -50,15 +49,15 @@ class Cell(Stylized_Cell):
         soma.ena = 50
         soma.ek = -85
         for isec in self.grp_ids[2]:
-            sec = sections[isec]  # apical dendrites
+            sec = self.get_sec_by_id(isec)  # apical dendrites
             sec.insert('NaTa_t')
             sec.insert('SKv3_1')
             sec.ena = 50
             sec.ek = -85
         # variable parameters
         for i,entry in enumerate(self.biophys_entries):
-            for isec in self.grp_ids[entry[0]]:
-                setattr(sections[isec],entry[1],self.biophys[i])
+            for sec in self.get_sec_by_id(self.grp_ids[entry[0]]):
+                setattr(sec,entry[1],self.biophys[i])
         h.v_init = self._vrest
     
     def define_biophys_entries(self):
@@ -67,7 +66,13 @@ class Cell(Stylized_Cell):
         Each entry is a pair of group id and parameter reference string.
         Define default values and set parameters in "biophys".
         """
-        self.grp_ids = [[0],[1, 2, 3, 4],[5, 6, 7]] # categorize sections id's into groups
+        self.grp_sec_type_ids = [[0],[1,2],[3,4]]  # select section id's for each group
+        self.grp_ids = []  # get indices of sections for each group
+        for ids in self.grp_sec_type_ids:
+            secs = []
+            for i in ids:
+                secs.extend(self.sec_id_lookup[i])
+            self.grp_ids.append(secs)
         self.biophys_entries = [
             (0,'g_pas'),(1,'g_pas'),(2,'g_pas'),  # g_pas of soma, basal, apical 
             (0,'gNaTa_tbar_NaTa_t'),(2,'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical 
@@ -239,8 +244,13 @@ class Simulation(object):
         return self.t_vec.as_numpy()
     
     def get_lfp(self,index=0):
-        """Return LFP array of the cell by index, channels-by-time"""
-        return self.lfp[index].calc_ecp()
+        """Return LFP array of the cell by index (indices), (cells-by-)channels-by-time"""
+        if not hasattr(index,'__len__'):
+            lfp = self.lfp[index].calc_ecp()
+        else:
+            index = np.asarray(index).ravel()
+            lfp = np.stack([self.lfp[i].calc_ecp() for i in index],axis=0)
+        return lfp
     
 
 """

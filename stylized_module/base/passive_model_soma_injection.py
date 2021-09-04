@@ -154,8 +154,13 @@ class Simulation(object):
         return self.t_vec.as_numpy()
     
     def get_lfp(self,index=0):
-        """Return LFP array of the cell by index, channels-by-time"""
-        return self.lfp[index].calc_ecp()
+        """Return LFP array of the cell by index (indices), (cells-by-)channels-by-time"""
+        if not hasattr(index,'__len__'):
+            lfp = self.lfp[index].calc_ecp()
+        else:
+            index = np.asarray(index).ravel()
+            lfp = np.stack([self.lfp[i].calc_ecp() for i in index],axis=0)
+        return lfp
     
 
 """

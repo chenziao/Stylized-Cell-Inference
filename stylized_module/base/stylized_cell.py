@@ -10,20 +10,23 @@ from stylized_module.currents.current_injection import Current_injection
 h.load_file('stdrun.hoc')
 
 class Stylized_Cell(object):
-    def __init__(self,geometry=None,dL=30,vrest=-70.0):
+    def __init__(self,geometry=None,dL=30,vrest=-70.0,nbranch=4):
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
         dL: maximum segment length
         vrest: reversal potential of leak channel for all segments
+        nbranch: number of branches of each non axial section
         """
         self._h = h
         self._dL = dL
         self._vrest = vrest
+        self._nbranch = max(nbranch,2)
         self._nsec = 0
         self._nseg = 0
         self.all = []  # list of all sections
         self.segments = []  # list of all segments
+        self.sec_id_lookup = {} # dictionary from section type id to section index
         self.sec_id_in_seg = []
         self.seg_coords = {}
         self.injection = []
@@ -52,37 +55,38 @@ class Stylized_Cell(object):
             return None
         self._nsec = 0
         self.all = []
-        sec_index = [0]*len(self.geometry.index)
-        for j,sec in self.geometry.iterrows():
-            axial = sec['axial']
-            L = sec['L']
-            R = sec['R']
-            ang = sec['ang']
-            sec_index[j] = self._nsec
-            section = self.add_section(name=sec['name'],diam=2*R)
-            if j==0:
-                R0 = R
-                nseg = 1
-                self.soma = section
+        rot = 2*math.pi/self._nbranch
+        for id,sec in self.geometry.iterrows():
+            start_idx = self._nsec 
+            if id==0:
+                R0 = sec['R']
                 pt0 = [0.,-2*R0,0.]
                 pt1 = [0.,0.,0.]
+                self.soma = self.add_section(name=sec['name'],diam=2*R0)
+                self.set_location(self.soma,pt0,pt1,1)
             else:
+                L = sec['L']
+                R = sec['R']
+                ang = sec['ang']
                 nseg = math.ceil(L/self._dL)
-                pid = sec_index[sec['pid']]
+                pid = self.sec_id_lookup[sec['pid']][0]
                 psec = self.all[pid]
                 pt0 = [psec.x3d(1),psec.y3d(1),psec.z3d(1)]
-                pt1 = [0.,L*math.sin(ang),0.]
-                if not axial:
-                    pt1[0] = L*math.cos(ang)
-                for i in range(3):
-                    pt1[i] += pt0[i]
-                section.connect(psec(1),0)
-            self.set_location(section,pt0,pt1,nseg)
-            if not axial:
-                section = self.add_section(name=sec['name'],diam=2*R)
-                section.connect(psec(1),0)
-                pt1[0] = -pt1[0]
-                self.set_location(section,pt0,pt1,nseg)
+                if sec['axial']:
+                    nbranch = 1
+                    X = 0
+                    pt1[1] = pt0[1]+L
+                else:
+                    nbranch = self._nbranch
+                    X = L*math.cos(ang)
+                    pt1[1] = pt0[1]+L*math.sin(ang)
+                for i in range(nbranch):
+                    pt1[0] = pt0[0]+X*math.cos(i*rot)
+                    pt1[2] = pt0[2]+X*math.sin(i*rot)
+                    section = self.add_section(name=sec['name'],diam=2*R)
+                    section.connect(psec(1),0)
+                    self.set_location(section,pt0,pt1,nseg)
+            self.sec_id_lookup[id] = list(range(start_idx,self._nsec))
         self.set_location(self.soma,[0.,-R0,0.],[0.,R0,0.],1)
         self.store_segments()
     
@@ -132,16 +136,20 @@ class Stylized_Cell(object):
         self.seg_coords['r'] = r  # radius
     
     def get_sec_by_id(self,index=None):
-        """Get list of section objects by indices in the section list"""
-        if not isinstance(index, (list,tuple,np.ndarray)):
-            index = [index]
-        return [self.all[i] for i in index]
+        """Get section(s) objects by index(indices) in the section list"""
+        if not hasattr(index,'__len__'):
+            sec = self.all[index]
+        else:
+            sec = [self.all[i] for i in index]
+        return sec
     
     def get_seg_by_id(self,index=None):
-        """Get list of segment objects by indices in the segment list"""
-        if not isinstance(index, (list,tuple,np.ndarray)):
-            index = [index]
-        return [self.segments[i] for i in index]
+        """Get segment(s) objects by index(indices) in the segment list"""
+        if not hasattr(index,'__len__'):
+            seg = self.segments[index]
+        else:
+            seg = [self.segments[i] for i in index]
+        return seg
     
     def set_channels(self):
         """Abstract method for setting biophysical properties, inserting channels"""
