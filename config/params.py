@@ -10,6 +10,7 @@ import h5py
 #Project Imports
 import config.paths as paths
 from stylized_module.models.cnn import SummaryNet
+from stylized_module.dists.distributions import build_priors
 
 
 ACTIVE_CELL = True
@@ -63,8 +64,11 @@ IM_FILTER_SAMPLING_RATE = 40000 #40 kHz
 IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_THETA_BOUNDS = [0,np.pi]
-#                       y          z            h       phi     sr      trl     trr         dr      tur         dl
-IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
+#                       y          d            h       phi     sr      trl     trr         dr      tur         dl
+IM_PARAMETER_TYPES = ['U', 'U', 'U', 'U', 'N', 'N', 'N', 'N', 'N', 'N']
+# IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
+IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[7.5,1.5],[410.,130.],[0.6,0.13],[0.6,0.13],[0.6,0.13],[200.,33.3]]#,[3,5]]
+IM_PARAMETER_DICT = dict(zip(IM_PARAMETER_VARIABLES, IM_PARAMETER_BOUNDS))
 IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 
@@ -73,7 +77,8 @@ IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=flo
 # transform x -> y as uniform distribution. Do this in the simulation as a separate cumulative function
 # Inverse of CDM
 
-IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
+# IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
+IM_PRIOR_DISTRIBUTION = build_priors()
 IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2
 IM_NUMBER_OF_SIMULATIONS = 5000
