@@ -67,21 +67,18 @@ IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_THETA_BOUNDS = [0,np.pi]
 #                       y          d            h       phi     sr      trl     trr         dr      tur         dl
+IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 
-IM_PARAMETER_BOUNDS = [list(range2logn(-2000,2000)),list(range2logn(20,200)),
-list(range2logn(-1,1)),list(range2logn(0,np.pi)),list(range2logn(3, 12)),
-list(range2logn(20, 800)),list(range2logn(0.2,1.0)),list(range2logn(0.2,1.0)),
-list(range2logn(0.2,1.0)),list(range2logn(100,300))]#,[3,5]]
-
-IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
-IM_PARAMETER_STDS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
-IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=IM_PARAMETER_LOCS, covariance_matrix=torch.diag(torch.square(IM_PARAMETER_STDS)))
+# IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
+# IM_PARAMETER_STDS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
+IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUNDS)),
+                                            covariance_matrix=torch.diag(torch.ones(len(IM_PARAMETER_BOUNDS))))
 
 # IM_PARAMETER_TYPES = ['U', 'U', 'U', 'U', 'N', 'N', 'N', 'N', 'N', 'N']
 # IM_PARAMETER_DICT = list(zip(IM_PARAMETER_TYPES, IM_PARAMETER_BOUNDS))
 # IM_PRIOR_DISTRIBUTION = build_priors(IM_PARAMETER_DICT)
 
-# IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
+
 # IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
