@@ -11,16 +11,17 @@ import h5py
 import config.paths as paths
 from stylized_module.models.cnn import SummaryNet
 from stylized_module.dists.distributions import build_priors
+from utils.transform.distribution_transformation import range2logn
 
 
 ACTIVE_CELL = True
 
 #GENERAL PARAMETERS USED ACROSS RUNS
-# ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-hf = h5py.File(paths.ELECTRODES,'r')
-elec_pos = np.array(hf.get('coord'))
-ELECTRODE_POSITION = np.column_stack((elec_pos,np.zeros(elec_pos.shape[0])))
-ELECTRODE_GRID = (np.array(hf.get('grid/x')),np.array(hf.get('grid/y')),np.zeros(1))
+ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
+# hf = h5py.File(paths.ELECTRODES,'r')
+# elec_pos = np.array(hf.get('coord'))
+# ELECTRODE_POSITION = np.column_stack((elec_pos,np.zeros(elec_pos.shape[0])))
+# ELECTRODE_GRID = (np.array(hf.get('grid/x')),np.array(hf.get('grid/y')),np.zeros(1))
 
 
 
@@ -29,7 +30,7 @@ GT_TSTOP = 20. # ms
 GT_DT = 0.025  # ms. does not allow change
 GT_ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
 GT_LOCATION_PARAMETERS = [0,350,80,1.43,0.9,1.27]
-GT_GMAX = 0.0025
+GT_GMAX = 0.005
 GT_SCALE = 1.
 GT_BUTTERWORTH_ORDER = 2 #2nd order
 GT_CRITICAL_FREQUENCY = 100 #100 Hz
@@ -67,7 +68,9 @@ IM_THETA_BOUNDS = [0,np.pi]
 #                       y          d            h       phi     sr      trl     trr         dr      tur         dl
 IM_PARAMETER_TYPES = ['U', 'U', 'U', 'U', 'N', 'N', 'N', 'N', 'N', 'N']
 # IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
-IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[7.5,1.5],[410.,130.],[0.6,0.13],[0.6,0.13],[0.6,0.13],[200.,33.3]]#,[3,5]]
+IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],
+list(range2logn(3, 12)),list(range2logn(20, 800)),list(range2logn(0.2,1.0)),
+list(range2logn(0.2,1.0)),list(range2logn(0.2,1.0)),list(range2logn(100,300))]#,[3,5]]
 IM_PARAMETER_DICT = list(zip(IM_PARAMETER_TYPES, IM_PARAMETER_BOUNDS))
 IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
