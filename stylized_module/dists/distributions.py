@@ -1,7 +1,5 @@
 import torch
 import numpy as np
-import pyro
-from torch.distributions import Normal, Uniform
 from pyro.distributions.torch_distribution import TorchDistribution
 from pyro.distributions.util import broadcast_shape
 
@@ -9,19 +7,16 @@ from pyro.distributions.util import broadcast_shape
 class StackedDistribution(TorchDistribution):
     def __init__(
         self,
-        *base_dists,
+        base_dist1,
+        base_dist2,
         validate_args=False
     ):
         # print(base_dists)
-        assert len(set(base_dist.event_shape for base_dist in base_dists[0])) == 1, \
-            "All base distributions should have the same event shape"
-        # batch_shape = torch.squeeze(torch.from_numpy(np.array(broadcast_shape([base_dist.batch_shape for base_dist in base_dists]))))
-        # print(type(base_dists[0]))
-        batch_shape = torch.from_numpy(np.array(broadcast_shape(*[base_dist.batch_shape for base_dist in base_dists[0]])))
-        # print(type(batch_shape))
-        # bs = [1 for i in batch_shape] #done because each distribution is 1D and torch.size flattens this
-        event_shape = base_dists[0][0].event_shape + (len(base_dists[0]),)
-        self.base_dists = [base_dist.expand(batch_shape) for base_dist in base_dists[0]]
+        assert base_dist1.event_shape == base_dist2.event_shape, \
+            "Both base distributions should have the same event shape"
+        batch_shape = torch.from_numpy(np.array(broadcast_shape(base_dist1, base_dist2)))
+        event_shape = base_dist1[0].event_shape
+        self.base_dists = [base_dist1.expand(batch_shape), base_dist2.expand(batch_shape)]
         super().__init__(batch_shape, event_shape, validate_args)
     
     def log_prob(self, x):
@@ -36,14 +31,3 @@ class StackedDistribution(TorchDistribution):
     @property
     def has_rsample(self):
         return all(base_dist.has_rsample for base_dist in self.base_dists)
-
-
-def build_priors(bounds):
-    priors = []
-    for k, v in bounds:
-        if k == 'U':
-            priors.append(Uniform(v[0],v[1]))
-        elif k == 'N':
-            priors.append(Normal(v[0],v[1]))
-    box_dist = StackedDistribution(priors)
-    return box_dist

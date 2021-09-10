@@ -11,7 +11,7 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 #Project Imports
 import config.paths as paths
 from stylized_module.models.cnn import SummaryNet
-from stylized_module.dists.distributions import build_priors
+from stylized_module.dists.distributions import StackedDistribution, build_priors
 from utils.transform.distribution_transformation import range2logn
 
 
@@ -65,23 +65,23 @@ IM_BANDFILTER_TYPE = 'hp' #highpass
 IM_FILTER_SAMPLING_RATE = 40000 #40 kHz
 IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
-IM_THETA_BOUNDS = [0,np.pi]
-#                       y          d            h       phi     sr      trl     trr         dr      tur         dl
-IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
+IM_ALPHA_BOUNDS = [0,np.pi]
+#                       y            d        theta                 h       phi     r_s    l_t     r_t        r_d      r_tu      l_d
+IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-(np.pi/3),np.pi/3],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 
 # IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_STDS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
+
 IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUNDS)),
                                             covariance_matrix=torch.diag(torch.ones(len(IM_PARAMETER_BOUNDS))))
-
-# IM_PARAMETER_TYPES = ['U', 'U', 'U', 'U', 'N', 'N', 'N', 'N', 'N', 'N']
-# IM_PARAMETER_DICT = list(zip(IM_PARAMETER_TYPES, IM_PARAMETER_BOUNDS))
-# IM_PRIOR_DISTRIBUTION = build_priors(IM_PARAMETER_DICT)
 
 
 # IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
+# IM_LOC_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
+# IM_GEO_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(6), covariance_matrix=torch.diag(torch.ones(6)))
+# IM_PRIOR_DISTRIBUTION = StackedDistribution(IM_LOC_PRIOR_DISTRIBUTION, IM_GEO_PRIOR_DISTRIBUTION)
 
 IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2
