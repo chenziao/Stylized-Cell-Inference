@@ -55,14 +55,14 @@ class SummaryNet3D(nn.Module):
         self.nout = window_size*self.nelec
         self.nstats = nstats
         
-        # 96x4x192 -> 96x4x192
+        # 96x4x96 -> 96x4x96
         self.conv1 = nn.Conv3d(in_channels=1, out_channels=5, kernel_size=3, padding=1, padding_mode='replicate')
-        # 96x4x192 -> 48x48
+        # 96x4x96 -> 48x2x48
         self.pool1 = nn.MaxPool3d(kernel_size=2)
-        # 48x48 -> 48x48
-        self.conv2 = nn.Conv2d(in_channels=5, out_channels=5, kernel_size=3, padding=1, padding_mode='replicate')
-        # 48x48 -> 24x24
-        self.pool2 = nn.MaxPool2d(kernel_size=2)
+        # 48x2x48 -> 48x2x48
+        self.conv2 = nn.Conv3d(in_channels=5, out_channels=5, kernel_size=3, padding=1, padding_mode='replicate')
+        # 48x2x48 -> 24x1x24 => reformatted to 24x24
+        self.pool2 = nn.MaxPool3d(kernel_size=2)
         # 24x24 -> 24x24
         self.conv3 = nn.Conv2d(in_channels=5, out_channels=5, kernel_size=3, padding=1, padding_mode='replicate')
         # 24x24 -> 12x12
@@ -77,12 +77,12 @@ class SummaryNet3D(nn.Module):
 
     def forward(self,x):
         x0 = x[:,self.nout:] # n x 24
-        x = x[:,:self.nout] # n x 9216
-        x = x.view(-1,1,self.window_size,self.nelec) # (batch size,in_channels,height,length) -1 means not changing size of that dimension
-        print(self.conv1(x).size())
+        x = x[:,:self.nout] # n x 36864
+        x = x.view(-1,1,96,4,96)
+        #x = x.view(-1,1,self.window_size,4,self.nelec) # (batch size,in_channels,height,width,length) -1 means not changing size of that dimension
         x = self.pool1(F.relu(self.conv1(x)))
-        print(x.size())
         x = self.pool2(F.relu(self.conv2(x)))
+        x = x.view(-1,5,24,24)
         x = self.pool3(F.relu(self.conv3(x)))
         x = self.pool4(F.relu(self.conv4(x)))
         x = x.view(-1,125) # (batch size, in_features)
