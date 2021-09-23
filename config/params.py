@@ -43,7 +43,7 @@ GT_FILTER_SAMPLING_RATE = 40000 #40 kHz
 PM_TSTOP = 5. # ms
 PM_DT = 0.025 # ms. does not allow change
 PM_ELECTRODE_POSITION = ELECTRODE_POSITION #np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-PM_START_IDX = 360
+PM_START_IDX = 320
 PM_WINDOW_SIZE = 96
 PM_SCALING_FACTOR = 1085. #2.55 
 
@@ -52,8 +52,8 @@ PM_SCALING_FACTOR = 1085. #2.55
 AM_TSTOP = 20.
 AM_DT = 0.025
 AM_ELECTRODE_POSITION = ELECTRODE_POSITION #np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-AM_START_IDX = 390
-AM_WINDOW_SIZE = 96
+AM_START_IDX = 320
+AM_WINDOW_SIZE = 128
 AM_TRUE_LOCATION_PARAMETERS = [0,350,80,3.0,0.9,1.27]
 AM_FIXED_LOCATION_PARAMETERS = [0,380,75,2.9,0.92,1.2]
 
@@ -66,8 +66,8 @@ IM_FILTER_SAMPLING_RATE = 40000 #40 kHz
 IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0,np.pi]
-#                       y            d        theta                 h       phi     r_s    l_t     r_t        r_d      r_tu      l_d
-IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-(np.pi/3),np.pi/3],[-1,1],[0,np.pi],[3,12],[20,800],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
+#                       y            d        theta                 h       phi     l_t     r_s     r_t        r_d      r_tu      l_d
+IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-(np.pi/3),np.pi/3],[-1,1],[0,np.pi],[20,800],[3,12],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 
 # IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_STDS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
@@ -89,4 +89,4 @@ IM_NUMBER_OF_SIMULATIONS = 1000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
-IM_GRAPHING_LABELS = [r'y',r'd',r'theta',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']
+IM_GRAPHING_LABELS = [r'y',r'd',r'theta',r'h',r'$\phi$',r'trunk length',r'soma radius',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']
