@@ -18,6 +18,10 @@ from utils.plotting.plot_results import plot_LFP_traces
 
 h.load_file('stdrun.hoc')
 
+pc = h.ParallelContext()
+MPI_size = int(pc.nhost())
+MPI_rank = int(pc.id())
+
 class Cell(Stylized_Cell):
     """Define single cell model using parent class Stylized_Cell"""
     def __init__(self,geometry=None,biophys=None,dL=30,vrest=-70.0):
@@ -222,10 +226,13 @@ class Simulation(object):
         self.cells.clear()  # remove cell objects from previous run
         self.lfp.clear()
         # Create cell with morphology and biophysical parameters
-        for i in range(self.ncell):
+        # for i in range(self.ncell):
+        cell_ids = [for i in range(self.ncell)]
+        for i in cell_ids[MPI_rank::MPI_size]:
             geometry = self.set_geometry(self.geometry,self.geo_param[i,:])
             self.cells.append( Cell(geometry=geometry,biophys=self.biophys[i,:]) )
         # add injection current or synaptic current and set up lfp recording
+        pc.barrier()
         min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
         for i,cell in enumerate(self.cells):
 #             # Pulse injection
@@ -251,24 +258,3 @@ class Simulation(object):
             index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index],axis=0)
         return lfp
-    
-
-"""
-Function to create and run an active model simulation
-"""
-def run_am_simulation():
-    h.nrn_load_dll(paths.COMPILED_LIBRARY)
-    geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
-    h.tstop = params.AM_TSTOP
-    h.dt = params.AM_DT
-    hf = h5py.File(paths.SIMULATED_DATA_FILE, 'r')
-    groundtruth_lfp = np.array(hf.get('data'))
-    hf.close()
-    x0_trace = groundtruth_lfp[params.AM_START_IDX:params.AM_START_IDX+params.AM_WINDOW_SIZE,:]
-    sim = Simulation(geo_standard,params.AM_ELECTRODE_POSITION,loc_param=params.AM_FIXED_LOCATION_PARAMETERS)
-    sim.run()
-    t = sim.t()
-    t0 = t[:params.AM_WINDOW_SIZE]
-    # fig,ax = plot_LFP_traces(params.AM_DT*np.arange(groundtruth_lfp.shape[0]),groundtruth_lfp)
-    # fig,ax = plot_LFP_traces(np.arange(params.AM_START_IDX,params.AM_START_IDX+params.AM_WINDOW_SIZE),x0_trace)
-    return sim, params.AM_WINDOW_SIZE, x0_trace, t0
