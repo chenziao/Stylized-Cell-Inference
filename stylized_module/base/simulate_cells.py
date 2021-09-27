@@ -4,6 +4,7 @@ sys.path.append(os.path.split(sys.path[0])[0])
 from torch import Tensor
 import numpy as np
 from numpy import ndarray
+from sbi.inference import simulate_for_sbi
 
 import config.params as params
 import config.paths as paths
@@ -13,6 +14,11 @@ from stylized_module.models.SummaryStats2D import cat_output
 from utils.transform.distribution_transformation import norm2unif, range2logn, norm2logn, logds_norm2unif, logds_norm2logn
 
 rng = np.random.default_rng(123412)
+
+
+def simulate_in_sbi(inferencer, proposal, samples=param.IM_NUMBER_OF_SIMULATIONS):
+    theta, x = simulate_for_sbi(inferencer.simulator,proposal,num_simulations=samples)
+    return theta, x
 
 
 def run_am_simulation(data_path: str=paths.SIMULATED_DATA_FILE) -> tuple(amSimluation, int, ndarray, ndarray):
