@@ -2,29 +2,32 @@ import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
 
 import pickle
-from sbi.inference import SNPE, prepare_for_sbi, simulate_for_sbi
+from sbi.inference import SNPE, prepare_for_sbi
 from sbi.utils.get_nn_models import posterior_nn  # For SNLE: likelihood_nn(). For SNRE: classifier_nn()
+from utils.spike_window import first_pk_tr
 import torch
+import numpy as np
 
 import config.params as params
 import config.paths as paths
-from stylized_module.base.simulate_cells import run_pm_simulation, run_am_simulation
+from stylized_module.base.simulate_cells import run_pm_simulation, run_am_simulation, simulate
 from stylized_module.models.SummaryStats2D import cat_output
+from utils.transform.distribution_transformation import norm2unif, range2logn, norm2logn, logds_norm2unif, logds_norm2logn
 
 
 class Inferencer(object):
 
     def __init__(self):
         self.sim, self.window_size, self.x0_trace, self.t0 = run_pm_simulation() if params.ACTIVE_CELL is False else run_am_simulation()
-        self.fst_idx = first_pk_tr(x0_trace)
+        self.fst_idx = first_pk_tr(self.x0_trace)
         self.simulator, self.prior = prepare_for_sbi(simulate, params.IM_PRIOR_DISTRIBUTION)
-        self.x_o = cat_output(x0_trace)
+        self.x_o = cat_output(self.x0_trace)
 
         density_estimator_build_fun = posterior_nn(model=params.IM_POSTERIOR_MODEL_ESTIMATOR,
                                            embedding_net=params.IM_EMBEDDED_NETWORK,
                                            hidden_features=params.IM_POSTERIOR_MODEL_HIDDEN_LAYERS)
 
-        self.inference = SNPE(prior=prior,density_estimator=density_estimator_build_fun,show_progress_bars=True)
+        self.inference = SNPE(prior=self.prior,density_estimator=density_estimator_build_fun,show_progress_bars=True)
 
 
     def run_inferencer(self, theta, x, proposal):
@@ -45,22 +48,22 @@ class Inferencer(object):
             pickle.dump(density_estimator, handle)
             
         # posteriors.append(posterior)
-        proposal = posterior.set_default_x(x_o)
+        proposal = posterior.set_default_x(self.x_o)
             
-        inference._summary_writer = None
-        inference._build_neural_net = None
+        self.inference._summary_writer = None
+        self.inference._build_neural_net = None
         with open(paths.INFERENCER_SAVE + ".pkl", "wb") as handle:
-            pickle.dump(inference, handle)
+            pickle.dump(self.inference, handle)
 
         # with open(paths.POSTERIOR_SAVE + "1_post.pkl", "rb") as handle:
         #     posterior = pickle.load(handle)
         return posterior
 
     def build_log_prob(self, posterior):
-        samples = posterior.sample((1000,), x=x_o, sample_with='mcmc') #, sample_with_mcmc=True
+        samples = posterior.sample((1000,), x=self.x_o, sample_with='mcmc') #, sample_with_mcmc=True
 
         #posterior.leakage_correction(x_o, num_rejection_samples=1000)
-        log_probability = posterior.log_prob(samples,x=x_o, norm_posterior=False) #, norm_posterior=False
+        log_probability = posterior.log_prob(samples,x=self.x_o, norm_posterior=False) #, norm_posterior=False
         log_prob_t = log_probability
         for i in range(6):
             log_prob_t += logds_norm2unif(samples[:,i], params.IM_PARAMETER_BOUNDS[i][0], params.IM_PARAMETER_BOUNDS[i][1])

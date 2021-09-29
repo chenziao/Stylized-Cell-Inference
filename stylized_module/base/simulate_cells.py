@@ -1,22 +1,29 @@
 import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
 
+import torch
 from torch import Tensor
 import numpy as np
 from numpy import ndarray
 from sbi.inference import simulate_for_sbi
+import h5py
+from neuron import h
+import pandas as pd
+from scipy import signal
+from utils.spike_window import get_spike_window
+from typing import Optional
 
 import config.params as params
 import config.paths as paths
 from stylized_module.base.active_model_synapse_input import Simulation as amSimulation
 from stylized_module.base.passive_model_soma_injection import Simulation as pmSimulation
 from stylized_module.models.SummaryStats2D import cat_output
-from utils.transform.distribution_transformation import norm2unif, range2logn, norm2logn, logds_norm2unif, logds_norm2logn
+from utils.transform.distribution_transformation import norm2unif, range2logn, norm2logn
 
 rng = np.random.default_rng(123412)
 
 
-def simulate_in_sbi(inferencer, proposal, samples=param.IM_NUMBER_OF_SIMULATIONS):
+def simulate_in_sbi(inferencer, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
     theta, x = simulate_for_sbi(inferencer.simulator,proposal,num_simulations=samples)
     return theta, x
 
@@ -103,27 +110,29 @@ def run_pm_simulation(data_path: str=paths.SIMULATED_DATA_FILE) -> tuple(pmSimlu
 
 def run_sim_from_sample(param: Tensor,
                         sim: amSimulation,
+                        fst_idx: int=0,
                         cell_type: str='active', 
                         input_coordinates: str='polar',
                         whole_trace: bool=False,
                         **kwargs
 ) -> ndarray:
-"""
-The function takes in a sample and converts it to the correct parameter space. Once done it
-simulates a cell simulation with the specified parameters and returns the resulting filtered LFP
+    """
+    The function takes in a sample and converts it to the correct parameter space. Once done it
+    simulates a cell simulation with the specified parameters and returns the resulting filtered LFP
 
-Args:
-    param: Tensor sample of data provided corresponding to cell location and geometric parameters
-    sim: Simulation instance from active cell #TODO add passive cell simulation instances
-    cell_type: Version of cell, currently only working with active. #TODO implement 'passive'
-    input_coordinates: Type of sample parameters to expect as input #TODO implement euclidean
-    whole_trace: specify whether to return the entire LFP trace or not
-    kwargs: additional arguments that are not currently relevant for the users
+    Args:
+        param: Tensor sample of data provided corresponding to cell location and geometric parameters
+        sim: Simulation instance from active cell #TODO add passive cell simulation instances
+        fst_idx: First Index of where the LFP peak starts
+        cell_type: Version of cell, currently only working with active. #TODO implement 'passive'
+        input_coordinates: Type of sample parameters to expect as input #TODO implement euclidean
+        whole_trace: specify whether to return the entire LFP trace or not
+        kwargs: additional arguments that are not currently relevant for the users
 
-Returns:
-    Filtered LFP in a Numpy Array
+    Returns:
+        Filtered LFP in a Numpy Array
 
-"""
+    """
 
     #Build Butterworth Filter
     filt_b,filt_a = signal.butter(params.IM_BUTTERWORTH_ORDER,
