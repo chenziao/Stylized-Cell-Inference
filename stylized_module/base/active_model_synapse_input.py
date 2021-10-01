@@ -149,6 +149,10 @@ class Simulation(object):
         self.set_gmax(gmax)
         self.set_scale(scale)
         self.set_netstim()
+
+        self.n = len(([i for i in range(self.ncell)])[MPI_rank::MPI_size])
+        self.input_array = np.zeros((self.n,1+len(self.geometry)+6))
+
         self.create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector( round(h.tstop/h.dt)+1 ).record(h._ref_t)  # record time
     
@@ -227,19 +231,17 @@ class Simulation(object):
         self.lfp.clear()
         # Create cell with morphology and biophysical parameters
         # for i in range(self.ncell):
-        cell_ids = [for i in range(self.ncell)]
+        cell_ids = [i for i in range(self.ncell)]
         n = len(cell_ids[MPI_rank::MPI_size])
-        f = h5py.File(paths.SIMULATIONS, 'w')
-        dset = f.create_dataset("input", (n,1+len(self.geometry)+len(self.geo_param[0,:])))
         for i in cell_ids[MPI_rank::MPI_size]:
             geometry = self.set_geometry(self.geometry,self.geo_param[i,:])
             self.cells.append( Cell(geometry=geometry,biophys=self.biophys[i,:]) )
-            geo_array = geometry.to_numpy()
+            geo_array = geometry.iloc[:,4:6].to_numpy().ravel()
             bio_array = self.biophys[i,:]
             ids_array = np.array(cell_ids)
+            # print(ids_array.shape, bio_array.shape, geo_array.shape)
             data = np.concatenate((ids_array, bio_array, geo_array))
-            dset[i, :] = data
-        f.close()
+            self.input_array[i, :] = data
         # add injection current or synaptic current and set up lfp recording
         pc.barrier()
         min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
@@ -265,7 +267,7 @@ class Simulation(object):
             lfp = self.lfp[index].calc_ecp()
         else:
             f = h5py.File(paths.SIMULATIONS, 'w')
-            dset = f.create_dataset("lfp", (len(index),1+len(sel.flp[0].calc_ecp())))
+            dset = f.create_dataset("lfp", (len(index),1+len(self.flp[0].calc_ecp())))
             index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index],axis=0)
             dset = np.hstack((index, lfp))

@@ -10,6 +10,7 @@ passive_location_params/
 *.zip
 compiled_graphs/
 *.h5
+*.hdf5
 *.mat
 *.pkl
 *.png

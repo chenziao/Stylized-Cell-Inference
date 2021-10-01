@@ -10,7 +10,7 @@ import numpy as np
 
 import config.params as params
 import config.paths as paths
-from stylized_module.base.simulate_cells import run_pm_simulation, run_am_simulation, simulate
+from stylized_module.base.simulate_cells import SimulationRunner #run_pm_simulation, run_am_simulation, simulate
 from stylized_module.models.SummaryStats2D import cat_output
 from utils.transform.distribution_transformation import norm2unif, range2logn, norm2logn, logds_norm2unif, logds_norm2logn
 
@@ -18,10 +18,11 @@ from utils.transform.distribution_transformation import norm2unif, range2logn, n
 class Inferencer(object):
 
     def __init__(self):
-        self.sim, self.window_size, self.x0_trace, self.t0 = run_pm_simulation() if params.ACTIVE_CELL is False else run_am_simulation()
-        self.fst_idx = first_pk_tr(self.x0_trace)
-        self.simulator, self.prior = prepare_for_sbi(simulate, params.IM_PRIOR_DISTRIBUTION)
-        self.x_o = cat_output(self.x0_trace)
+        # self.sim, self.window_size, self.x0_trace, self.t0 = run_pm_simulation() if params.ACTIVE_CELL is False else run_am_simulation()
+        self.simR = SimulationRunner()
+        self.fst_idx = first_pk_tr(self.simR.x0_trace)
+        self.simulator, self.prior = prepare_for_sbi(self.simR.simulate, params.IM_PRIOR_DISTRIBUTION)
+        self.x_o = cat_output(self.simR.x0_trace)
 
         density_estimator_build_fun = posterior_nn(model=params.IM_POSTERIOR_MODEL_ESTIMATOR,
                                            embedding_net=params.IM_EMBEDDED_NETWORK,
