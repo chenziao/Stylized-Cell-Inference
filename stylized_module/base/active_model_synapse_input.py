@@ -18,6 +18,7 @@ from utils.plotting.plot_results import plot_LFP_traces
 
 h.load_file('stdrun.hoc')
 
+# h.nrnmpi_init()
 pc = h.ParallelContext()
 MPI_size = int(pc.nhost())
 MPI_rank = int(pc.id())
@@ -233,6 +234,8 @@ class Simulation(object):
         # for i in range(self.ncell):
         cell_ids = [i for i in range(self.ncell)]
         n = len(cell_ids[MPI_rank::MPI_size])
+        # f = h5py.File(paths.ROOT_DIR + "/data/parallel_" + str(MPI_rank) + ".hdf5", 'w')
+        # dset = f.create_dataset("input", (n,1+len(self.geometry)+6))
         for i in cell_ids[MPI_rank::MPI_size]:
             geometry = self.set_geometry(self.geometry,self.geo_param[i,:])
             self.cells.append( Cell(geometry=geometry,biophys=self.biophys[i,:]) )
@@ -242,8 +245,11 @@ class Simulation(object):
             # print(ids_array.shape, bio_array.shape, geo_array.shape)
             data = np.concatenate((ids_array, bio_array, geo_array))
             self.input_array[i, :] = data
+            # dset[i,:] = data
+        # f.close()
         # add injection current or synaptic current and set up lfp recording
         pc.barrier()
+        np.savetxt(paths.ROOT_DIR + "/data/parallel_" + str(MPI_rank) + ".csv", self.input_array, delimiter=",")
         min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
         for i,cell in enumerate(self.cells):
 #             # Pulse injection
@@ -256,6 +262,7 @@ class Simulation(object):
     def run(self):
         """Run simulation"""
         h.run()
+        pc.done()
     
     def t(self):
         """Return simulation time vector"""
