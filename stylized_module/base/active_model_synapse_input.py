@@ -236,7 +236,7 @@ class Simulation(object):
         n = len(cell_ids[MPI_rank::MPI_size])
         for i in cell_ids[MPI_rank::MPI_size]:
             # if i == 0:
-            print(i, MPI_rank)
+            print(i, MPI_rank, MPI_size)
             geometry = self.set_geometry(self.geometry,self.geo_param[i,:])
             self.cells.append( Cell(geometry=geometry,biophys=self.biophys[i,:]) )
             geo_array = geometry.iloc[:,4:6].to_numpy().ravel()
