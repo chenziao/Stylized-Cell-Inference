@@ -31,7 +31,7 @@ class SimulationRunner(object):
                                                                 else self.run_am_simulation())
 
     def simulate_in_sbi(self, inferencer, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
-        theta, x = simulate_for_sbi(inferencer.simulator,proposal,num_simulations=samples)
+        theta, x = simulate_for_sbi(inferencer.simulator,proposal,num_simulations=1)
         return theta, x
 
 
@@ -64,7 +64,10 @@ class SimulationRunner(object):
         x0_trace = groundtruth_lfp[params.AM_START_IDX:params.AM_START_IDX+params.AM_WINDOW_SIZE,:]
 
         #Setting Simulation Runtime Parameters and Running
-        sim = amSimulation(geo_standard,params.AM_ELECTRODE_POSITION,loc_param=params.AM_FIXED_LOCATION_PARAMETERS)
+        sim = amSimulation(geo_standard,
+                            params.AM_ELECTRODE_POSITION,
+                            loc_param=params.AM_FIXED_LOCATION_PARAMETERS, 
+                            ncell=params.IM_NUMBER_OF_SIMULATIONS)
         sim.run()
         t = sim.t()
         t0 = t[:params.AM_WINDOW_SIZE]
