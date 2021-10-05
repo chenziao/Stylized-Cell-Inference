@@ -30,7 +30,8 @@ ELECTRODE_GRID = (np.array(hf.get('grid/x')),np.array(hf.get('grid/y')),np.zeros
 GT_TSTOP = 20. # ms
 GT_DT = 0.025  # ms. does not allow change
 GT_ELECTRODE_POSITION = ELECTRODE_POSITION #np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-GT_LOCATION_PARAMETERS = [350,50,np.pi/4,1.43,0.0,0.8]
+                        # x,     y,  z,    alpha, h,  phi  # y,   d,  theta,   alpha, h,  phi
+GT_LOCATION_PARAMETERS = [0.685,350,49.995,1.43, 0.0, 0.8] #[350, 50, np.pi/4, 1.43, 0.0, 0.8]
 GT_GMAX = 0.005
 GT_SCALE = 1.
 GT_BUTTERWORTH_ORDER = 2 #2nd order

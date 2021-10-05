@@ -201,8 +201,8 @@ class Simulation(object):
     def define_geometry_entries(self):
         """Define list of entries to geometry dataframe. Each entry is a pair of section id and property."""
         self.geo_entries = [
-            (0,'R'),  # change soma radius
             (3,'L'),  # change trunk length
+            (0,'R'),  # change soma radius
             (3,'R'),  # change trunk radius
             ([1,2],'R'),  # change basal dendrites radius
             (4,'R'),  # change tuft radius
