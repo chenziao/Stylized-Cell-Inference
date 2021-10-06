@@ -152,7 +152,7 @@ class Simulation(object):
         self.set_netstim()
 
         self.n = len(([i for i in range(self.ncell)])[MPI_rank::MPI_size])
-        self.input_array = np.zeros((self.n,1+len(self.geometry)+6))
+        self.input_array = np.zeros((self.ncell,1+len(self.geometry)+6))
 
         self.create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector( round(h.tstop/h.dt)+1 ).record(h._ref_t)  # record time
@@ -236,7 +236,7 @@ class Simulation(object):
         n = len(cell_ids[MPI_rank::MPI_size])
         for i in cell_ids[MPI_rank::MPI_size]:
             # if i == 0:
-            print(i, MPI_rank)
+            # print(i, MPI_rank, len(cell_ids[MPI_rank::MPI_size]))
             geometry = self.set_geometry(self.geometry,self.geo_param[i,:])
             self.cells.append( Cell(geometry=geometry,biophys=self.biophys[i,:]) )
             geo_array = geometry.iloc[:,4:6].to_numpy().ravel()
@@ -246,8 +246,9 @@ class Simulation(object):
             data = np.concatenate((ids_array, bio_array, geo_array))
             self.input_array[i, :] = data
         # add injection current or synaptic current and set up lfp recording
-        np.savetxt(paths.ROOT_DIR + "/data/parallel_" + str(MPI_rank) + ".csv", self.input_array, delimiter=",")
         pc.barrier()
+        np.savetxt(paths.ROOT_DIR + "/data/temp/parallel_" + str(MPI_rank) + ".csv", self.input_array, delimiter=",")
+        # np.savetxt(paths.ROOT_DIR + "/data/parallel_full.csv", self.input_array, delimiter=",")
         min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
         for i,cell in enumerate(self.cells):
 #             # Pulse injection

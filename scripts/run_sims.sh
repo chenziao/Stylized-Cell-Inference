@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-mpiexec -n 4 python run_sims.py
+mpirun -n 8 nrniv -mpi -python scripts/run_sims.py

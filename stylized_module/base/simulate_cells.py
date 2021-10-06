@@ -30,8 +30,8 @@ class SimulationRunner(object):
                                                                 if params.ACTIVE_CELL is False 
                                                                 else self.run_am_simulation())
 
-    def simulate_in_sbi(self, inferencer, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
-        theta, x = simulate_for_sbi(inferencer.simulator,proposal,num_simulations=1)
+    def simulate_in_sbi(self, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
+        theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1)
         return theta, x
 
 
@@ -143,7 +143,6 @@ class SimulationRunner(object):
             Filtered LFP in a Numpy Array
 
         """
-
         #Build Butterworth Filter
         filt_b,filt_a = signal.butter(params.IM_BUTTERWORTH_ORDER,
                                 params.IM_CRITICAL_FREQUENCY,
@@ -212,7 +211,7 @@ class SimulationRunner(object):
             
         """
         if params.ACTIVE_CELL is False:
-            lfp = self.run_sim_from_sample(sim_params, cell_type='passive')
+            lfp = self.run_sim_from_sample(torch.squeeze(sim_params), cell_type='passive')
         else:
-            lfp = self.run_sim_from_sample(sim_params, cell_type='active')
+            lfp = self.run_sim_from_sample(torch.squeeze(sim_params), cell_type='active')
         return cat_output(lfp)
