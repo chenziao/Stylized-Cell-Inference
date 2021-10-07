@@ -247,6 +247,7 @@ class Simulation(object):
             self.input_array[i, :] = data
         # add injection current or synaptic current and set up lfp recording
         pc.barrier()
+        pc.done()
         np.savetxt(paths.ROOT_DIR + "/data/temp/parallel_" + str(MPI_rank) + ".csv", self.input_array, delimiter=",")
         # np.savetxt(paths.ROOT_DIR + "/data/parallel_full.csv", self.input_array, delimiter=",")
         min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
@@ -261,7 +262,6 @@ class Simulation(object):
     def run(self):
         """Run simulation"""
         h.run()
-        pc.done()
     
     def t(self):
         """Return simulation time vector"""

@@ -31,7 +31,8 @@ class SimulationRunner(object):
                                                                 else self.run_am_simulation())
 
     def simulate_in_sbi(self, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
-        theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1)
+        theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1000)
+        x = torch.reshape(x, (1,-1)).float() #TODO fix this so that it works with larger batches instead of a single cell
         return theta, x
 
 

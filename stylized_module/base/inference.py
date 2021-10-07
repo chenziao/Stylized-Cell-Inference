@@ -39,7 +39,7 @@ class Inferencer(object):
         # theta, x = simulate_for_sbi(self.simulator,proposal,num_simulations=params.IM_NUMBER_OF_SIMULATIONS)
         # In `SNLE` and `SNRE`, you should not pass the `proposal` to `.append_simulations()`
     #     density_estimator = inference.append_simulations(np.squeeze(theta), np.squeeze(x), proposal=proposal).train()
-        density_estimator = self.inference.append_simulations(np.squeeze(theta), x, proposal=proposal).train()
+        density_estimator = self.inference.append_simulations(theta, x, proposal=proposal).train()
         posterior = self.inference.build_posterior(density_estimator, sample_with="mcmc")
         
         with open(paths.POSTERIOR_SAVE + "_post.pkl", "wb") as handle:
