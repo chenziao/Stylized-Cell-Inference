@@ -279,6 +279,7 @@ class Simulation(object):
         if not hasattr(index,'__len__'):
             lfp = self.lfp[index].calc_ecp()
         else:
+            print(index)
             # f = h5py.File(paths.SIMULATIONS, 'w')
             # dset = f.create_dataset("lfp", (len(index),1+len(self.flp[0].calc_ecp())))
             # index = np.asarray(index).ravel()

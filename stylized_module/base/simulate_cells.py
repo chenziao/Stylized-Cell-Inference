@@ -163,24 +163,24 @@ class SimulationRunner(object):
         z = d * np.cos(theta)
         
         #organizing and setting simulation location parameters
-        numpy_list = np.array([
+        numpy_list = np.hstack((
             x,                                                                                       #x
             norm2unif(param[:,0], params.IM_PARAMETER_BOUNDS[0][0], params.IM_PARAMETER_BOUNDS[0][1]), #y
             z,                                                                                       #z
             alpha,                                                                                   #alpha
             norm2unif(param[:,3], params.IM_PARAMETER_BOUNDS[3][0], params.IM_PARAMETER_BOUNDS[3][1]), #h
             norm2unif(param[:,4], params.IM_PARAMETER_BOUNDS[4][0], params.IM_PARAMETER_BOUNDS[4][1])  #phi
-        ])
+        ))
         
         #organizing and setting simulation geometric parameters
-        geo_list = np.zeros(6)
-        geo_list[0] = norm2unif(param[:,5], params.IM_PARAMETER_BOUNDS[5][0], params.IM_PARAMETER_BOUNDS[5][1])
+        geo_list = np.zeros((param.size()[0], 6))
+        geo_list[:,0] = norm2unif(param[:,5], params.IM_PARAMETER_BOUNDS[5][0], params.IM_PARAMETER_BOUNDS[5][1])
         for i in range(6,11):
             if i == 6:
                 m,s=range2logn(params.IM_PARAMETER_BOUNDS[i][0], params.IM_PARAMETER_BOUNDS[i][1], n_sigma=3)
             else:
                 m,s=range2logn(params.IM_PARAMETER_BOUNDS[i][0], params.IM_PARAMETER_BOUNDS[i][1])
-            geo_list[i-5] = norm2logn(param[:,i], m, s)
+            geo_list[:,i-5] = norm2logn(param[:,i], m, s)
 
 
         geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')

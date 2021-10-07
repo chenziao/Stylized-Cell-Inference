@@ -22,7 +22,7 @@ class Inferencer(object):
         # self.window_size, self.x0_trace, self.t0 = run_pm_simulation() if params.ACTIVE_CELL is False else run_am_simulation()
         self.simR = SimulationRunner()
         self.fst_idx = first_pk_tr(self.simR.x0_trace)
-        self.prior = process_prior(params.IM_PRIOR_DISTRIBUTION)
+        self.prior, _, prior_returns_numpy = process_prior(params.IM_PRIOR_DISTRIBUTION)
         # self.simulator, self.prior = prepare_for_sbi(self.simR.simulate, params.IM_PRIOR_DISTRIBUTION)
         self.x_o = cat_output(self.simR.x0_trace)
 
