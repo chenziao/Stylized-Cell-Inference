@@ -284,7 +284,7 @@ class Simulation(object):
             # dset = f.create_dataset("lfp", (len(index),1+len(self.flp[0].calc_ecp())))
             # index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index],axis=0)
-            np.savetxt(paths.ROOT_DIR + "/data/temp/parallel_lfp_" + str(MPI_rank) + ".csv", self.lfp, delimiter=",")
+            np.savetxt(paths.ROOT_DIR + "/data/temp/parallel_lfp_" + str(MPI_rank) + ".csv", self.lfp, delimiter=",", fmt='%s')
             # dset = np.hstack((index, lfp))
             # f.close()
         return lfp

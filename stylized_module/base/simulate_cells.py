@@ -32,7 +32,7 @@ class SimulationRunner(object):
 
     def simulate_runs(self, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
         theta = proposal.sample((samples,))
-        print(theta.shape)
+        # print(theta.shape)
         x = self.simulate(theta)
         # theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1000)
         # theta -> [num_sims, 11], x-> [num_sims, 72991]
@@ -197,7 +197,7 @@ class SimulationRunner(object):
         sim.run()
 
         #extract lfp, filter, and return
-        lfp = sim.get_lfp(index=[0,sim.n]).T
+        lfp = sim.get_lfp(index=np.arange(0,sim.n)).T
         filtered_lfp = signal.lfilter(filt_b,filt_a,lfp,axis=0) # filter along row of the lfp 2d-array, if each row is a channel
         if not whole_trace:
             start,end = get_spike_window(filtered_lfp,win_size=params.AM_WINDOW_SIZE,align_at=fst_idx)
