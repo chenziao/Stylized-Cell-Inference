@@ -32,6 +32,7 @@ class SimulationRunner(object):
 
     def simulate_runs(self, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
         theta = proposal.sample((samples,))
+        print(theta.shape)
         x = self.simulate(theta)
         # theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1000)
         # theta -> [num_sims, 11], x-> [num_sims, 72991]

@@ -2,7 +2,8 @@ import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
 
 import pickle
-from sbi.inference import SNPE, prepare_for_sbi
+from sbi.inference import SNPE
+from sbi.utils.user_input_checks import process_prior
 from sbi.utils.get_nn_models import posterior_nn  # For SNLE: likelihood_nn(). For SNRE: classifier_nn()
 from utils.spike_window import first_pk_tr
 import torch
@@ -18,10 +19,11 @@ from utils.transform.distribution_transformation import norm2unif, range2logn, n
 class Inferencer(object):
 
     def __init__(self):
-        # self.sim, self.window_size, self.x0_trace, self.t0 = run_pm_simulation() if params.ACTIVE_CELL is False else run_am_simulation()
+        # self.window_size, self.x0_trace, self.t0 = run_pm_simulation() if params.ACTIVE_CELL is False else run_am_simulation()
         self.simR = SimulationRunner()
         self.fst_idx = first_pk_tr(self.simR.x0_trace)
-        self.simulator, self.prior = prepare_for_sbi(self.simR.simulate, params.IM_PRIOR_DISTRIBUTION)
+        self.prior = process_prior(params.IM_PRIOR_DISTRIBUTION)
+        # self.simulator, self.prior = prepare_for_sbi(self.simR.simulate, params.IM_PRIOR_DISTRIBUTION)
         self.x_o = cat_output(self.simR.x0_trace)
 
         density_estimator_build_fun = posterior_nn(model=params.IM_POSTERIOR_MODEL_ESTIMATOR,
