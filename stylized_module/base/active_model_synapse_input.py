@@ -15,6 +15,7 @@ from stylized_module.currents.ecp import EcpMod, newposition
 from stylized_module.currents.recorder import Recorder
 from stylized_module.currents.point_current import Point_current
 from utils.plotting.plot_results import plot_LFP_traces
+from utils.combine_csv import build_csv
 
 h.load_file('stdrun.hoc')
 
@@ -247,8 +248,13 @@ class Simulation(object):
             self.input_array[i, :] = data
         # add injection current or synaptic current and set up lfp recording
         pc.barrier()
-        pc.done()
+        # pc.done()
         np.savetxt(paths.ROOT_DIR + "/data/temp/parallel_" + str(MPI_rank) + ".csv", self.input_array, delimiter=",")
+
+        pc.barrier()
+        if MPI_rank == 0:
+            build_csv()
+        
         # np.savetxt(paths.ROOT_DIR + "/data/parallel_full.csv", self.input_array, delimiter=",")
         min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
         for i,cell in enumerate(self.cells):
@@ -262,6 +268,7 @@ class Simulation(object):
     def run(self):
         """Run simulation"""
         h.run()
+        # pc.done()
     
     def t(self):
         """Return simulation time vector"""
@@ -272,10 +279,11 @@ class Simulation(object):
         if not hasattr(index,'__len__'):
             lfp = self.lfp[index].calc_ecp()
         else:
-            f = h5py.File(paths.SIMULATIONS, 'w')
-            dset = f.create_dataset("lfp", (len(index),1+len(self.flp[0].calc_ecp())))
-            index = np.asarray(index).ravel()
+            # f = h5py.File(paths.SIMULATIONS, 'w')
+            # dset = f.create_dataset("lfp", (len(index),1+len(self.flp[0].calc_ecp())))
+            # index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index],axis=0)
-            dset = np.hstack((index, lfp))
-            f.close()
+            np.savetxt(paths.ROOT_DIR + "/data/temp/parallel_lfp_" + str(MPI_rank) + ".csv", self.lfp, delimiter=",")
+            # dset = np.hstack((index, lfp))
+            # f.close()
         return lfp

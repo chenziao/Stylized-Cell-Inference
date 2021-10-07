@@ -30,7 +30,8 @@ else
     VER=$(uname -r)
 fi
 
-if [ "${OS}" == CentOS Linux ]; then
+if [ "${OS}" = "CentOS Linux" ]; then
     module load mpi/mpich-3.2-x86_64
+fi
 
 mpirun -n 8 nrniv -mpi -python scripts/run_sims.py

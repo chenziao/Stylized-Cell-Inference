@@ -26,17 +26,20 @@ rng = np.random.default_rng(123412)
 class SimulationRunner(object):
 
     def __init__(self):
-        self.sim, self.window_size, self.x0_trace, self.t0 = (self.run_pm_simulation() 
-                                                                if params.ACTIVE_CELL is False 
-                                                                else self.run_am_simulation())
+        self.window_size, self.x0_trace, self.t0 = (self.run_pm_simulation() 
+                                                    if params.ACTIVE_CELL is False 
+                                                    else self.run_am_simulation())
 
-    def simulate_in_sbi(self, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
-        theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1000)
-        x = torch.reshape(x, (1,-1)).float() #TODO fix this so that it works with larger batches instead of a single cell
+    def simulate_runs(self, proposal, samples=params.IM_NUMBER_OF_SIMULATIONS):
+        theta = proposal.sample((samples,))
+        x = self.simulate(theta)
+        # theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1000)
+        # theta -> [num_sims, 11], x-> [num_sims, 72991]
+        # x = torch.reshape(x, (1,-1)).float() #TODO fix this so that it works with larger batches instead of a single cell
         return theta, x
 
 
-    def run_am_simulation(self, data_path: str=paths.SIMULATED_DATA_FILE) -> Tuple[amSimulation, int, ndarray, ndarray]:
+    def run_am_simulation(self, data_path: str=paths.SIMULATED_DATA_FILE) -> Tuple[int, ndarray, ndarray]:
         """
         The function takes in the specific data file and returns simulation results in the form of a tuple.
 
@@ -44,8 +47,7 @@ class SimulationRunner(object):
             data_path: String with a path pointing to the data location
         
         Returns:
-            Tuple of 4 items:
-                sim: The simulation instance
+            Tuple of 3 items:
                 window_size: The size of the window used in the simulation
                 x0_trace: The initial LFP trace
                 t0: The LFP trace time
@@ -58,23 +60,24 @@ class SimulationRunner(object):
         h.dt = params.AM_DT
 
         #Loading Cell Parameters
-        geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
+        # geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
         hf = h5py.File(data_path, 'r')
         groundtruth_lfp = np.array(hf.get('data'))
         hf.close()
         x0_trace = groundtruth_lfp[params.AM_START_IDX:params.AM_START_IDX+params.AM_WINDOW_SIZE,:]
 
         #Setting Simulation Runtime Parameters and Running
-        sim = amSimulation(geo_standard,
-                            params.AM_ELECTRODE_POSITION,
-                            loc_param=params.AM_FIXED_LOCATION_PARAMETERS, 
-                            ncell=params.IM_NUMBER_OF_SIMULATIONS)
-        sim.run()
-        t = sim.t()
-        t0 = t[:params.AM_WINDOW_SIZE]
+        # sim = amSimulation(geo_standard,
+        #                     params.AM_ELECTRODE_POSITION,
+        #                     loc_param=params.AM_FIXED_LOCATION_PARAMETERS, 
+        #                     ncell=params.IM_NUMBER_OF_SIMULATIONS)
+        # sim.run()
+        # t = sim.t()
+        # t0 = t[:params.AM_WINDOW_SIZE]
+        t0 = np.arange(params.AM_START_IDX, params.AM_START_IDX+params.AM_WINDOW_SIZE)
         window_size = params.AM_WINDOW_SIZE
 
-        return sim, window_size, x0_trace, t0
+        return window_size, x0_trace, t0
 
 
     def run_pm_simulation(self, data_path: str=paths.SIMULATED_DATA_FILE) -> Tuple[pmSimulation, int, ndarray, ndarray]:
@@ -132,8 +135,7 @@ class SimulationRunner(object):
         simulates a cell simulation with the specified parameters and returns the resulting filtered LFP
 
         Args:
-            param: Tensor sample of data provided corresponding to cell location and geometric parameters
-            sim: Simulation instance from active cell #TODO add passive cell simulation instances
+            param: Tensor sample of data provided corresponding to cell location and geometric parameters (theta)
             fst_idx: First Index of where the LFP peak starts
             cell_type: Version of cell, currently only working with active. #TODO implement 'passive'
             input_coordinates: Type of sample parameters to expect as input #TODO implement euclidean
@@ -154,43 +156,47 @@ class SimulationRunner(object):
         alpha = rng.uniform(low=params.IM_ALPHA_BOUNDS[0], high=params.IM_ALPHA_BOUNDS[1])
 
         #convert polar to euclidean
-        d = norm2unif(param[1], params.IM_PARAMETER_BOUNDS[1][0], params.IM_PARAMETER_BOUNDS[1][1])
-        theta = norm2unif(param[2], params.IM_PARAMETER_BOUNDS[2][0], params.IM_PARAMETER_BOUNDS[2][1])
+        d = norm2unif(param[:,1], params.IM_PARAMETER_BOUNDS[1][0], params.IM_PARAMETER_BOUNDS[1][1])
+        theta = norm2unif(param[:,2], params.IM_PARAMETER_BOUNDS[2][0], params.IM_PARAMETER_BOUNDS[2][1])
         x = d * np.sin(theta)
         z = d * np.cos(theta)
         
         #organizing and setting simulation location parameters
         numpy_list = np.array([
             x,                                                                                       #x
-            norm2unif(param[0], params.IM_PARAMETER_BOUNDS[0][0], params.IM_PARAMETER_BOUNDS[0][1]), #y
+            norm2unif(param[:,0], params.IM_PARAMETER_BOUNDS[0][0], params.IM_PARAMETER_BOUNDS[0][1]), #y
             z,                                                                                       #z
             alpha,                                                                                   #alpha
-            norm2unif(param[3], params.IM_PARAMETER_BOUNDS[3][0], params.IM_PARAMETER_BOUNDS[3][1]), #h
-            norm2unif(param[4], params.IM_PARAMETER_BOUNDS[4][0], params.IM_PARAMETER_BOUNDS[4][1])  #phi
+            norm2unif(param[:,3], params.IM_PARAMETER_BOUNDS[3][0], params.IM_PARAMETER_BOUNDS[3][1]), #h
+            norm2unif(param[:,4], params.IM_PARAMETER_BOUNDS[4][0], params.IM_PARAMETER_BOUNDS[4][1])  #phi
         ])
-        self.sim.set_loc_param(torch.from_numpy(numpy_list))
         
         #organizing and setting simulation geometric parameters
         geo_list = np.zeros(6)
-        geo_list[0] = norm2unif(param[5], params.IM_PARAMETER_BOUNDS[5][0], params.IM_PARAMETER_BOUNDS[5][1])
+        geo_list[0] = norm2unif(param[:,5], params.IM_PARAMETER_BOUNDS[5][0], params.IM_PARAMETER_BOUNDS[5][1])
         for i in range(6,11):
             if i == 6:
                 m,s=range2logn(params.IM_PARAMETER_BOUNDS[i][0], params.IM_PARAMETER_BOUNDS[i][1], n_sigma=3)
             else:
                 m,s=range2logn(params.IM_PARAMETER_BOUNDS[i][0], params.IM_PARAMETER_BOUNDS[i][1])
-            geo_list[i-5] = norm2logn(param[i], m, s)
-        self.sim.set_geo_param(torch.from_numpy(geo_list))
+            geo_list[i-5] = norm2logn(param[:,i], m, s)
+
+
+        geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
+
+        sim = amSimulation(geo_standard,
+                            params.AM_ELECTRODE_POSITION,
+                            loc_param=torch.from_numpy(numpy_list),
+                            geo_param=torch.from_numpy(geo_list),
+                            gmax=params.GT_GMAX,
+                            scale=1.0,
+                            ncell=params.IM_NUMBER_OF_SIMULATIONS)
 
         #simluation specific run time parameters
-        scalVal = 1
-        self.sim.set_scale(scalVal)
-        self.sim.set_gmax(params.GT_GMAX)
-        self.sim.set_scale(scalVal)
-        self.sim.create_cells()
-        self.sim.run()
+        sim.run()
 
         #extract lfp, filter, and return
-        lfp = self.sim.get_lfp().T
+        lfp = sim.get_lfp(index=[0,sim.n]).T
         filtered_lfp = signal.lfilter(filt_b,filt_a,lfp,axis=0) # filter along row of the lfp 2d-array, if each row is a channel
         if not whole_trace:
             start,end = get_spike_window(filtered_lfp,win_size=params.AM_WINDOW_SIZE,align_at=fst_idx)
@@ -212,7 +218,7 @@ class SimulationRunner(object):
             
         """
         if params.ACTIVE_CELL is False:
-            lfp = self.run_sim_from_sample(torch.squeeze(sim_params), cell_type='passive')
+            lfp = self.run_sim_from_sample(sim_params, cell_type='passive')
         else:
-            lfp = self.run_sim_from_sample(torch.squeeze(sim_params), cell_type='active')
+            lfp = self.run_sim_from_sample(sim_params, cell_type='active')
         return cat_output(lfp)
