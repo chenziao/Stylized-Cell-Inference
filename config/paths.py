@@ -9,8 +9,10 @@ GEO_STANDARD = os.path.join(ROOT_DIR, 'config/geom_standard.csv')
 ELECTRODES = os.path.join(ROOT_DIR, 'config/Electrode2D.h5')
 
 SIMULATIONS = os.path.join(ROOT_DIR, 'data/parallel_simulations.hdf5')
-CSV_TEMP_FILES = os.path.join(ROOT_DIR, 'data/temp')
-CSV_SIM_FILE = os.path.join(ROOT_DIR, 'data/full_sims.csv')
+CSV_TEMP_IN_FILES = os.path.join(ROOT_DIR, 'data/temp_in')
+CSV_TEMP_LFP_FILES = os.path.join(ROOT_DIR, 'data/temp_lfp')
+CSV_SIM_IN_FILE = os.path.join(ROOT_DIR, 'data/full_in_sims.csv')
+CSV_SIM_LFP_FILE = os.path.join(ROOT_DIR, 'data/full_lfp_sims.csv')
 SIMULATED_DATA_FILE = os.path.join(ROOT_DIR, 'data/active_groundtruth.h5')
 MORPHOLOGY_DATA_FILE = os.path.join(ROOT_DIR, 'data/detailed_groundtruth.h5') #Allen Morphology Cell Data
 INVIVO_DATA_FILE = os.path.join(ROOT_DIR, 'data/cell360LFP.h5')

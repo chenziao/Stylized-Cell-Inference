@@ -3,12 +3,13 @@ sys.path.append(os.path.split(sys.path[0])[0])
 
 import h5py
 import pandas as pd
+import numpy as np
 
 from neuron import h
 
 import stylized_module.base.inference as infer
 import config.paths as paths
-from utils.combine_csv import build_csv
+from utils.combine_csv import build_lfp_csv
 
 pc = h.ParallelContext()
 MPI_size = int(pc.nhost())
@@ -20,9 +21,19 @@ if __name__ == "__main__":
     # if MPI_rank == 0:
     #     build_csv()
     theta, x = inf.simR.simulate_runs(inf.prior)
-    print(theta.shape, x.shape)
-    posterior = inf.run_inferencer(theta, x, inf.prior)
     pc.done()
+    print(theta.shape)
+    print(x.shape)
+    np.save("theta1.npy", theta)
+    np.save("x1.npy", x)
+    # pc.barrier()
+    # pc.done()
+    # if MPI_rank == 0:
+    #     build_lfp_csv()
+    # # print(theta.shape, x.shape)
+    # posterior = inf.run_inferencer(theta, x, inf.prior)
+    # theta, x = inf.simR.simulate_runs(posterior)
+    # # pc.done()
     # posterior = inf.run_inferencer(theta, x, posterior)
     # samples, log_prob = inf.build_log_prob(posterior)
     # predicted_params = inf.predict_params(samples, log_prob)

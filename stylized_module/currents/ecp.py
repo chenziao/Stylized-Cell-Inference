@@ -89,6 +89,7 @@ def newposition(translate,rotate,old_position=[0.,0.,0.],move_frame=False):
     """
     translate = np.asarray(translate)
     old_position = np.asarray(old_position)
+    # print(rotate)
     Rot = R.from_euler('yxy',[rotate[0],np.arccos(rotate[1]),rotate[2]])
     if move_frame:
         new_position = Rot.inv().apply(old_position-translate)

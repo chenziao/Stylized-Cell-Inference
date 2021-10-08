@@ -35,3 +35,7 @@ if [ "${OS}" = "CentOS Linux" ]; then
 fi
 
 mpirun -n 8 nrniv -mpi -python scripts/run_sims.py
+
+pkill mpirun
+
+# python scripts/run_inf.py

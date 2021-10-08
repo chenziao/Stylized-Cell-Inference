@@ -21,6 +21,9 @@ from stylized_module.models.SummaryStats2D import cat_output
 from utils.transform.distribution_transformation import norm2unif, range2logn, norm2logn
 
 rng = np.random.default_rng(123412)
+pc = h.ParallelContext()
+MPI_size = int(pc.nhost())
+MPI_rank = int(pc.id())
 
 
 class SimulationRunner(object):
@@ -34,6 +37,17 @@ class SimulationRunner(object):
         theta = proposal.sample((samples,))
         # print(theta.shape)
         x = self.simulate(theta)
+        pc.barrier()
+        # dest = pc.py_allgather(theta)
+        # full_theta = np.concatenate(dest, axis=2)
+        # print(full_theta.shape)
+        # pc.done()
+        out = []
+        for i in range(x.shape[2]):
+            out.append(cat_output(x[:,:,i]))
+        x = torch.transpose(torch.tensor(np.stack(out, axis=1), dtype=torch.float), 0, 1)
+        # x = cat_output(x)
+        # print(theta.shape, x.shape)
         # theta, x = simulate_for_sbi(self.simulate,proposal,num_simulations=1000)
         # theta -> [num_sims, 11], x-> [num_sims, 72991]
         # x = torch.reshape(x, (1,-1)).float() #TODO fix this so that it works with larger batches instead of a single cell
@@ -154,7 +168,8 @@ class SimulationRunner(object):
                                 fs=params.IM_FILTER_SAMPLING_RATE)
 
         #Replace alpha with random uniform number
-        alpha = rng.uniform(low=params.IM_ALPHA_BOUNDS[0], high=params.IM_ALPHA_BOUNDS[1])
+        alpha = rng.uniform(low=params.IM_ALPHA_BOUNDS[0], high=params.IM_ALPHA_BOUNDS[1], size=(param.size()[0],))
+        # print("alpha.shape {}".format(alpha.shape))
 
         #convert polar to euclidean
         d = norm2unif(param[:,1], params.IM_PARAMETER_BOUNDS[1][0], params.IM_PARAMETER_BOUNDS[1][1])
@@ -162,8 +177,9 @@ class SimulationRunner(object):
         x = d * np.sin(theta)
         z = d * np.cos(theta)
         
+        # print("X.shape {}".format(x.shape))
         #organizing and setting simulation location parameters
-        numpy_list = np.hstack((
+        numpy_list = np.vstack((
             x,                                                                                       #x
             norm2unif(param[:,0], params.IM_PARAMETER_BOUNDS[0][0], params.IM_PARAMETER_BOUNDS[0][1]), #y
             z,                                                                                       #z
@@ -172,6 +188,8 @@ class SimulationRunner(object):
             norm2unif(param[:,4], params.IM_PARAMETER_BOUNDS[4][0], params.IM_PARAMETER_BOUNDS[4][1])  #phi
         ))
         
+        numpy_list = np.transpose(numpy_list)
+
         #organizing and setting simulation geometric parameters
         geo_list = np.zeros((param.size()[0], 6))
         geo_list[:,0] = norm2unif(param[:,5], params.IM_PARAMETER_BOUNDS[5][0], params.IM_PARAMETER_BOUNDS[5][1])
@@ -184,6 +202,8 @@ class SimulationRunner(object):
 
 
         geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
+
+        # print("Numpy_list: {}".format(numpy_list.shape))
 
         sim = amSimulation(geo_standard,
                             params.AM_ELECTRODE_POSITION,
@@ -222,4 +242,10 @@ class SimulationRunner(object):
             lfp = self.run_sim_from_sample(sim_params, cell_type='passive')
         else:
             lfp = self.run_sim_from_sample(sim_params, cell_type='active')
-        return cat_output(lfp)
+        # print(lfp.shape)
+        pc.barrier()
+        dest = pc.py_allgather(lfp)
+        full_lfp = np.concatenate(dest, axis=2)
+        # print(full_lfp.shape)
+        return full_lfp
+        # return cat_output(lfp)

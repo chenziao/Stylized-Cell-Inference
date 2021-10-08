@@ -15,3 +15,5 @@ compiled_graphs/
 *.pkl
 *.png
 *.jpg
+*.npy
+*.csv
