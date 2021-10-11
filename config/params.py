@@ -86,7 +86,7 @@ IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUN
 IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2
 IM_NUMBER_OF_SIMULATIONS = 5000
-IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
+IM_POSTERIOR_MODEL_ESTIMATOR = 'mdn'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
 IM_GRAPHING_LABELS = [r'y',r'd',r'theta',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']

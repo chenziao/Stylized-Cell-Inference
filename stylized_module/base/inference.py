@@ -42,12 +42,12 @@ class Inferencer(object):
         # In `SNLE` and `SNRE`, you should not pass the `proposal` to `.append_simulations()`
     #     density_estimator = inference.append_simulations(np.squeeze(theta), np.squeeze(x), proposal=proposal).train()
         density_estimator = self.inference.append_simulations(theta, x, proposal=proposal).train()
-        posterior = self.inference.build_posterior(density_estimator, sample_with="mcmc")
+        posterior = self.inference.build_posterior(density_estimator)#, sample_with="mcmc")
         
-        with open(paths.POSTERIOR_SAVE + "_post.pkl", "wb") as handle:
+        with open(paths.POSTERIOR_SAVE + "_post_mdn.pkl", "wb") as handle:
             pickle.dump(posterior, handle)
             
-        with open(paths.POSTERIOR_SAVE + "_de.pkl", "wb") as handle:
+        with open(paths.POSTERIOR_SAVE + "_de_mdn.pkl", "wb") as handle:
             pickle.dump(density_estimator, handle)
             
         # posteriors.append(posterior)
@@ -55,7 +55,7 @@ class Inferencer(object):
             
         self.inference._summary_writer = None
         self.inference._build_neural_net = None
-        with open(paths.INFERENCER_SAVE + ".pkl", "wb") as handle:
+        with open(paths.INFERENCER_SAVE + "_mdn.pkl", "wb") as handle:
             pickle.dump(self.inference, handle)
 
         # with open(paths.POSTERIOR_SAVE + "1_post.pkl", "rb") as handle:
@@ -63,7 +63,7 @@ class Inferencer(object):
         return posterior
 
     def build_log_prob(self, posterior):
-        samples = posterior.sample((1000,), x=self.x_o, sample_with='mcmc') #, sample_with_mcmc=True
+        samples = posterior.sample((1000,), x=self.x_o)#, sample_with='mcmc') #, sample_with_mcmc=True
 
         #posterior.leakage_correction(x_o, num_rejection_samples=1000)
         log_probability = posterior.log_prob(samples,x=self.x_o, norm_posterior=False) #, norm_posterior=False

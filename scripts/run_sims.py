@@ -17,19 +17,15 @@ MPI_size = int(pc.nhost())
 MPI_rank = int(pc.id())
 
 if __name__ == "__main__":
-    #inf = infer.Inferencer()
-    # f = h5py.File(paths.SIMULATIONS, 'w')
-    # if MPI_rank == 0:
-    #     build_csv()
-    with open(r"posterior.pkl", "rb") as input_file:
-        posterior = cPickle.load(input_file)
+    # with open(r"posterior_mdn.pkl", "rb") as input_file:
+    #     posterior = cPickle.load(input_file)
     inf = infer.Inferencer()
-    theta, x = inf.simR.simulate_runs(posterior)
+    theta, x = inf.simR.simulate_runs(inf.prior)
     pc.done()
     print(theta.shape)
     print(x.shape)
-    np.save("theta2.npy", theta)
-    np.save("x2.npy", x)
+    np.save("theta_mdn1.npy", theta)
+    np.save("x_mdn1.npy", x)
     # pc.barrier()
     # pc.done()
     # if MPI_rank == 0:
