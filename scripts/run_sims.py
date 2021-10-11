@@ -5,6 +5,7 @@ import h5py
 import pandas as pd
 import numpy as np
 
+import _pickle as cPickle
 from neuron import h
 
 import stylized_module.base.inference as infer
@@ -16,16 +17,19 @@ MPI_size = int(pc.nhost())
 MPI_rank = int(pc.id())
 
 if __name__ == "__main__":
-    inf = infer.Inferencer()
+    #inf = infer.Inferencer()
     # f = h5py.File(paths.SIMULATIONS, 'w')
     # if MPI_rank == 0:
     #     build_csv()
-    theta, x = inf.simR.simulate_runs(inf.prior)
+    with open(r"posterior.pkl", "rb") as input_file:
+        posterior = cPickle.load(input_file)
+    inf = infer.Inferencer()
+    theta, x = inf.simR.simulate_runs(posterior)
     pc.done()
     print(theta.shape)
     print(x.shape)
-    np.save("theta1.npy", theta)
-    np.save("x1.npy", x)
+    np.save("theta2.npy", theta)
+    np.save("x2.npy", x)
     # pc.barrier()
     # pc.done()
     # if MPI_rank == 0:
