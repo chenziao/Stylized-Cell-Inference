@@ -17,15 +17,15 @@ MPI_size = int(pc.nhost())
 MPI_rank = int(pc.id())
 
 if __name__ == "__main__":
-    # with open(r"posterior_mdn.pkl", "rb") as input_file:
-    #     posterior = cPickle.load(input_file)
+    with open(r"posterior_mdn.pkl", "rb") as input_file:
+        posterior = cPickle.load(input_file)
     inf = infer.Inferencer()
-    theta, x = inf.simR.simulate_runs(inf.prior)
+    theta, x = inf.simR.simulate_runs(posterior)
     pc.done()
     print(theta.shape)
     print(x.shape)
-    np.save("theta_mdn1.npy", theta)
-    np.save("x_mdn1.npy", x)
+    np.save("theta_mdn2.npy", theta)
+    np.save("x_mdn2.npy", x)
     # pc.barrier()
     # pc.done()
     # if MPI_rank == 0:

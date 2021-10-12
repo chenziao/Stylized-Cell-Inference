@@ -143,6 +143,7 @@ class SimulationRunner(object):
                             cell_type: str='active', 
                             input_coordinates: str='polar',
                             whole_trace: bool=False,
+                            ncells=params.IM_NUMBER_OF_SIMULATIONS,
                             **kwargs
     ) -> ndarray:
         """
@@ -211,7 +212,7 @@ class SimulationRunner(object):
                             geo_param=torch.from_numpy(geo_list),
                             gmax=params.GT_GMAX,
                             scale=1.0,
-                            ncell=params.IM_NUMBER_OF_SIMULATIONS)
+                            ncell=ncells)
 
         #simluation specific run time parameters
         sim.run()
