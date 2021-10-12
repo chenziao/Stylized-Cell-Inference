@@ -20,6 +20,7 @@ if __name__ == "__main__":
     with open(r"posterior_mdn.pkl", "rb") as input_file:
         posterior = cPickle.load(input_file)
     inf = infer.Inferencer()
+    #theta, x = inf.simR.simulate_runs(inf.prior)
     theta, x = inf.simR.simulate_runs(posterior)
     pc.done()
     print(theta.shape)

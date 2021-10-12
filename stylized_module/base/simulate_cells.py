@@ -240,9 +240,9 @@ class SimulationRunner(object):
             
         """
         if params.ACTIVE_CELL is False:
-            lfp = self.run_sim_from_sample(sim_params, cell_type='passive')
+            lfp = self.run_sim_from_sample(sim_params, fst_idx=10, cell_type='passive')
         else:
-            lfp = self.run_sim_from_sample(sim_params, cell_type='active')
+            lfp = self.run_sim_from_sample(sim_params, fst_idx=10, cell_type='active')
         # print(lfp.shape)
         pc.barrier()
         dest = pc.py_allgather(lfp)
