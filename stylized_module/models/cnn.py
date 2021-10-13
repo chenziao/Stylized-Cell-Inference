@@ -65,12 +65,12 @@ class SummaryNet3D(nn.Module):
         # 48x2x48 -> 24x1x24 => reformatted to 24x24
         self.pool2 = nn.MaxPool3d(kernel_size=2)
         # 24x24 -> 24x24
-        self.conv2d1x1 = nn.COnv2d(in_channels=15, out_channels=15, kernel_size=1, stride=2)
+        self.conv2d1x1 = nn.Conv2d(in_channels=15, out_channels=15, kernel_size=1, stride=2)
         self.conv3 = nn.Conv2d(in_channels=15, out_channels=15, kernel_size=3, padding=1, padding_mode='replicate')
         # 24x24 -> 12x12
         self.pool3 = nn.MaxPool2d(kernel_size=2)
         # 12x12 -> 10x10
-        self.conv4 = nn.Conv2d(in_channels=15, out_channels=15, kernel_size=3)
+        self.conv4 = nn.Conv2d(in_channels=15, out_channels=15, kernel_size=3, padding=1, padding_mode='replicate')
         # 10x10 -> 5x5
         self.pool4 = nn.MaxPool2d(kernel_size=2)
         # Fully connected layer taking as input the 8 flattened output arrays from the maxpooling layer
@@ -93,7 +93,7 @@ class SummaryNet3D(nn.Module):
         x = F.relu(self.conv2(x))
         x += residual
         x = self.conv3d1x1(x)
-        x = x.view(-1,5,24,47) #24 or 32
+        x = x.view(-1,15,24,48) #24 or 32
         residual = x
         # x = self.pool3(F.relu(self.conv3(x)))
         x = F.relu(self.conv3(x))
@@ -105,6 +105,7 @@ class SummaryNet3D(nn.Module):
         x = F.relu(self.conv4(x))
         x += residual
         x = self.conv2d1x1(x)
+        # -1x15x6x12
 #         print(x.shape)
         x = x.view(-1,250) #250 or 350 # (batch size, in_features)
         x = self.fc(x)
