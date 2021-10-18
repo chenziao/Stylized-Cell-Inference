@@ -218,11 +218,18 @@ class SimulationRunner(object):
         sim.run()
 
         #extract lfp, filter, and return
-        lfp = sim.get_lfp(index=np.arange(0,sim.n)).T
-        filtered_lfp = signal.lfilter(filt_b,filt_a,lfp,axis=0) # filter along row of the lfp 2d-array, if each row is a channel
+        lfp = np.transpose(sim.get_lfp(index=np.arange(0,sim.n)), (0,2,1))
+#         print(lfp.shape)
+        filtered_lfp = signal.lfilter(filt_b,filt_a,lfp,axis=1) # filter along row of the lfp 2d-array, if each row is a channel
         if not whole_trace:
-            start,end = get_spike_window(filtered_lfp,win_size=params.AM_WINDOW_SIZE,align_at=fst_idx)
-            filtered_lfp = filtered_lfp[start:end,:]
+            temp = []
+            for i in range(filtered_lfp.shape[0]):
+                start,end = get_spike_window(np.squeeze(filtered_lfp[i,:,:]),win_size=params.AM_WINDOW_SIZE,align_at=fst_idx)
+                temp.append(filtered_lfp[i,start:end,:])
+#                 filtered_lfp[i,:,:] = filtered_lfp[i,start:end,:]
+            trunk_lfp = np.stack(temp, axis=0)
+#             print(trunk_lfp.shape)    
+            return trunk_lfp
         return filtered_lfp
 
 
@@ -243,10 +250,10 @@ class SimulationRunner(object):
             lfp = self.run_sim_from_sample(sim_params, fst_idx=10, cell_type='passive')
         else:
             lfp = self.run_sim_from_sample(sim_params, fst_idx=10, cell_type='active')
-        # print(lfp.shape)
+#         print(lfp.shape)
         pc.barrier()
         dest = pc.py_allgather(lfp)
-        full_lfp = np.concatenate(dest, axis=2)
+        full_lfp = np.concatenate(dest, axis=0)
         # print(full_lfp.shape)
         return full_lfp
         # return cat_output(lfp)

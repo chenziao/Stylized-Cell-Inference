@@ -10,6 +10,7 @@ from neuron import h
 
 import stylized_module.base.inference as infer
 import config.paths as paths
+import config.params as params
 from utils.combine_csv import build_lfp_csv
 
 pc = h.ParallelContext()
@@ -17,16 +18,15 @@ MPI_size = int(pc.nhost())
 MPI_rank = int(pc.id())
 
 if __name__ == "__main__":
-    with open(r"posterior_mdn2.pkl", "rb") as input_file:
-        posterior = cPickle.load(input_file)
-    inf = infer.Inferencer()
-    #theta, x = inf.simR.simulate_runs(inf.prior)
-    theta, x = inf.simR.simulate_runs(posterior)
+#     with open(r"posterior_maf1.pkl", "rb") as input_file:
+#         posterior = cPickle.load(input_file)
+    inf = infer.Inferencer(params.IM_PRIOR_DISTRIBUTION)
+    theta, x = inf.simR.simulate_runs(inf.prior)
     pc.done()
     print(theta.shape)
     print(x.shape)
-    np.save("theta_mdn3.npy", theta)
-    np.save("x_mdn3.npy", x)
+    np.save("theta_maf1.npy", theta)
+    np.save("x_maf1.npy", x)
     # pc.barrier()
     # pc.done()
     # if MPI_rank == 0:
