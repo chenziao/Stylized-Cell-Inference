@@ -91,7 +91,7 @@ class Stylized_Cell(object):
         self.store_segments()
     
     def add_section(self,name='null_sec',diam=500.0):
-        sec = h.Section(name=name)
+        sec = h.Section(name=name,cell=self)
         sec.diam = diam
         self.all.append(sec)
         self._nsec += 1
