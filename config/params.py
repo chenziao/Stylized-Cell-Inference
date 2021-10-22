@@ -7,6 +7,7 @@ import sbi.utils as utils
 import torch
 import h5py
 from torch.distributions.multivariate_normal import MultivariateNormal
+import pyro.distributions as dists
 
 #Project Imports
 import config.paths as paths
@@ -67,14 +68,54 @@ IM_FILTER_SAMPLING_RATE = 40000 #40 kHz
 IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:,1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0,np.pi]
-#                       y            d        theta                 h       phi     l_t     r_s     r_t        r_d      r_tu      l_d
-IM_PARAMETER_BOUNDS = [[-2000,2000],[20,200],[-(np.pi/3),np.pi/3],[-1,1],[0,np.pi],[20,800],[3,12],[0.2,1.0],[0.2,1.0],[0.2,1.0],[100,300]]#,[3,5]]
 
+IM_PARAMETER_BOUNDS = [
+    [-2000,2000],           #y
+    [20,200],               #d
+    [-(np.pi/3),np.pi/3],   #theta
+    [-1,1],                 #h
+    [0,np.pi],              #phi
+    [
+        (np.log(3)+np.log(12))/2,
+        (np.log(12)-np.log(3))/6
+    ],                      #r_s
+    [80, 200],              #l_t
+    [
+        (np.log(0.2)+np.log(1.0))/2,
+        (np.log(1.0)-np.log(0.2))/4
+    ],                      #r_t
+    [
+        (np.log(0.2)+np.log(1.0))/2,
+        (np.log(1.0)-np.log(0.2))/4
+    ],                      #r_d
+    [
+        (np.log(0.2)+np.log(1.0))/2,
+        (np.log(1.0)-np.log(0.2))/4
+    ],                      #r_tu
+    [100,300
+        (np.log(100)+np.log(300))/2,
+        (np.log(300)-np.log(100))/2
+    ]                       #l_d
+]
 # IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_STDS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 
-IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUNDS)),
-                                            covariance_matrix=torch.diag(torch.ones(len(IM_PARAMETER_BOUNDS))))
+# IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUNDS)),
+#                                             covariance_matrix=torch.diag(torch.ones(len(IM_PARAMETER_BOUNDS))))
+
+IM_PRIOR_DISTRIBUTION = [
+    dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),
+    dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),
+    dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),
+    dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),
+    dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),
+    dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),
+    dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),
+    dists.LogNormal(IM_PARAMETER_BOUNDS[7][0], IM_PARAMETER_BOUNDS[7][1]),
+    dists.LogNormal(IM_PARAMETER_BOUNDS[8][0], IM_PARAMETER_BOUNDS[8][1]),
+    dists.LogNormal(IM_PARAMETER_BOUNDS[9][0], IM_PARAMETER_BOUNDS[9][1]),
+    dists.LogNormal(IM_PARAMETER_BOUNDS[10][0], IM_PARAMETER_BOUNDS[10][1]),
+]
 
 
 # IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
@@ -85,8 +126,8 @@ IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUN
 # IM_PRIOR_DISTRIBUTION = StackedDistribution(IM_LOC_PRIOR_DISTRIBUTION, IM_GEO_PRIOR_DISTRIBUTION)
 
 IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
-IM_NUMBER_OF_ROUNDS = 3
-IM_NUMBER_OF_SIMULATIONS = 2000
+IM_NUMBER_OF_ROUNDS = 2
+IM_NUMBER_OF_SIMULATIONS = 1000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
