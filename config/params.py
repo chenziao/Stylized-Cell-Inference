@@ -7,7 +7,9 @@ import sbi.utils as utils
 import torch
 import h5py
 from torch.distributions.multivariate_normal import MultivariateNormal
+from sbi.utils.user_input_checks_utils import MultipleIndependent
 import pyro.distributions as dists
+import torch
 
 #Project Imports
 import config.paths as paths
@@ -70,31 +72,31 @@ IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0,np.pi]
 
 IM_PARAMETER_BOUNDS = [
-    [-2000,2000],           #y
-    [20,200],               #d
-    [-(np.pi/3),np.pi/3],   #theta
-    [-1,1],                 #h
-    [0,np.pi],              #phi
+    [torch.Tensor([-2000]),torch.Tensor([2000])],           #y
+    [torch.Tensor([20]),torch.Tensor([200])],               #d
+    [torch.Tensor([-(np.pi/3)]),torch.Tensor([np.pi/3])],   #theta
+    [torch.Tensor([-1]),torch.Tensor([1])],                 #h
+    [torch.Tensor([0]),torch.Tensor([np.pi])],              #phi
     [
-        (np.log(3)+np.log(12))/2,
-        (np.log(12)-np.log(3))/6
+        torch.Tensor([(np.log(3)+np.log(12))/2]),
+        torch.Tensor([(np.log(12)-np.log(3))/6])
     ],                      #r_s
-    [80, 200],              #l_t
+    [torch.Tensor([80]), torch.Tensor([200])],              #l_t
     [
-        (np.log(0.2)+np.log(1.0))/2,
-        (np.log(1.0)-np.log(0.2))/4
+        torch.Tensor([(np.log(0.2)+np.log(1.0))/2]),
+        torch.Tensor([(np.log(1.0)-np.log(0.2))/4])
     ],                      #r_t
     [
-        (np.log(0.2)+np.log(1.0))/2,
-        (np.log(1.0)-np.log(0.2))/4
+        torch.Tensor([(np.log(0.2)+np.log(1.0))/2]),
+        torch.Tensor([(np.log(1.0)-np.log(0.2))/4])
     ],                      #r_d
     [
-        (np.log(0.2)+np.log(1.0))/2,
-        (np.log(1.0)-np.log(0.2))/4
+        torch.Tensor([(np.log(0.2)+np.log(1.0))/2]),
+        torch.Tensor([(np.log(1.0)-np.log(0.2))/4])
     ],                      #r_tu
-    [100,300
-        (np.log(100)+np.log(300))/2,
-        (np.log(300)-np.log(100))/2
+    [
+        torch.Tensor([(np.log(100)+np.log(300))/2]),
+        torch.Tensor([(np.log(300)-np.log(100))/2])
     ]                       #l_d
 ]
 # IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
@@ -103,7 +105,7 @@ IM_PARAMETER_BOUNDS = [
 # IM_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(len(IM_PARAMETER_BOUNDS)),
 #                                             covariance_matrix=torch.diag(torch.ones(len(IM_PARAMETER_BOUNDS))))
 
-IM_PRIOR_DISTRIBUTION = [
+PRIOR_LIST = [
     dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),
     dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),
     dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),
@@ -118,6 +120,8 @@ IM_PRIOR_DISTRIBUTION = [
 ]
 
 
+IM_PRIOR_DISTRIBUTION = MultipleIndependent(PRIOR_LIST, validate_args=False)
+
 # IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
@@ -125,7 +129,7 @@ IM_PRIOR_DISTRIBUTION = [
 # IM_GEO_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(6), covariance_matrix=torch.diag(torch.ones(6)))
 # IM_PRIOR_DISTRIBUTION = StackedDistribution(IM_LOC_PRIOR_DISTRIBUTION, IM_GEO_PRIOR_DISTRIBUTION)
 
-IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
+# IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2
 IM_NUMBER_OF_SIMULATIONS = 1000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
