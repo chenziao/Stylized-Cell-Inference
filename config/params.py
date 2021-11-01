@@ -96,7 +96,7 @@ IM_PARAMETER_BOUNDS = [
     ],                      #r_tu
     [
         torch.Tensor([(np.log(100)+np.log(300))/2]),
-        torch.Tensor([(np.log(300)-np.log(100))/2])
+        torch.Tensor([(np.log(300)-np.log(100))/4])
     ]                       #l_d
 ]
 # IM_PARAMETER_LOCS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
@@ -130,8 +130,8 @@ IM_PRIOR_DISTRIBUTION = MultipleIndependent(PRIOR_LIST, validate_args=False)
 # IM_PRIOR_DISTRIBUTION = StackedDistribution(IM_LOC_PRIOR_DISTRIBUTION, IM_GEO_PRIOR_DISTRIBUTION)
 
 # IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
-IM_NUMBER_OF_ROUNDS = 1
-IM_NUMBER_OF_SIMULATIONS = 2000
+IM_NUMBER_OF_ROUNDS = 2
+IM_NUMBER_OF_SIMULATIONS = 1000
 IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
