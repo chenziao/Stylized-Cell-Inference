@@ -72,11 +72,11 @@ IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0,np.pi]
 
 IM_PARAMETER_BOUNDS = [
-    [torch.Tensor([-2000]),torch.Tensor([2000])],           #y
-    [torch.Tensor([20]),torch.Tensor([200])],               #d
-    [torch.Tensor([-(np.pi/3)]),torch.Tensor([np.pi/3])],   #theta
-    [torch.Tensor([-1]),torch.Tensor([1])],                 #h
-    [torch.Tensor([0]),torch.Tensor([np.pi])],              #phi
+    [torch.Tensor([349]),torch.Tensor([351])],#[torch.Tensor([-2000]),torch.Tensor([2000])],           #y
+    [torch.Tensor([49]),torch.Tensor([51])],#[torch.Tensor([20]),torch.Tensor([200])],               #d
+    [torch.Tensor([(np.pi/4)-0.01]),torch.Tensor([(np.pi/4)+0.01])],#[torch.Tensor([-(np.pi/3)]),torch.Tensor([np.pi/3])],   #theta
+    [torch.Tensor([-0.01]),torch.Tensor([0.01])],#[torch.Tensor([-1]),torch.Tensor([1])],                 #h
+    [torch.Tensor([0.7]),torch.Tensor([0.9])],#[torch.Tensor([0]),torch.Tensor([np.pi])],              #phi
     [
         torch.Tensor([(np.log(3)+np.log(12))/2]),
         torch.Tensor([(np.log(12)-np.log(3))/6])
