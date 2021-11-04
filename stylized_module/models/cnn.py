@@ -81,14 +81,22 @@ class SummaryNet3D(nn.Module):
         x = x[:,:(-self.nstats)] # n x 36864
         x = x.view(-1,1,96,4,190) # 96 or 128
         #x = x.view(-1,1,self.window_size,4,self.nelec) # (batch size,in_channels,height,width,length) -1 means not changing size of that dimension
-        x = self.pool1(F.relu(self.conv1(x)))
-#         print(x.shape)
-        x = self.pool2(F.relu(self.conv2(x)))
-#         print(x.shape)
+        res = x
+        x = F.relu(self.conv1(x))
+        x = self.pool1(x+res)
+        
+        res = x
+        x = F.relu(self.conv2(x))
+        x = self.pool2(x+res)
+        
         x = x.view(-1,5,24,47) #24 or 32
-        x = self.pool3(F.relu(self.conv3(x)))
-#         print(x.shape)
-        x = self.pool4(F.relu(self.conv4(x)))
+        
+        res = x
+        x = F.relu(self.conv3(x))
+        x = self.pool3(x+res)
+        
+        x = F.relu(self.conv4(x))
+        x = self.pool4(x)
 #         print(x.shape)
         x = x.view(-1,250) #250 or 350 # (batch size, in_features)
         x = self.fc(x)
