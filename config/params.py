@@ -18,7 +18,7 @@ from stylized_module.dists.distributions import StackedDistribution
 from utils.transform.distribution_transformation import range2logn
 
 
-ACTIVE_CELL = True
+ACTIVE_CELL = False
 
 #GENERAL PARAMETERS USED ACROSS RUNS
 # ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
@@ -34,7 +34,7 @@ GT_TSTOP = 20. # ms
 GT_DT = 0.025  # ms. does not allow change
 GT_ELECTRODE_POSITION = ELECTRODE_POSITION #np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
                         # x,     y,  z,    alpha, h,  phi  # y,   d,  theta,   alpha, h,  phi
-GT_LOCATION_PARAMETERS = [0.685,350,49.995,1.43, 0.0, 0.8] #[350, 50, np.pi/4, 1.43, 0.0, 0.8]
+GT_LOCATION_PARAMETERS = [0.685,0,49.995,1.43, 0.0, 0.8] #[0, 50, np.pi/4, 1.43, 0.0, 0.8]
 GT_GMAX = 0.005
 GT_SCALE = 1.
 GT_BUTTERWORTH_ORDER = 2 #2nd order
@@ -72,7 +72,7 @@ IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0,np.pi]
 
 IM_PARAMETER_BOUNDS = [
-    [torch.Tensor([-2000]),torch.Tensor([2000])],           #y
+    [torch.Tensor([-500]),torch.Tensor([500])],           #y
     [torch.Tensor([20]),torch.Tensor([200])],               #d
     [torch.Tensor([-(np.pi/3)]),torch.Tensor([np.pi/3])],   #theta
     [torch.Tensor([-1]),torch.Tensor([1])],                 #h
@@ -107,11 +107,11 @@ IM_PARAMETER_BOUNDS = [
 
 PRIOR_LIST = [
     # dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),        #y
-    dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),        #d
-    dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),        #theta
-    dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),        #h
-    dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),        #phi
-    # dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),      #r_s
+#     dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),        #d
+#     dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),        #theta
+#     dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),        #h
+#     dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),        #phi
+    dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),      #r_s
     dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),        #l_t
     # dists.LogNormal(IM_PARAMETER_BOUNDS[7][0], IM_PARAMETER_BOUNDS[7][1]),      #r_t
     # dists.LogNormal(IM_PARAMETER_BOUNDS[8][0], IM_PARAMETER_BOUNDS[8][1]),      #r_d
