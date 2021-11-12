@@ -81,7 +81,7 @@ IM_PARAMETER_BOUNDS = [
         torch.Tensor([(np.log(3)+np.log(12))/2]),
         torch.Tensor([(np.log(12)-np.log(3))/6])
     ],                      #r_s
-    [torch.Tensor([80]), torch.Tensor([200])],              #l_t
+    [torch.Tensor([20]), torch.Tensor([800])],              #l_t
     [
         torch.Tensor([(np.log(0.2)+np.log(1.0))/2]),
         torch.Tensor([(np.log(1.0)-np.log(0.2))/4])
