@@ -56,5 +56,6 @@ def Stats(lfp):
 
 def cat_output(lfp):
     lfp,_ = Grid_LFP(lfp,params.ELECTRODE_POSITION,params.ELECTRODE_GRID)
-    output = np.concatenate((lfp.ravel(),Stats(lfp)))
+#     output = np.concatenate((lfp.ravel(),Stats(lfp)))
+    output = lfp.ravel()
     return torch.from_numpy(output)

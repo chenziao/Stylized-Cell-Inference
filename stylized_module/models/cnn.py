@@ -77,8 +77,8 @@ class SummaryNet3D(nn.Module):
 
     def forward(self,x):
 #         print(x.shape)
-        x0 = x[:,(-self.nstats):] # n x 24
-        x = x[:,:(-self.nstats)] # n x 36864
+#         x0 = x[:,(-self.nstats):] # n x 24
+#         x = x[:,:(-self.nstats)] # n x 36864
         x = x.view(-1,1,96,4,190) # 96 or 128
         #x = x.view(-1,1,self.window_size,4,self.nelec) # (batch size,in_channels,height,width,length) -1 means not changing size of that dimension
         res = x
@@ -102,6 +102,6 @@ class SummaryNet3D(nn.Module):
         x = self.fc(x)
 #         print(x.shape)
 #         print(x0.shape)
-        x = torch.cat((x,x0),dim=1)
+#         x = torch.cat((x,x0),dim=1)
         # x = self.fc2(x)
         return x
