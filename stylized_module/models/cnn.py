@@ -73,7 +73,7 @@ class SummaryNet3D(nn.Module):
         self.pool4 = nn.MaxPool2d(kernel_size=2)
         # Fully connected layer taking as input the 8 flattened output arrays from the maxpooling layer
         self.fc = nn.Linear(in_features=250, out_features=50) # 5*5*5=125
-        self.fc2 = nn.Linear(in_features=50+self.nstats, out_features=12)
+        self.fc2 = nn.Linear(in_features=50+self.nstats, out_features=128)
 
     def forward(self,x):
 #         print(x.shape)
