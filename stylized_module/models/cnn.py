@@ -72,17 +72,19 @@ class SummaryNet3D(nn.Module):
         # 10x10 -> 5x5
         self.pool4 = nn.MaxPool2d(kernel_size=2)
         # Fully connected layer taking as input the 8 flattened output arrays from the maxpooling layer
-        self.fc = nn.Linear(in_features=250, out_features=50) # 5*5*5=125
-        self.fc2 = nn.Linear(in_features=50+self.nstats, out_features=128)
+        self.fc = nn.Linear(in_features=250, out_features=128) # 5*5*5=125
+        self.fc2 = nn.Linear(in_features=128+self.nstats, out_features=12)
 
     def forward(self,x):
 #         print(x.shape)
-#         x0 = x[:,(-self.nstats):] # n x 24
-#         x = x[:,:(-self.nstats)] # n x 36864
+        x0 = x[:,(-self.nstats):] # n x 24
+        x = x[:,:(-self.nstats)] # n x 36864
         x = x.view(-1,1,96,4,190) # 96 or 128
-        #x = x.view(-1,1,self.window_size,4,self.nelec) # (batch size,in_channels,height,width,length) -1 means not changing size of that dimension
+#         print(x.shape)
+#         x = x.view(-1,1,self.window_size,4,self.nelec) # (batch size,in_channels,height,width,length) -1 means not changing size of that dimension
         res = x
         x = F.relu(self.conv1(x))
+#         print(res.shape, x.shape)
         x = self.pool1(x+res)
         
         res = x
@@ -102,6 +104,6 @@ class SummaryNet3D(nn.Module):
         x = self.fc(x)
 #         print(x.shape)
 #         print(x0.shape)
-#         x = torch.cat((x,x0),dim=1)
-        # x = self.fc2(x)
+        x = torch.cat((x,x0),dim=1)
+        x = self.fc2(x)
         return x
