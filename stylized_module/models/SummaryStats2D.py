@@ -4,6 +4,7 @@ from scipy.interpolate import griddata
 
 #Project Imports
 import config.params as params
+from utils.spike_window import first_pk_tr
 
 def Grid_LFP(lfp,coord,grid_v):
     t = lfp.shape[0]
@@ -20,17 +21,23 @@ def Stats(lfp):
     Calculates summary statistics
     """
     lfp = np.asarray(lfp)
+    print(lfp.shape)
     grid_shape = tuple(v.size for v in params.ELECTRODE_GRID[:2])
     
     avg = np.mean(lfp,axis=0) # average voltage of each channel
     stdDev = np.std(lfp,axis=0) # stDev of the voltage of each channel
     tT = np.argmin(lfp,axis=0)
     tP = np.argmax(lfp,axis=0)
+    
+    t0 = first_pk_tr(lfp)
+    x0 = np.argmax(np.abs(lfp))
+    
     Troughs = -np.take_along_axis(lfp,np.expand_dims(tT,axis=0),axis=0)
     Peaks = np.take_along_axis(lfp,np.expand_dims(tP,axis=0),axis=0)
     relT = tP-tT
+    relTWidths = np.take_along_axis(lfp,np.expand_dims(relT,axis=0),axis=0)
     
-    stats_list = [avg,relT,stdDev,Troughs,Peaks]
+    stats_list = [avg,relT,stdDev,Troughs,Peaks,relTWidths]
     I_min = 2 # include minimum statistics for the the first I_min in stats_list
     
     # Statistics across channels
@@ -48,7 +55,7 @@ def Stats(lfp):
             mx, my = np.unravel_index(m,grid_shape)
             All = np.array([mean,std,Mx,My,max_val,mx,my,min_val])
         else:
-            All = np.array([mean,std,Mx,My,max_val])
+            All = np.array([mean,std,Mx,max_val])#My,max_val])
         return All
     
     allStats = np.concatenate([statscalc(x,i<I_min) for i,x in enumerate(stats_list)])
