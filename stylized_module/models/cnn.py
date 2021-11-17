@@ -47,7 +47,7 @@ class SummaryNet(nn.Module):
 
 
 class SummaryNet3D(nn.Module):
-    def __init__(self, nelec, window_size, nstats=36):
+    def __init__(self, nelec, window_size, nstats=30):
         super(SummaryNet3D, self).__init__()
         
         self.nelec = nelec

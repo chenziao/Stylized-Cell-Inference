@@ -21,23 +21,49 @@ def Stats(lfp):
     Calculates summary statistics
     """
     lfp = np.asarray(lfp)
-    print(lfp.shape)
+#     print(lfp.shape)
     grid_shape = tuple(v.size for v in params.ELECTRODE_GRID[:2])
-    
     avg = np.mean(lfp,axis=0) # average voltage of each channel
     stdDev = np.std(lfp,axis=0) # stDev of the voltage of each channel
     tT = np.argmin(lfp,axis=0)
     tP = np.argmax(lfp,axis=0)
     
     t0 = first_pk_tr(lfp)
-    x0 = np.argmax(np.abs(lfp))
+    reshaped_lfp = (lfp[t0,:].reshape(4,190))
+    x0 = np.argmax(np.max(np.abs(reshaped_lfp), axis=1), axis=0)
+#     print(x0)
+    fy = reshaped_lfp[x0,:]
+#     fy = np.take(fy,x0)
+#     print(fy.shape)
+    y0 = np.argmax(np.abs(fy), axis=0)
+#     print(fy)
+    half_height = np.abs(fy[y0])/2
+    
+    def searchheights(lfp, height, idx):
+        i, j = idx, idx
+        while(lfp[i] > height and lfp[j] > height):
+            i += 1
+            j -= 1
+            if i >= 190 or j <= 0:
+                return 0, 190
+        while(lfp[i] > height):
+            i += 1
+            if i >= 190 or j <= 0:
+                return 0, 190
+        while(lfp[j] > height):
+            j -= 1
+            if i >= 190 or j <= 0:
+                return 0, 190
+        return j, i
+    
+    min_idx, max_idx = searchheights(np.abs(fy), half_height, y0)
+#     print(half_height, min_idx, max_idx, y0)
     
     Troughs = -np.take_along_axis(lfp,np.expand_dims(tT,axis=0),axis=0)
     Peaks = np.take_along_axis(lfp,np.expand_dims(tP,axis=0),axis=0)
     relT = tP-tT
-    relTWidths = np.take_along_axis(lfp,np.expand_dims(relT,axis=0),axis=0)
     
-    stats_list = [avg,relT,stdDev,Troughs,Peaks,relTWidths]
+    stats_list = [avg,relT,stdDev,Troughs,Peaks]
     I_min = 2 # include minimum statistics for the the first I_min in stats_list
     
     # Statistics across channels
@@ -57,8 +83,9 @@ def Stats(lfp):
         else:
             All = np.array([mean,std,Mx,max_val])#My,max_val])
         return All
-    
-    allStats = np.concatenate([statscalc(x,i<I_min) for i,x in enumerate(stats_list)])
+    sl = [statscalc(x,i<I_min) for i,x in enumerate(stats_list)]+[np.array([max_idx,min_idx])]
+#     print(sl)
+    allStats = np.concatenate(sl)
     return allStats
 
 def cat_output(lfp):

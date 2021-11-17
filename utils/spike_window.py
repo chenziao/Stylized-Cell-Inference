@@ -1,12 +1,19 @@
 import numpy as np
+from typing import Tuple
 
-def first_pk_tr(lfp):
-    """Find the time index of first peak/trough in "lfp" (2D array, each column is a channel)."""
+
+def first_pk_tr(lfp: np.ndarray) -> np.ndarray:
+    """
+    Find the time index of first peak/trough in "lfp" (2D array, each column is a channel).
+    """
     m = np.argmin(np.amin(lfp,axis=1))
     M = np.argmax(np.amax(lfp,axis=1))
     return min(m,M)
     
-def get_spike_window(lfp,win_size,align_at=0):
+
+def get_spike_window(lfp: np.ndarray,
+                     win_size: int,
+                     align_at: int=0) -> Tuple[int, int]:
     """
     Get the window of the spike waveform, where the first peak/trough is aligned at a fixed point in the window.
     lfp: input lfp with spike waveform (2D array, each column is a channel)
