@@ -90,7 +90,8 @@ def Stats(g_lfp: np.ndarray,
         return idx_left, idx_right
     
     #Calculation of statistics across channels
-    sl = [statscalc(x,i<I_min) for i,x in enumerate(stats_list)]
+#     sl = [statscalc(x,i<I_min) for i,x in enumerate(stats_list)]
+    sl = []
     
     """
     Calculates width of the first peak and adds it to the stats
@@ -98,13 +99,13 @@ def Stats(g_lfp: np.ndarray,
     """
     if grid is not None:
         t0 = first_pk_tr(g_lfp)
-        reshaped_lfp = (g_lfp[t0,:].reshape(2,380))
+        reshaped_lfp = (g_lfp[t0,:].reshape(4,190))
         x0 = np.argmax(np.max(np.abs(reshaped_lfp), axis=1), axis=0)
         fy = reshaped_lfp[x0,:]
         y0 = np.argmax(np.abs(fy), axis=0)
         half_height = np.abs(fy[y0])/2
         min_idx, max_idx = searchheights(np.abs(fy), half_height, y0)
-        sl + [np.array([max_idx,min_idx])]
+        sl += [np.array([max_idx,min_idx])]
 
         
     allStats = np.concatenate(sl)

@@ -13,7 +13,7 @@ import torch
 
 #Project Imports
 import config.paths as paths
-from stylized_module.models.cnn import SummaryNet, SummaryNet3D
+from stylized_module.feature_extraction.SummaryNet import SummaryNet, SummaryNet3D
 from utils.transform.distribution_transformation import range2logn
 
 
@@ -125,8 +125,8 @@ IM_PRIOR_DISTRIBUTION = dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BO
 
 # IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
 IM_NUMBER_OF_ROUNDS = 2
-IM_NUMBER_OF_SIMULATIONS = 1000
-IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
+IM_NUMBER_OF_SIMULATIONS = 500
+IM_POSTERIOR_MODEL_ESTIMATOR = 'mdn'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
 IM_GRAPHING_LABELS = [r'y',r'd',r'theta',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']
