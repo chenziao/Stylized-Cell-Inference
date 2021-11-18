@@ -9,6 +9,22 @@ def first_pk_tr(lfp: np.ndarray) -> np.ndarray:
     m = np.argmin(np.amin(lfp,axis=1))
     M = np.argmax(np.amax(lfp,axis=1))
     return min(m,M)
+
+
+def first_pk(lfp: np.ndarray) -> np.ndarray:
+    """
+    Find the time index of first peak in "lfp" (2D array, each column is a channel).
+    """
+    M = np.argmax(np.amax(lfp,axis=1))
+    return min(M)
+
+
+def first_tr(lfp: np.ndarray) -> np.ndarray:
+    """
+    Find the time index of first trough in "lfp" (2D array, each column is a channel).
+    """
+    m = np.argmin(np.amin(lfp,axis=1))
+    return min(m)
     
 
 def get_spike_window(lfp: np.ndarray,
