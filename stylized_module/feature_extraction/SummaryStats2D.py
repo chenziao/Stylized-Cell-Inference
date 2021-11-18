@@ -90,8 +90,8 @@ def Stats(g_lfp: np.ndarray,
         return idx_left, idx_right
     
     #Calculation of statistics across channels
-#     sl = [statscalc(x,i<I_min) for i,x in enumerate(stats_list)]
-    sl = []
+    sl = [statscalc(x,i<I_min) for i,x in enumerate(stats_list)]
+#     sl = []
     
     """
     Calculates width of the first peak and adds it to the stats

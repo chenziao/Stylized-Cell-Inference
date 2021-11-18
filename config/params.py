@@ -32,8 +32,8 @@ ELECTRODE_GRID = (np.array(hf.get('grid/x')),np.array(hf.get('grid/y')),np.zeros
 GT_TSTOP = 20. # ms
 GT_DT = 0.025  # ms. does not allow change
 GT_ELECTRODE_POSITION = ELECTRODE_POSITION #np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-                        # x,     y,  z,    alpha, h,  phi  # y,   d,  theta,   alpha, h,  phi
-GT_LOCATION_PARAMETERS = [0.685,0,49.995,1.43, 1.0, 0.8] #[0, 50, np.pi/4, 1.43, 0.0, 0.8]
+                        # x,     y,  z,    alpha,   h,  phi  # y,   d,  theta,   alpha, h,  phi
+GT_LOCATION_PARAMETERS = [0.,    0,  50.,  np.pi/4, 1.0, 0.0]#[0.685,0,49.995,1.43, 1.0, 0.8] #[0, 50, np.pi/4, 1.43, 0.0, 0.8]
 GT_GMAX = 0.005
 GT_SCALE = 1.
 GT_BUTTERWORTH_ORDER = 2 #2nd order
@@ -99,22 +99,22 @@ IM_PARAMETER_BOUNDS = [
     ]                       #l_d
 ]
 
-# PRIOR_LIST = [
+PRIOR_LIST = [
 #     # dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),        #y
 # #     dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),        #d
 # #     dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),        #theta
 # #     dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),        #h
 # #     dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),        #phi
-#     dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),      #r_s
-#     dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),        #l_t
+    dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),      #r_s
+    dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),        #l_t
 #     # dists.LogNormal(IM_PARAMETER_BOUNDS[7][0], IM_PARAMETER_BOUNDS[7][1]),      #r_t
 #     # dists.LogNormal(IM_PARAMETER_BOUNDS[8][0], IM_PARAMETER_BOUNDS[8][1]),      #r_d
 #     # dists.LogNormal(IM_PARAMETER_BOUNDS[9][0], IM_PARAMETER_BOUNDS[9][1]),      #r_tu
 #     # dists.LogNormal(IM_PARAMETER_BOUNDS[10][0], IM_PARAMETER_BOUNDS[10][1]),    #l_d    
-# ]
+]
 
 
-IM_PRIOR_DISTRIBUTION = dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1])#MultipleIndependent(PRIOR_LIST, validate_args=False)
+IM_PRIOR_DISTRIBUTION = MultipleIndependent(PRIOR_LIST, validate_args=False)
 
 # IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
@@ -124,9 +124,9 @@ IM_PRIOR_DISTRIBUTION = dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BO
 # IM_PRIOR_DISTRIBUTION = StackedDistribution(IM_LOC_PRIOR_DISTRIBUTION, IM_GEO_PRIOR_DISTRIBUTION)
 
 # IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
-IM_NUMBER_OF_ROUNDS = 2
-IM_NUMBER_OF_SIMULATIONS = 500
-IM_POSTERIOR_MODEL_ESTIMATOR = 'mdn'
+IM_NUMBER_OF_ROUNDS = 1
+IM_NUMBER_OF_SIMULATIONS = 1000
+IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
 IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
 IM_SAVE_X0 = None
 IM_GRAPHING_LABELS = [r'y',r'd',r'theta',r'h',r'$\phi$',r'soma radius',r'trunk length',r'trunk radius',r'basal radius',r'tuft radius',r'basal length']
