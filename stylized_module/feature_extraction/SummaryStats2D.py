@@ -100,14 +100,36 @@ def Stats(g_lfp: np.ndarray,
     if grid is not None:
         t0 = first_pk_tr(g_lfp)
         t_pk = first_pk(g_lfp)
-        reshaped_lfp = (g_lfp[t0,:].reshape(4,190))
+        reshaped_full_lfp = np.zeros((g_lfp.shape[0],4,190))
+        for t in range(g_lfp.shape[0]):
+            reshaped_full_lfp[t,:,:] = g_lfp[t,:].reshape(4,190)
+        ft_x = np.argmax(np.max(np.abs(reshaped_full_lfp), axis=2), axis=1)
+        ft_y = np.argmax(np.max(np.abs(reshaped_full_lfp), axis=1), axis=1)
+        ft_lfp = np.zeros((g_lfp.shape[0],))
+        for i in range(g_lfp.shape[0]):
+            ft_lfp[i] = reshaped_full_lfp[i,ft_x[i], ft_y[i]]
+        y0 = t0
+        for i in range(t0, g_lfp.shape[0]-t0):
+            if ft_lfp[i] >= 0.0: #TODO Fix this for the condition when it is an initial peak!!!
+                y0 = i
+#                 print(y0)
+                break
+        zero_min_idx, zero_max_idx = searchheights(ft_lfp, 0, y0)
+#         print("Zeros: {}".format(np.abs(zero_min_idx-zero_max_idx)))
+#         i = t0
+#         while ft[i] != 0:
+            
+        
+        
+        
+        reshaped_lfp = (g_lfp[t0,:].reshape(4,190)) #just removing the extra dimension for time with a reshape
         x0 = np.argmax(np.max(np.abs(reshaped_lfp), axis=1), axis=0)
         fy = reshaped_lfp[x0,:]
         y0 = np.argmax(np.abs(fy), axis=0)
         half_height = np.abs(fy[y0])/2
         min_idx, max_idx = searchheights(np.abs(fy), half_height, y0)
-        print(max_idx-min_idx)
-        sl += [np.array([max_idx,min_idx,t0,t_pk])]
+#         print("Trough: {}".format(max_idx-min_idx))
+        sl += [np.array([max_idx,min_idx,t0,t_pk,zero_min_idx,zero_max_idx])]
 
         
     allStats = np.concatenate(sl)
