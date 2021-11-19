@@ -116,7 +116,7 @@ class Synapse(Point_current):
     def setup_synapse(self):
         syn = self.pp_obj
         syn.e = 0.  # mV. Reversal potential
-        syn.tau = 5.0  # ms. Synapse time constant
+        syn.tau = 2.0  # ms. Synapse time constant
         syn.gmax = self.gmax  # uS. maximum conductance
         self.nc = h.NetCon(self.stim,syn,1,0,1)
 

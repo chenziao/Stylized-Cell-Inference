@@ -79,15 +79,26 @@ def Stats(g_lfp: np.ndarray,
     
     def searchheights(lfp, height, idx):
         idx_left, idx_right = 0, lfp.size
-        for i in range(idx, idx_left, -1):
+        for i in range(idx-1, idx_left, -1):
             if lfp[i] <= height:
                 idx_left = i
                 break
-        for i in range(idx, idx_right):
+        for i in range(idx+1, idx_right):
             if lfp[i] <= height:
                 idx_right = i
                 break
         return idx_left, idx_right
+    
+    def lfp_as_fy(lfp, t, height=None, prints=False):
+        lfp_t = (lfp[t,:].reshape(4,190)) #just removing the extra dimension for time with a reshape
+        x0 = np.argmax(np.max(np.abs(lfp_t), axis=1), axis=0)
+        fy = lfp_t[x0,:]
+        y0 = np.argmax(np.abs(fy), axis=0)
+        half_height = np.abs(fy[y0])/2 if height is None else np.abs(fy[y0])
+        if prints:
+            print(half_height, y0)
+            print(fy)
+        return searchheights(np.abs(fy), half_height, y0)
     
     #Calculation of statistics across channels
     sl = [statscalc(x,i<I_min) for i,x in enumerate(stats_list)]
@@ -98,7 +109,6 @@ def Stats(g_lfp: np.ndarray,
     if grid parameter is provided
     """
     if grid is not None:
-        t0 = first_pk_tr(g_lfp)
         t_pk = first_pk(g_lfp)
         reshaped_full_lfp = np.zeros((g_lfp.shape[0],4,190))
         for t in range(g_lfp.shape[0]):
@@ -108,30 +118,45 @@ def Stats(g_lfp: np.ndarray,
         ft_lfp = np.zeros((g_lfp.shape[0],))
         for i in range(g_lfp.shape[0]):
             ft_lfp[i] = reshaped_full_lfp[i,ft_x[i], ft_y[i]]
-        y0 = t0
+        
+        t0 = first_pk_tr(g_lfp)
+        t1 = t0
         for i in range(t0, g_lfp.shape[0]-t0):
             if ft_lfp[i] >= 0.0: #TODO Fix this for the condition when it is an initial peak!!!
-                y0 = i
+                t1 = i
 #                 print(y0)
                 break
-        zero_min_idx, zero_max_idx = searchheights(ft_lfp, 0, y0)
-#         print("Zeros: {}".format(np.abs(zero_min_idx-zero_max_idx)))
-#         i = t0
-#         while ft[i] != 0:
-            
+        zero_min_idx, zero_max_idx = searchheights(ft_lfp, 0, t1)
+        
+        
+        t2 = first_pk_tr(g_lfp[t1:,:]) + t1
         
         
         
-        reshaped_lfp = (g_lfp[t0,:].reshape(4,190)) #just removing the extra dimension for time with a reshape
-        x0 = np.argmax(np.max(np.abs(reshaped_lfp), axis=1), axis=0)
-        fy = reshaped_lfp[x0,:]
+        #FIRST PEAK
+        lfp_t = (g_lfp[t0,:].reshape(4,190)) #just removing the extra dimension for time with a reshape
+        x0 = np.argmax(np.max(np.abs(lfp_t), axis=1), axis=0)
+        fy = lfp_t[x0,:]
         y0 = np.argmax(np.abs(fy), axis=0)
         half_height = np.abs(fy[y0])/2
         min_idx, max_idx = searchheights(np.abs(fy), half_height, y0)
+        
+        idx_list = []
+        idx_list.extend(lfp_as_fy(g_lfp, t0))
+        idx_list.extend(lfp_as_fy(g_lfp, t1, height=0, prints=False))
+        idx_list.extend(lfp_as_fy(g_lfp, t2))
+        idx_list.extend((t0,t1,t2))
+        
+#         print("First Peak: {} {} {}".format(t0, min_idx_0, max_idx_0))
+#         print("LFP Zero: {} {} {}".format(t1, min_idx_1, max_idx_1))
+#         print("Second Peak: {} {} {}".format(t2, min_idx_2, max_idx_2))
+        
 #         print("Trough: {}".format(max_idx-min_idx))
-        sl += [np.array([max_idx,min_idx,t0,t_pk,zero_min_idx,zero_max_idx])]
+#         sl += [np.array([max_idx,min_idx,zero_min_idx,zero_max_idx])]
+        sl += [np.array(idx_list)]
 
         
+    
     allStats = np.concatenate(sl)
     return allStats
 
