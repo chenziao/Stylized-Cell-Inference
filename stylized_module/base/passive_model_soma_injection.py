@@ -170,7 +170,7 @@ def run_pm_simulation():
     geo_standard = pd.read_csv(paths.GEO_STANDARD,index_col='id')
     h.tstop = params.PM_TSTOP
     h.dt = params.PM_DT
-    hf = h5py.File(paths.MORPHOLOGY_DATA_FILE, 'r')
+    hf = h5py.File(paths.SIMULATED_DATA_FILE, 'r')
     groundtruth_lfp = np.array(hf.get('data'))
     hf.close()
     window_size = params.PM_WINDOW_SIZE

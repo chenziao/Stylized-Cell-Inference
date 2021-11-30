@@ -16,3 +16,4 @@ compiled_graphs/
 *.jpg
 *.npy
 *.csv
+results/old_run_results/
