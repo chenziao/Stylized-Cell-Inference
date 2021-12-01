@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 import numpy as np
+from typing import Optional, Tuple, List
 
 
-def plot_LFP_traces(t, lfp, savefig=None, fontsize=40, labelpad=-30, tick_length=15, nbins=3):
+def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
+                    fontsize: int = 40, labelpad: int = -30,
+                    tick_length: int = 15, nbins: int = 3) -> Tuple[Figure, Axes]:
     """
     Plot LFP traces.
     t: time points (ms). 1D array
@@ -18,11 +23,8 @@ def plot_LFP_traces(t, lfp, savefig=None, fontsize=40, labelpad=-30, tick_length
         for j in range(lfp.shape[1]):
             ax, = plt.plot(t, lfp[:, j])
             legend_elements.append(ax)
-        # legend_elements = range(1, lfp.shape[1])
-        legend_labels = [str(i) for i in legend_elements]
     else:
         ax = plt.plot(t, lfp)
-    # plt.legend(legend_elements, legend_labels)
     plt.xlabel('ms', fontsize=fontsize)
     plt.ylabel('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
     plt.locator_params(axis='both', nbins=nbins)
@@ -35,8 +37,9 @@ def plot_LFP_traces(t, lfp, savefig=None, fontsize=40, labelpad=-30, tick_length
     return fig, ax
 
 
-def plot_LFP_heatmap(t, elec_d, lfp, savefig=None, vlim='auto', fontsize=40, ticksize=30, labelpad=-12, nbins=3,
-                     cbbox=[.91, 0.118, .03, 0.76], cmap='viridis'):
+def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
+                     vlim: str = 'auto', fontsize: int = 40, ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
+                     cbbox: Optional[List[float]] = None, cmap: str = 'viridis') -> Tuple[Figure, Axes]:
     """
     Plot LFP heatmap.
     t: time points (ms). 1D array
@@ -45,6 +48,8 @@ def plot_LFP_heatmap(t, elec_d, lfp, savefig=None, vlim='auto', fontsize=40, tic
     savefig: if specified as string, save figure with the string as file name.
     vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
     """
+    if cbbox is None:
+        cbbox = [.91, 0.118, .03, 0.76]
     lfp = np.asarray(lfp).T
     elec_d = np.asarray(elec_d) / 1000
     if vlim == 'auto':

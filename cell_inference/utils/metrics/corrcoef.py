@@ -1,21 +1,22 @@
 import numpy as np
+from typing import Optional, Tuple
 
 
-def corrcoef(x, y):
+def corrcoef(x: Optional[float, int, np.ndarray], y: Optional[float, int, np.ndarray]) -> np.ndarray:
     """
     function for calculating correlation coefficient
     """
     return (np.mean(x * y) - np.mean(x) * np.mean(y)) / (np.std(x) * np.std(y))
 
 
-def max_corrcoef(x, y, window_size=None):
+def max_corrcoef(x: Optional[float, int, np.ndarray], y: Optional[float, int, np.ndarray],
+                 window_size: Optional[int] = None) -> Tuple:
     """
-    Calculate correlation coefficient between input x and y inside sliding time window
-    (time should be the first axis, i.e. a column is a channel)
-    Find the maximum correlation coefficient and the corresponding window location.
-    Return first the maximum value, then return the index of the start point of corresponding window.
-    If window_size is not specified, use the length of x as window size. Return the index of window in y.
-    If window_size is specified, slide the window separately in x and y. Return the indices of windows in x and y respectively.
+    Calculate correlation coefficient between input x and y inside sliding time window (time should be the first
+    axis, i.e. a column is a channel) Find the maximum correlation coefficient and the corresponding window location.
+    Return first the maximum value, then return the index of the start point of corresponding window. If window_size
+    is not specified, use the length of x as window size. Return the index of window in y. If window_size is
+    specified, slide the window separately in x and y. Return the indices of windows in x and y respectively.
     """
     if window_size is None:
         win = x.shape[0]

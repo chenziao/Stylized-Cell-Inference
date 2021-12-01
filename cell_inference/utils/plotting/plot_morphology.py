@@ -1,22 +1,29 @@
-from cell_inference.utils.currents.ecp import newposition
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 import numpy as np
+from typing import Optional, List, Tuple
+
+from cell_inference.utils.currents.ecp import move_position
+from cell_inference.cells.simulation import Simulation
 
 
-def plot_morphology(sim, cellid=0, electrodes=None, axes=[2, 0, 1], clr=['g', 'b', 'c', 'pink', 'purple'], elev=20,
-                    azim=10, figsize=None):
+def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.ndarray] = None,
+                    axes: Optional[List[int]] = None, clr: Optional[List[str]] = None, elev: int = 20,
+                    azim: int = 10, figsize: Optional[Tuple[float, float]] = None) -> Tuple[Figure, Axes]:
     """
-    Plot morphology in 3D.
-    sim: simulation object
-    cellid: cell id. Default: 0
-    electrodes: electrode positions.  Default: None, not shown.
-    axes: sequence of axes to display in 3d plot axes. Default: [2,0,1] show z,x,y in 3d plot x,y,z axes, so y is upward.
-    clr: list of colors for each type of section
+    Plot morphology in 3D. sim: simulation object cellid: cell id. Default: 0 electrodes: electrode positions.
+    Default: None, not shown. axes: sequence of axes to display in 3d plot axes. Default: [2,0,1] show z,x,
+    y in 3d plot x,y,z axes, so y is upward. clr: list of colors for each type of section
     """
+    if axes is None:
+        axes = [2, 0, 1]
+    if clr is None:
+        clr = ['g', 'b', 'c', 'pink', 'purple']
     cell = sim.cells[cellid]
     move_cell = sim.loc_param[cellid]
-    dl = newposition([0., 0., 0.], move_cell[1], cell.seg_coords['dl'])
-    pc = newposition(move_cell[0], move_cell[1], cell.seg_coords['pc'])
+    dl = move_position([0., 0., 0.], move_cell[1], cell.seg_coords['dl'])
+    pc = move_position(move_cell[0], move_cell[1], cell.seg_coords['pc'])
     xyz = 'xyz'
     box = np.vstack([np.full(3, np.inf), np.full(3, np.NINF)])
     if electrodes is not None:
