@@ -19,43 +19,29 @@ ELECTRODE_POSITION = np.column_stack((elec_pos, np.zeros(elec_pos.shape[0])))
 ELECTRODE_GRID = (np.array(hf.get('grid/x')), np.array(hf.get('grid/y')), np.zeros(1))
 
 # GET GROUND TRUTH FROM ACTIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX GT
-GT_TSTOP = 20.  # ms
-GT_DT = 0.025  # ms. does not allow change
-GT_ELECTRODE_POSITION = ELECTRODE_POSITION  # np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
+TSTOP = 20.  # ms
+DT = 0.025  # ms. does not allow change
 # x,     y,  z,    alpha,   h,  phi  # y,   d,  theta,   alpha, h,  phi
-GT_LOCATION_PARAMETERS = [0., 0, 50., np.pi / 4, 1.0,
-                          0.0]  # [0.685,0,49.995,1.43, 1.0, 0.8] #[0, 50, np.pi/4, 1.43, 0.0, 0.8]
-GT_GMAX = 0.005
-GT_SCALE = 1.
-GT_BUTTERWORTH_ORDER = 2  # 2nd order
-GT_CRITICAL_FREQUENCY = 100  # 100 Hz
-GT_BANDFILTER_TYPE = 'hp'  # highpass
-GT_FILTER_SAMPLING_RATE = 40000  # 40 kHz
+LOCATION_PARAMETERS = [0., 0, 50., np.pi / 4, 1.0,
+                       0.0]  # [0.685,0,49.995,1.43, 1.0, 0.8] #[0, 50, np.pi/4, 1.43, 0.0, 0.8]
+GMAX = 0.005
+SCALE = 1.
+BUTTERWORTH_ORDER = 2  # 2nd order
+FILTER_CRITICAL_FREQUENCY = 100  # 100 Hz
+BANDFILTER_TYPE = 'hp'  # highpass
+FILTER_SAMPLING_RATE = 40000  # 40 kHz
 
-# SIMULATION OF PASSIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX PM
-PM_TSTOP = 5.  # ms
-PM_DT = 0.025  # ms. does not allow change
-PM_ELECTRODE_POSITION = ELECTRODE_POSITION  # np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-PM_START_IDX = 320
-PM_WINDOW_SIZE = 176
-PM_SCALING_FACTOR = 1085.  # 2.55
-
-# SIMULATION OF ACTIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX AM
-AM_TSTOP = 20.
-AM_DT = 0.025
-AM_ELECTRODE_POSITION = ELECTRODE_POSITION  # np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
-AM_START_IDX = 320
-AM_WINDOW_SIZE = 176
-AM_TRUE_LOCATION_PARAMETERS = [0, 350, 80, 3.0, 0.9, 1.27]
-AM_FIXED_LOCATION_PARAMETERS = GT_LOCATION_PARAMETERS  # [0,380,75,2.9,0.92,1.2]
+START_IDX = 320
+WINDOW_SIZE = 176
+SOMA_INJECT_SCALING_FACTOR = 1085.  # 2.55
 
 # INFERENCE MODEL PARAMS ARE DENOTED WITH THE PREFIX IM
 IM_BUTTERWORTH_ORDER = 2  # 2nd order
 IM_CRITICAL_FREQUENCY = 100  # 100 Hz
 IM_BANDFILTER_TYPE = 'hp'  # highpass
 IM_FILTER_SAMPLING_RATE = 40000  # 40 kHz
-IM_Y_DISTANCE = GT_ELECTRODE_POSITION[:, 1].ravel()
-IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, PM_WINDOW_SIZE)
+IM_Y_DISTANCE = ELECTRODE_POSITION[:, 1].ravel()
+IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0, np.pi]
 
 IM_PARAMETER_BOUNDS = [
