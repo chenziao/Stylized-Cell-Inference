@@ -33,7 +33,7 @@ POSTERIOR_SAVE = os.path.join(ROOT_DIR, 'results/Posteriors/')
 
 INFERENCER_SAVE = os.path.join(ROOT_DIR, 'results/Inferencers/')
 
-IMAGE_SAVE = os.path.join(ROOT_DIR, 'results/ResultJPGs/')
+IMAGE_SAVE = os.path.join(ROOT_DIR, 'resources/results/ResultJPGs/')
 
 ACTIVE_INFERENCE_SAVE_TRACES = os.path.join(INFERENCE_RESULTS_ROOT,
                                             'result_pdfs/ActiveCellResultsCNN_Traces.pdf')

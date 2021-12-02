@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from scipy.interpolate import griddata
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 
 # Project Imports
 import cell_inference.config.params as params
@@ -79,8 +79,8 @@ def calculate_stats(g_lfp: np.ndarray,
             single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x, sing_lfp_max_val])  # My,max_val])
         return single_lfp_all_stats
 
-    def searchheights(lfp: np.ndarray, height: Optional[float, int, np.ndarray],
-                      idx: Optional[int, np.ndarray]) -> Tuple[int, int]:
+    def searchheights(lfp: np.ndarray, height: Optional[Union[float, int, np.ndarray]],
+                      idx: Optional[Union[int, np.ndarray]]) -> Tuple[int, int]:
         idx_left, idx_right = 0, lfp.size
         for i in range(idx - 1, idx_left, -1):
             if lfp[i] <= height:
@@ -92,8 +92,8 @@ def calculate_stats(g_lfp: np.ndarray,
                 break
         return idx_left, idx_right
 
-    def lfp_as_fy(lfp: np.ndarray, time: Optional[int, np.ndarray],
-                  height: Optional[float, int, np.ndarray] = None) -> Tuple[int, int]:
+    def lfp_as_fy(lfp: np.ndarray, time: Optional[Union[int, np.ndarray]],
+                  height: Optional[Union[float, int, np.ndarray]] = None) -> Tuple[int, int]:
         lfp_wrt_time = (lfp[time, :].reshape(4, 190))  # just removing the extra dimension for time with a reshape
         x0_idx_wrt_time = np.argmax(np.max(np.abs(lfp_wrt_time), axis=1), axis=0)
         fy_wrt_x0_wrt_time = lfp_wrt_time[x0_idx_wrt_time, :]
