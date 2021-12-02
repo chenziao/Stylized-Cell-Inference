@@ -4,10 +4,6 @@ from neuron import h
 import math
 from abc import ABC, abstractmethod
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from cell_inference.cells.stylizedcell import StylizedCell
-
 
 class PointCurrent(ABC):
     """A module for current injection"""
@@ -31,7 +27,7 @@ class PointCurrent(ABC):
         size = [round(h.tstop / h.dt) + 1] if hasattr(h, 'tstop') else []
         self.rec_vec = h.Vector(*size).record(self.pp_obj._ref_i)
 
-    def get_section(self) -> StylizedCell:
+    def get_section(self) -> h.Section:
         return self.cell.all[self.sec_index]
 
     def get_segment(self) -> h.Section:

@@ -85,7 +85,6 @@ class StylizedCell(ABC):
         """Create cell morphology"""
         if self.geometry is None:
             raise ValueError("Warning: geometry is not loaded.")
-            return None
         self._nsec = 0
         rot = 2 * math.pi / self._nbranch
         r0 = None
@@ -149,7 +148,7 @@ class StylizedCell(ABC):
         self._nsec += 1
         return sec
 
-    def get_sec_by_id(self, index: Optional[list] = None) -> Optional[Union[List[h.Section], h.Section]]:
+    def get_sec_by_id(self, index: Optional[_T] = None) -> Optional[Union[List[h.Section], h.Section]]:
         """Get section(s) objects by index(indices) in the section list"""
         if not hasattr(index, '__len__'):
             sec = self.all[index]
@@ -157,7 +156,7 @@ class StylizedCell(ABC):
             sec = [self.all[i] for i in index]
         return sec
 
-    def get_seg_by_id(self, index: Optional[list] = None) -> List[h.Section]:
+    def get_seg_by_id(self, index: Optional[_T] = None) -> List[h.Section]:
         """Get segment(s) objects by index(indices) in the segment list"""
         if not hasattr(index, '__len__'):
             seg = self.segments[index]

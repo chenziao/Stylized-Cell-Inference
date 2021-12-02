@@ -26,7 +26,7 @@ class ActiveCell(StylizedCell):
         vrest: reversal potential for leak channels
         """
         self.grp_ids = []
-        self.biophys = None
+        self.biophys = biophys
         self.v_rec = None
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
@@ -65,7 +65,7 @@ class ActiveCell(StylizedCell):
     # PUBLIC METHODS
     def set_channels(self) -> None:
         if not self.grp_ids:
-            self.biophys = self.__create_biophys_entries()
+            self.biophys = self.__create_biophys_entries(self.biophys)
         # common parameters
         for sec in self.all:
             sec.cm = 2.0
