@@ -3,10 +3,12 @@ from neuron import h
 import math
 import numpy as np
 import pandas as pd
-from typing import List, Optional, Sequence, Dict
+from typing import List, Optional, Sequence, Dict, Union, TypeVar
 from enum import Enum
 
 from cell_inference.utils.currents.currentinjection import CurrentInjection
+
+_T = TypeVar("_T", bound=Sequence)
 
 h.load_file('stdrun.hoc')
 
@@ -36,12 +38,12 @@ class StylizedCell(ABC):
         self.segments = []  # list of all segments
         self.sec_id_lookup = {}  # dictionary from section type id to section index
         self.sec_id_in_seg = []
-        self.seg_coords = self.__calc_seg_coords()
         self.injection = []
         self.geometry = None
         self.soma = None
         self.set_geometry(geometry)
         self.__setup_all()
+        self.seg_coords = self.__calc_seg_coords()
 
     @abstractmethod
     def set_channels(self) -> str:
@@ -82,10 +84,9 @@ class StylizedCell(ABC):
     def __create_morphology(self) -> None:
         """Create cell morphology"""
         if self.geometry is None:
-            print("Warning: geometry is not loaded.")
+            raise ValueError("Warning: geometry is not loaded.")
             return None
         self._nsec = 0
-        self.all = []
         rot = 2 * math.pi / self._nbranch
         r0 = None
         for geo_id, sec in self.geometry.iterrows():
@@ -148,7 +149,7 @@ class StylizedCell(ABC):
         self._nsec += 1
         return sec
 
-    def get_sec_by_id(self, index: Optional[List[int], Sequence] = None) -> Optional[List[h.Section], h.Section]:
+    def get_sec_by_id(self, index: Optional[list] = None) -> Optional[Union[List[h.Section], h.Section]]:
         """Get section(s) objects by index(indices) in the section list"""
         if not hasattr(index, '__len__'):
             sec = self.all[index]
@@ -156,7 +157,7 @@ class StylizedCell(ABC):
             sec = [self.all[i] for i in index]
         return sec
 
-    def get_seg_by_id(self, index: Optional[List[int], Sequence] = None) -> List[h.Segment]:
+    def get_seg_by_id(self, index: Optional[list] = None) -> List[h.Section]:
         """Get segment(s) objects by index(indices) in the segment list"""
         if not hasattr(index, '__len__'):
             seg = self.segments[index]

@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from neuron import h
 import math
 from abc import ABC, abstractmethod
 
-from cell_inference.cells.stylizedcell import StylizedCell
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from cell_inference.cells.stylizedcell import StylizedCell
 
 
 class PointCurrent(ABC):

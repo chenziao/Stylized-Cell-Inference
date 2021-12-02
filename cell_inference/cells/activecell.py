@@ -2,7 +2,7 @@
 from neuron import h
 import pandas as pd
 import numpy as np
-from typing import Optional, Any
+from typing import Optional, Any, Union
 
 # Project Imports
 from cell_inference.cells.stylizedcell import StylizedCell
@@ -25,20 +25,22 @@ class ActiveCell(StylizedCell):
         dL: maximum segment length
         vrest: reversal potential for leak channels
         """
-        super().__init__(geometry, dl, vrest)
-
-        self.biophys = self.__create_biophys_entries(biophys)  # Define biophysical properties
-        self.v_rec = self.__record_soma_v()
         self.grp_ids = []
+        self.biophys = None
+        self.v_rec = None
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
             (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
             (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
         ]
-        self.set_channels()
+        
+        super(ActiveCell, self).__init__(geometry, dl, vrest)
+        self.v_rec = self.__record_soma_v()
+        
+#         self.set_channels()
 
     # PRIVATE METHODS
-    def __create_biophys_entries(self, biophys: Optional[np.ndarray]) -> np.ndarray:
+    def __create_biophys_entries(self, biophys: Optional[np.ndarray] = None) -> np.ndarray:
         """
         Define list of entries of biophysical parameters.
         Each entry is a pair of group id and parameter reference string.
@@ -62,6 +64,8 @@ class ActiveCell(StylizedCell):
 
     # PUBLIC METHODS
     def set_channels(self) -> None:
+        if not self.grp_ids:
+            self.biophys = self.__create_biophys_entries()
         # common parameters
         for sec in self.all:
             sec.cm = 2.0
@@ -91,7 +95,7 @@ class ActiveCell(StylizedCell):
         """Add synapse to a section by its index"""
         self.injection.append(Synapse(self, stim, sec_index, **kwargs))
 
-    def v(self) -> Optional[str, np.ndarray]:
+    def v(self) -> Optional[Union[str, np.ndarray]]:
         """Return recorded soma membrane voltage in numpy array"""
         if hasattr(self, 'v_rec'):
             return self.v_rec.as_numpy()

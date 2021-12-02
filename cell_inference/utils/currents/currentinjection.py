@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from neuron import h
-from typing import List, Optional, Any
+from typing import List, Optional, Any, TYPE_CHECKING
 import numpy as np
 
 from cell_inference.utils.currents.pointcurrent import PointCurrent
-from cell_inference.cells.stylizedcell import StylizedCell
+
+if TYPE_CHECKING:
+    from cell_inference.cells.stylizedcell import StylizedCell
 
 
 class CurrentInjection(PointCurrent):

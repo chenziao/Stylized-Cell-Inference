@@ -3,10 +3,10 @@ import platform
 
 ROOT_DIR = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
 LIBRARY = 'nrnmech.dll' if platform.system() == 'Windows' else 'libnrnmech.so'
-COMPILED_LIBRARY = os.path.join(ROOT_DIR, 'compiled/x86_64/.libs', LIBRARY)
-MECHANISMS = os.path.join(ROOT_DIR, 'compiled/mechanisms')
-GEO_STANDARD = os.path.join(ROOT_DIR, 'config/geom_standard.csv')
-ELECTRODES = os.path.join(ROOT_DIR, 'config/Electrode2D.h5')
+COMPILED_LIBRARY = os.path.join(ROOT_DIR, 'resources/compiled/x86_64/.libs', LIBRARY)
+MECHANISMS = os.path.join(ROOT_DIR, 'resources/compiled/mechanisms')
+GEO_STANDARD = os.path.join(ROOT_DIR, 'resources/geom_standard.csv')
+ELECTRODES = os.path.join(ROOT_DIR, 'resources/Electrode2D.h5')
 
 SIMULATED_DATA_FILE = os.path.join(ROOT_DIR, 'resources/active_groundtruth.h5')
 MORPHOLOGY_DATA_FILE = os.path.join(ROOT_DIR, 'resources/detailed_groundtruth.h5')  # Allen Morphology Cell Data

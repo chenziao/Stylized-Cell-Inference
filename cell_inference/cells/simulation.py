@@ -2,7 +2,7 @@
 from neuron import h
 import pandas as pd
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 import h5py
 
 # Project Imports
@@ -120,7 +120,7 @@ class Simulation(object):
         stim.start = 0.1  # delay
         return stim
 
-    def __pack_parameters(self, param: Optional[np.ndarray, List[float], int, float],
+    def __pack_parameters(self, param: Optional[Union[np.ndarray, List[float], int, float]],
                           ndim: int, param_name: str) -> np.ndarray:
         """Pack parameters for the simulation"""
         if ndim == 0:
@@ -144,16 +144,16 @@ class Simulation(object):
         return param
 
     # PUBLIC METHODS
-    def set_loc_param(self, loc_param: Optional[np.ndarray, List[float]]) -> None:
+    def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]]) -> None:
         """Setup location parameters. loc_param ncell-by-6 array"""
         loc_param = self.__pack_parameters(loc_param, 1, "loc_param")
         self.loc_param = [(loc_param[i, :3], loc_param[i, 3:]) for i in range(self.ncell)]
 
-    def set_geo_param(self, geo_param: Optional[np.ndarray, List[float]]) -> None:
+    def set_geo_param(self, geo_param: Optional[Union[np.ndarray, List[float]]]) -> None:
         """Setup geometry parameters. geo_param ncell-by-k array, k entries of properties"""
         self.geo_param = self.__pack_parameters(geo_param, 1, "geo_param")
 
-    def set_biophys(self, biophys: Optional[np.ndarray, List[float]]) -> None:
+    def set_biophys(self, biophys: Optional[Union[np.ndarray, List[float]]]) -> None:
         """Setup geometry parameters. geo_param ncell-by-k array, k entries of properties"""
         self.biophys = self.__pack_parameters(biophys, 1, "biophys")
 

@@ -1,7 +1,7 @@
 from neuron import h
 import numpy as np
 from scipy.spatial.transform import Rotation
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 
 from cell_inference.utils.currents.recorder import Recorder
 from cell_inference.cells.stylizedcell import StylizedCell
@@ -13,8 +13,8 @@ class EcpMod(object):
     and calculating extracellular potential ECP
     """
 
-    def __init__(self, cell: StylizedCell, electrode_positions: Optional[List[int], np.ndarray],
-                 move_cell: Optional[Tuple[List[float], Tuple[float, float, float]]] = None,
+    def __init__(self, cell: StylizedCell, electrode_positions: Optional[Union[List[int], np.ndarray]],
+                 move_cell: Optional[Union[Tuple[List[float], Tuple[float, float, float]]]] = None,
                  scale: float = 1.0, min_distance: Optional[float] = None) -> None:
         """
         cell: cell object
@@ -44,8 +44,8 @@ class EcpMod(object):
         return Recorder(self.cell.segments, 'i_membrane_')
 
     # PUBLIC METHODS
-    def calc_transfer_resistance(self, move_cell: Tuple[List[float], Tuple[float, float, float]],
-                                 scale: float, min_distance: float) -> None:
+    def calc_transfer_resistance(self, move_cell: Optional[Union[Tuple[List[float], Tuple[float, float, float]]]] = None,
+                                 scale: float = 1.0, min_distance: Optional[float] = None) -> None:
         """
         Precompute mapping from segment to electrode locations
         move_cell: tuple of (translate,rotate), rotate the cell followed by translating it
@@ -91,7 +91,7 @@ class EcpMod(object):
 
 
 def move_position(translate: List[float], rotate: Tuple[float, float, float],
-                  old_position: Optional[List[float], np.ndarray] = None, move_frame: bool = False) -> np.ndarray:
+                  old_position: Optional[Union[List[float], np.ndarray]] = None, move_frame: bool = False) -> np.ndarray:
     """
     Rotate and translate an object with old_position and calculate its new coordinates. Rotate(alpha,h,phi): first
     rotate alpha about y-axis (spin), then rotate arccos(h) about x-axis (elevation), then rotate phi about y axis (
