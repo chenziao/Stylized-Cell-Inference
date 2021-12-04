@@ -1,7 +1,5 @@
 import unittest
 
-import numpy as np
-
 from cell_inference.utils.transform.distribution_transformation import *
 
 
@@ -25,12 +23,12 @@ class TestDistributionTransform(unittest.TestCase):
         self.assertEqual(sigma, y2)
 
         # FLOAT CASE
-        y1, y2 = range2logn(float(a), float(b), float(n_sigma))
+        y1, y2 = range2logn(float(a), float(b), n_sigma)
         self.assertEqual(mu, y1)
         self.assertEqual(sigma, y2)
 
         # NP.NDARRAY CASE
-        y1, y2 = range2logn(np.asarray(a), np.asarray(b), np.asarray(n_sigma))
+        y1, y2 = range2logn(np.asarray(a), np.asarray(b), n_sigma)
         self.assertEqual(mu, y1)
         self.assertEqual(sigma, y2)
 
