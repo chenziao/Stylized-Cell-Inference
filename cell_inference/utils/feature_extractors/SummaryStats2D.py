@@ -50,7 +50,7 @@ def calculate_stats(g_lfp: np.ndarray,
     rel_t = t_p - t_t
 
     stats_list = [avg, rel_t, std_dev, troughs, peaks]
-    i_min = 2  # include minimum statistics for the the first i_min in stats_list
+    i_min = 2  # include minimum statistics for the first i_min in stats_list
 
     """
     Helper functions for calculating statistics across channels and searching for
@@ -94,7 +94,7 @@ def calculate_stats(g_lfp: np.ndarray,
 
     def lfp_as_fy(lfp: np.ndarray, time: Optional[Union[int, np.ndarray]],
                   height: Optional[Union[float, int, np.ndarray]] = None) -> Tuple[int, int]:
-        lfp_wrt_time = (lfp[time, :].reshape(4, 190))  # just removing the extra dimension for time with a reshape
+        lfp_wrt_time = (lfp[time, :].reshape(4, 190))  # just removing the extra dimension for time with reshape
         x0_idx_wrt_time = np.argmax(np.max(np.abs(lfp_wrt_time), axis=1), axis=0)
         fy_wrt_x0_wrt_time = lfp_wrt_time[x0_idx_wrt_time, :]
         y0_idx_wrt_x0_wrt_time = np.argmax(np.abs(fy_wrt_x0_wrt_time), axis=0)
