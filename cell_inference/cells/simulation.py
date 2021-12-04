@@ -16,7 +16,7 @@ from cell_inference.config import paths, params
 class Simulation(object):
     def __init__(self, geometry: pd.DataFrame, electrodes: np.ndarray, cell_type: CellTypes,
                  loc_param: List[float] = None,
-                 geo_param: List[int] = None, biophys: List[int] = None,
+                 geo_param: Union[List[int], List[float]] = None, biophys: List[int] = None,
                  gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """

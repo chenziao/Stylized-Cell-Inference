@@ -3,10 +3,9 @@ import unittest
 import pandas as pd
 import numpy as np
 import h5py
+from neuron import h
 
 from cell_inference.cells.stylizedcell import CellTypes
-from cell_inference.cells.activecell import ActiveCell
-from cell_inference.cells.passivecell import PassiveCell
 from cell_inference.cells.simulation import Simulation
 from cell_inference.utils.feature_extractors.SummaryStats2D import build_lfp_grid, calculate_stats
 from cell_inference.config import params, paths
@@ -14,6 +13,10 @@ from cell_inference.config import params, paths
 
 class TestStylizedCell(unittest.TestCase):
     def setUp(self) -> None:
+        h.nrn_load_dll(paths.COMPILED_LIBRARY)
+        h.tstop = params.TSTOP
+        h.dt = params.DT
+
         self.rng = np.random.default_rng(12345)
         self.loc_param = [0, 0, 50, 0, 1.0, 0.0]
         self.geo_param = [6.0, 400.0, 0.5, 0.5, 0.5, 200.0]
@@ -50,15 +53,15 @@ class TestStylizedCell(unittest.TestCase):
         self.passive_sim.run_neuron_sim()
         self.active_sim.run_neuron_sim()
 
-        passive_lfp = self.passive_sim.get_lfp()
-        active_lfp = self.active_sim.get_lfp()
+        passive_lfp = self.passive_sim.get_lfp().T
+        active_lfp = self.active_sim.get_lfp().T
 
         passive_g_lfp, passive_grid = build_lfp_grid(passive_lfp, params.ELECTRODE_POSITION, params.ELECTRODE_GRID)
         active_g_lfp, active_grid = build_lfp_grid(active_lfp, params.ELECTRODE_POSITION, params.ELECTRODE_GRID)
         passive_stats = calculate_stats(passive_g_lfp, passive_grid)
         active_stats = calculate_stats(active_g_lfp, active_grid)
 
-        self.assertAlmostEqual(passive_stats, active_stats)
+        np.testing.assert_array_almost_equal(passive_stats, active_stats)
 
 
 if __name__ == '__main__':

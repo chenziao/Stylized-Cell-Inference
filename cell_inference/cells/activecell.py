@@ -81,17 +81,17 @@ class ActiveCell(StylizedCell):
         soma.ek = -85
         for isec in self.grp_ids[2]:
             sec = self.get_sec_by_id(isec)  # apical dendrites
-            if not hasattr(sec, '__len__'):
-                for s in sec:
-                    s.insert('NaTa_t')
-                    s.insert('SKv3_1')
-                    s.ena = 50
-                    s.ek = -85
-            else:
-                sec.insert('NaTa_t')
-                sec.insert('SKv3_1')
-                sec.ena = 50
-                sec.ek = -85
+            # if not hasattr(sec, '__len__'):
+            #     for s in sec:
+            #         s.insert('NaTa_t')
+            #         s.insert('SKv3_1')
+            #         s.ena = 50
+            #         s.ek = -85
+            # else:
+            sec.insert('NaTa_t')
+            sec.insert('SKv3_1')
+            sec.ena = 50
+            sec.ek = -85
         # variable parameters
         for i, entry in enumerate(self.biophys_entries):
             for sec in self.get_sec_by_id(self.grp_ids[entry[0]]):
