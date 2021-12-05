@@ -101,7 +101,7 @@ simplejson==3.17.3
 six==1.15.0
 sniffio==1.2.0
 sympy==1.8
-tensorboard==2.4.1
+tensorboard==2.7.0
 tensorboard-plugin-wit==1.8.0
 terminado==0.9.3
 testpath==0.4.4
