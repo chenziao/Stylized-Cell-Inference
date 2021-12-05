@@ -9,7 +9,10 @@ passive_geo_params/
 passive_location_params/
 *.zip
 compiled_graphs/
-*.h5
+active_groundtruth.h5
+detailed_groundtruth.h5
+Results_ActiveGroundTruth_CNN_Passive_locOnly.h5
+cell360LFP.h5
 *.pt
 *.pth
 *.mat

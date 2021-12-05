@@ -26,7 +26,7 @@ class StylizedCell(ABC):
         geometry: pandas dataframe of cell morphology properties
         dL: maximum segment length
         vrest: reversal potential of leak channel for all segments
-        nbranch: number of branches of each non axial section
+        nbranch: number of branches of each non-axial section
         """
         self._h = h
         self._dL = dl
