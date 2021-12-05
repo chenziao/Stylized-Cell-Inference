@@ -45,7 +45,7 @@ class TestStylizedCell(unittest.TestCase):
                                      cell_type=CellTypes.ACTIVE,
                                      loc_param=self.loc_param,
                                      geo_param=self.geo_param,
-                                     gmax=.1,
+                                     gmax=0.005,
                                      scale=1.,
                                      ncell=1)
 
