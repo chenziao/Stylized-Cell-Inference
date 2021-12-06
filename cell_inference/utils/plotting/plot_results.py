@@ -10,9 +10,15 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
                     tick_length: int = 15, nbins: int = 3) -> Tuple[Figure, Axes]:
     """
     Plot LFP traces.
+
+    Parameters
     t: time points (ms). 1D array
     lfp: LFP traces (uV). If is 2D array, each column is a channel.
     savefig: if specified as string, save figure with the string as file name.
+    fontsize: size of font for display
+    labelpad: Spacing in points from the Axes bounding box including ticks and tick labels.
+    tick_length: length between ticks
+    nbins: number of bins to create
     """
     t = np.asarray(t)
     lfp = np.asarray(lfp)
@@ -47,6 +53,12 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
     lfp: LFP traces (uV). If is 2D array, each column is a channel.
     savefig: if specified as string, save figure with the string as file name.
     vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
+    fontsize: size of font for display
+    labelpad: Spacing in points from the Axes bounding box including ticks and tick labels.
+    tick_length: length between ticks
+    nbins: number of bins to create
+    cbbox: dimensions of figure
+    cmap: A Colormap instance or registered colormap name. The colormap maps the C values to color.
     """
     if cbbox is None:
         cbbox = [.91, 0.118, .03, 0.76]
