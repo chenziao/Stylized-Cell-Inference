@@ -17,7 +17,7 @@ class FullyConnectedNetwork(nn.Module):
                  hidden_layers: int = 2, hidden_layer_size: int = 50,
                  activation: Optional[ActivationTypes] = None) -> None:
 
-        self.__activation_mapping = {ActivationTypes.ReLU: nn.RelU(),
+        self.__activation_mapping = {ActivationTypes.ReLU: nn.ReLU(),
                                      ActivationTypes.TanH: nn.Tanh(),
                                      ActivationTypes.Sigmoid: nn.Sigmoid(),
                                      ActivationTypes.LeakyReLU: nn.LeakyReLU(),
@@ -39,4 +39,3 @@ class FullyConnectedNetwork(nn.Module):
         x = self.hidden_layers(x)
         x = self.output_layers(x)
         return x
-
