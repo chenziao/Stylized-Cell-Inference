@@ -20,5 +20,4 @@ cell360LFP.h5
 *.png
 *.jpg
 *.npy
-*.csv
 cell_inference/resources/results/old_run_results/

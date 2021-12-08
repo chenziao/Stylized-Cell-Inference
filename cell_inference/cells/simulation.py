@@ -23,10 +23,12 @@ class Simulation(object):
         Initialize simulation object
         geometry: pandas dataframe of cell morphology properties
         electrodes: array of electrode coordinates, n-by-3
+        cell_type: CellTypes enum value to indicate type of cell simulation
         loc_param: location parameters, ncell-by-6 array, (x,y,z,theta,h,phi)
         geo_param: geometry parameters, ncell-by-k array, if not specified, use default properties in geometry
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
-        gmax: maximum conductance of synapse, ncell-vector, if is single value, is constant for all cells
+        gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells
+        soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
         ncell: number of cells in the simulation, required if simulating for multiple cells
         """
@@ -91,6 +93,7 @@ class Simulation(object):
 
         Parameters
         min_dist: minimum distance allowed between segment and electrode. Set to None if not using.
+        cell_type: CellTypes enum value to indicate type of cell simulation
         """
         self.cells.clear()  # remove cell objects from previous run
         self.lfp.clear()
@@ -145,28 +148,59 @@ class Simulation(object):
 
     # PUBLIC METHODS
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]]) -> None:
-        """Setup location parameters. loc_param ncell-by-6 array"""
+        """
+        Setup location parameters.
+
+        Parameters
+        loc_param: ncell-by-6 array describing the location of the cell
+        """
         loc_param = self.__pack_parameters(loc_param, 1, "loc_param")
         self.loc_param = [(loc_param[i, :3], loc_param[i, 3:]) for i in range(self.ncell)]
 
     def set_geo_param(self, geo_param: Optional[Union[np.ndarray, List[float]]]) -> None:
-        """Setup geometry parameters. geo_param ncell-by-k array, k entries of properties"""
+        """
+        Setup geometry parameters.
+
+        Parameters
+        geo_param: ncell-by-k array, k entries of properties
+        """
         self.geo_param = self.__pack_parameters(geo_param, 1, "geo_param")
 
     def set_biophys(self, biophys: Optional[Union[np.ndarray, List[float]]]) -> None:
-        """Setup geometry parameters. geo_param ncell-by-k array, k entries of properties"""
+        """
+        Setup geometry parameters.
+
+        Parameters
+        biophys: ncell-by-k array, k entries of properties
+        """
         self.biophys = self.__pack_parameters(biophys, 1, "biophys")
 
     def set_gmax(self, gmax: float) -> None:
-        """Setup maximum conductance of synapse"""
+        """
+        Setup maximum conductance of synapse
+
+        Parameters
+        gmax: cell gmax value
+        """
         self.gmax = self.__pack_parameters(gmax, 0, "gmax")
 
     def set_scale(self, scale: float) -> None:
-        """setup scaling factors of lfp magnitude"""
+        """
+        setup scaling factors of lfp magnitude
+
+        Parameters
+        scale: LFP scaling constant
+        """
         self.scale = self.__pack_parameters(scale, 0, "scale")
 
     def set_geometry(self, geometry: pd.DataFrame, geo_param: np.ndarray) -> pd.DataFrame:
-        """Set property values from geo_param through each entry to geometry. Return dataframe"""
+        """
+        Set property values from geo_param through each entry to geometry.
+
+        Parameters
+        geometry: pandas dataframe describing the geometry
+        geo_param: numpy array describing entries used
+        """
         geom = geometry.copy()
         for i, x in enumerate(geo_param):
             if x >= 0:
@@ -178,7 +212,12 @@ class Simulation(object):
         return self.t_vec.as_numpy()
 
     def get_lfp(self, index: int = 0) -> np.ndarray:
-        """Return LFP array of the cell by index (indices), (cells-by-)channels-by-time"""
+        """
+        Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
+
+        Parameters
+        index: index of the cell to retrieve the LFP from
+        """
         if not hasattr(index, '__len__'):
             lfp = self.lfp[index].calc_ecp()
         else:
