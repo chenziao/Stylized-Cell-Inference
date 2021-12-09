@@ -28,7 +28,7 @@ class FullyConnectedNetwork(nn.Module):
         self.input_layer = nn.Linear(in_features=in_features, out_features=hidden_layer_size)
         layers = OrderedDict()
         for i in range(hidden_layers * 2):
-            layers[str(i)] = nn.Linear(hidden_layer_size, hidden_layer_size) if i % 0 == 0 else self.activation
+            layers[str(i)] = nn.Linear(hidden_layer_size, hidden_layer_size) if i % 2 == 0 else self.activation
 
         self.hidden_layers = nn.Sequential(layers)
 

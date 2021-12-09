@@ -60,6 +60,8 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
                 val_loss = running_loss
 
         epochs_list.append(epoch)
+        if epoch % 10 == 0:
+            tqdm.write("Training Loss: {} Validation Loss: {}".format(train_loss, val_loss))
         train_loss_list.append(train_loss)
         val_loss_list.append(val_loss)
 
@@ -69,11 +71,26 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
     torch.save(model, paths.MODELS_ROOT + date_time + ".pt")
     df.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
 
-
-def build_dataloader(input_file: str,
-                     labels_file: Optional[str] = None,
-                     batch_size: int = 1,
-                     shuffle: bool = False) -> Tuple[DataLoader, DataLoader]:
+#TODO Clean up this function
+def build_dataloader_from_numpy(input_arr: np.ndarray, labels_arr: np.ndarray, batch_size: int = 1) -> Tuple[DataLoader, DataLoader]:
+    shuffler = np.random.permutation(input_arr.shape[0])
+    input_arr = input_arr[shuffler]
+    print(input_arr.shape)
+    labels_arr = labels_arr[shuffler]
+    
+    idx = int(input_arr.shape[0] * .75)
+    
+    training_dataset = TensorDataset(torch.Tensor(input_arr[:idx, :]), torch.Tensor(labels_arr[:idx, :]))
+    testing_dataset = TensorDataset(torch.Tensor(input_arr[idx:, :]), torch.Tensor(labels_arr[idx:, :]))
+    train_loader = DataLoader(dataset=training_dataset, batch_size=batch_size)
+    test_loader = DataLoader(dataset=testing_dataset, batch_size=batch_size)
+    return train_loader, test_loader
+    
+    
+def build_dataloader_from_file(input_file: str,
+                               labels_file: Optional[str] = None,
+                               batch_size: int = 1,
+                               shuffle: bool = False) -> Tuple[DataLoader, DataLoader]:
     if not os.path.isfile(input_file):
         raise FileNotFoundError("File {} does not exist".format(str))
     if not os.path.isfile(labels_file):
@@ -89,7 +106,7 @@ def build_dataloader(input_file: str,
         inputs = inputs[shuffler]
         labels = labels[shuffler]
 
-    idx = inputs.shape[0] * .75
+    idx = int(inputs.shape[0] * .75)
 
     training_dataset = TensorDataset(torch.Tensor(inputs[:idx, :]), torch.Tensor(labels[:idx]))
     testing_dataset = TensorDataset(torch.Tensor(inputs[idx:, :]), torch.Tensor(labels[idx:]))
