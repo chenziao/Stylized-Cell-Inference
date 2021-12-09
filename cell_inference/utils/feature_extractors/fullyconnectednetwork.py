@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from typing import Optional
 from collections import OrderedDict
@@ -34,7 +35,7 @@ class FullyConnectedNetwork(nn.Module):
 
         self.output_layers = nn.Linear(in_features=50, out_features=out_features)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.activation(self.input_layer(x))
         x = self.hidden_layers(x)
         x = self.output_layers(x)
