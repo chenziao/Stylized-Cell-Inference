@@ -27,7 +27,7 @@ class Simulation(object):
         loc_param: location parameters, ncell-by-6 array, (x,y,z,theta,h,phi)
         geo_param: geometry parameters, ncell-by-k array, if not specified, use default properties in geometry
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
-        gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells
+        gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells'
         soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
         ncell: number of cells in the simulation, required if simulating for multiple cells
