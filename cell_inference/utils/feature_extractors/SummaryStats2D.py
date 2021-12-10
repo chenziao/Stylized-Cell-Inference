@@ -10,7 +10,8 @@ from cell_inference.utils.spike_window import first_pk_tr
 
 def build_lfp_grid(lfp: np.ndarray,
                    coord: np.ndarray,
-                   grid_v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+                   grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]
+                   ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build a grid to match the Neuropixel Probe used to collect
     LFP signals: https://www.neuropixels.org/probe

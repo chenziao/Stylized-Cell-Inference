@@ -21,3 +21,6 @@ cell360LFP.h5
 *.jpg
 *.npy
 cell_inference/resources/results/old_run_results/
+/cell_inference/resources/results/pytorch_models/
+/cell_inference/resources/results/pytorch_losses/
+/cell_inference/resources/results/result_data/
