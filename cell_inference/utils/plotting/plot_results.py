@@ -48,6 +48,7 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
                      cbbox: Optional[List[float]] = None, cmap: str = 'viridis') -> Tuple[Figure, Axes]:
     """
     Plot LFP heatmap.
+
     t: time points (ms). 1D array
     elec_d: electrode distance (um). 1D array
     lfp: LFP traces (uV). If is 2D array, each column is a channel.

@@ -12,7 +12,7 @@ from cell_inference.utils.feature_extractors.SummaryStats2D import build_lfp_gri
 from cell_inference.config import params, paths
 
 
-def calculate_error(psj: np.ndarray, asj: np.ndarray) -> Tuple[bool, np.ndarray, np.ndarray]:
+def calculate_error(psj: np.ndarray, asj: np.ndarray, error: int) -> Tuple[bool, np.ndarray, np.ndarray]:
     """
     Helper function, takes in n of 1 summary stat from both passive and active cells
 
@@ -23,7 +23,7 @@ def calculate_error(psj: np.ndarray, asj: np.ndarray) -> Tuple[bool, np.ndarray,
     """
     numer = np.mean(psj - asj)
     denom = np.sqrt((np.var(psj) + np.var(asj)) / 2)
-    return (numer / denom) < 1, numer, denom
+    return (numer / denom) < error, numer, denom
 
 
 class TestStylizedCell(unittest.TestCase):
@@ -96,7 +96,7 @@ class TestStylizedCell(unittest.TestCase):
         active_stats = np.array(active_stats_list)
 
         for j in range(passive_stats.shape[1]):
-            check, numer, denom = calculate_error(passive_stats[:, j], active_stats[:, j])
+            check, numer, denom = calculate_error(passive_stats[:, j], active_stats[:, j], 1)
             self.assertTrue(check, "Summary Stat {} with num {} and denom {}".format(j, numer, denom))
 
 
