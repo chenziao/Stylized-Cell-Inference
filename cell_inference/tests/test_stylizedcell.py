@@ -45,7 +45,7 @@ class TestStylizedCell(unittest.TestCase):
         self.geo_param = np.tile(np.array([6.0, 400.0, 0.5, 0.5, 0.5, 200.0]), (self.ncell, 1))
         self.geo_standard = pd.read_csv(paths.GEO_STANDARD, index_col='id')
 
-        hf = h5py.File(paths.SIMULATED_DATA_FILE, 'r')
+        hf = h5py.File(paths.INVIVO_DATA_FILE, 'r')
         groundtruth_lfp = np.array(hf.get('data'))
         hf.close()
         max_indx = np.argmax(
