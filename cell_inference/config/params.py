@@ -1,8 +1,8 @@
 # Dependencies
 import numpy as np
 import h5py
-from sbi.utils.user_input_checks_utils import MultipleIndependent
-import pyro.distributions as dists
+# from sbi.utils.user_input_checks_utils import MultipleIndependent
+# import pyro.distributions as dists
 import torch
 
 # Project Imports
@@ -35,11 +35,6 @@ START_IDX = 320
 WINDOW_SIZE = 176
 SOMA_INJECT_SCALING_FACTOR = 1085.  # 2.55
 
-# INFERENCE MODEL PARAMS ARE DENOTED WITH THE PREFIX IM
-IM_BUTTERWORTH_ORDER = 2  # 2nd order
-IM_CRITICAL_FREQUENCY = 100  # 100 Hz
-IM_BANDFILTER_TYPE = 'hp'  # highpass
-IM_FILTER_SAMPLING_RATE = 40000  # 40 kHz
 IM_Y_DISTANCE = ELECTRODE_POSITION[:, 1].ravel()
 IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, WINDOW_SIZE)
 IM_ALPHA_BOUNDS = [0, np.pi]
@@ -73,21 +68,21 @@ IM_PARAMETER_BOUNDS = [
     ]  # l_d
 ]
 
-PRIOR_LIST = [
-    #     # dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),        #y
-    # #     dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),        #d
-    # #     dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),        #theta
-    dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),  # h
-    # #     dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),        #phi
-    dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),  # r_s
-    dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),  # l_t
-    #     # dists.LogNormal(IM_PARAMETER_BOUNDS[7][0], IM_PARAMETER_BOUNDS[7][1]),      #r_t
-    #     # dists.LogNormal(IM_PARAMETER_BOUNDS[8][0], IM_PARAMETER_BOUNDS[8][1]),      #r_d
-    #     # dists.LogNormal(IM_PARAMETER_BOUNDS[9][0], IM_PARAMETER_BOUNDS[9][1]),      #r_tu
-    #     # dists.LogNormal(IM_PARAMETER_BOUNDS[10][0], IM_PARAMETER_BOUNDS[10][1]),    #l_d
-]
+# PRIOR_LIST = [
+#     dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),        #y
+#     dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),        #d
+#     dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),        #theta
+#     dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),  # h
+#     dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),        #phi
+#     dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),  # r_s
+#     dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),  # l_t
+#     dists.LogNormal(IM_PARAMETER_BOUNDS[7][0], IM_PARAMETER_BOUNDS[7][1]),      #r_t
+#     dists.LogNormal(IM_PARAMETER_BOUNDS[8][0], IM_PARAMETER_BOUNDS[8][1]),      #r_d
+#     dists.LogNormal(IM_PARAMETER_BOUNDS[9][0], IM_PARAMETER_BOUNDS[9][1]),      #r_tu
+#     dists.LogNormal(IM_PARAMETER_BOUNDS[10][0], IM_PARAMETER_BOUNDS[10][1]),    #l_d
+# ]
 
-IM_PRIOR_DISTRIBUTION = MultipleIndependent(PRIOR_LIST, validate_args=False)
+# IM_PRIOR_DISTRIBUTION = MultipleIndependent(PRIOR_LIST, validate_args=False)
 
 # IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
 # IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)

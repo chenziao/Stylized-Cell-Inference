@@ -12,9 +12,14 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
                     axes: Optional[List[int]] = None, clr: Optional[List[str]] = None, elev: int = 20,
                     azim: int = 10, figsize: Optional[Tuple[float, float]] = None) -> Tuple[Figure, Axes]:
     """
-    Plot morphology in 3D. sim: simulation object cellid: cell id. Default: 0 electrodes: electrode positions.
-    Default: None, not shown. axes: sequence of axes to display in 3d plot axes. Default: [2,0,1] show z,x,
-    y in 3d plot x,y,z axes, so y is upward. clr: list of colors for each type of section
+    Plot morphology in 3D.
+
+    sim: simulation object
+    cellid: cell id. Default: 0
+    electrodes: electrode positions. Default: None, not shown.
+    axes: sequence of axes to display in 3d plot axes. Default: [2,0,1] show z,x,
+    y in 3d plot x,y,z axes, so y is upward.
+    clr: list of colors for each type of section
     """
     if axes is None:
         axes = [2, 0, 1]

@@ -15,8 +15,9 @@ from cell_inference.config import paths, params
 
 class Simulation(object):
     def __init__(self, geometry: pd.DataFrame, electrodes: np.ndarray, cell_type: CellTypes,
-                 loc_param: List[float] = None,
-                 geo_param: Union[List[int], List[float]] = None, biophys: List[int] = None,
+                 loc_param: Union[np.ndarray, List[int], List[float]] = None,
+                 geo_param: Union[np.ndarray, List[int], List[float]] = None,
+                 biophys: Union[np.ndarray, List[int], List[float]] = None,
                  gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """
@@ -211,7 +212,7 @@ class Simulation(object):
         """Return simulation time vector"""
         return self.t_vec.as_numpy()
 
-    def get_lfp(self, index: int = 0) -> np.ndarray:
+    def get_lfp(self, index: Union[np.ndarray, List[int], int] = 0) -> np.ndarray:
         """
         Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
 
