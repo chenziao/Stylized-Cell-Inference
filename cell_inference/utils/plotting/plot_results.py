@@ -23,18 +23,18 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
     t = np.asarray(t)
     lfp = np.asarray(lfp)
     fig = plt.figure()  # figsize=(15,15))
-    ax = plt.plot(t, lfp)
-    legend_elements = []
     if lfp.ndim == 2:
+        legend_elements = []
         for j in range(lfp.shape[1]):
-            ax, = plt.plot(t, lfp[:, j])
-            legend_elements.append(ax)
+            line, = plt.plot(t, lfp[:, j])
+            legend_elements.append(line)
     else:
-        ax = plt.plot(t, lfp)
+        line = plt.plot(t, lfp)
     plt.xlabel('ms', fontsize=fontsize)
     plt.ylabel('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
     plt.locator_params(axis='both', nbins=nbins)
     plt.tick_params(length=tick_length, labelsize=fontsize)
+    ax = plt.gca()
     plt.show()
     if savefig is not None:
         if type(savefig) is not str:

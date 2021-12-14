@@ -81,12 +81,16 @@ class EcpMod(object):
             tr[j, :] = np.log(num / den) / dlmag  # units of (um) use with im_ (total seg current)
         self.tr = scale / (4 * np.pi * sigma) * tr
 
-    def calc_ecp(self) -> np.ndarray:
-        """Calculate ECP after simulation. Unit: mV."""
+    def calc_im(self) -> np.ndarray:
+        """Calculate transmembrane current after simulation. Unit: nA."""
         im = self.im_rec.as_numpy()
         for inj in self.cell.injection:
             im[inj.get_segment_id(), :] -= inj.rec_vec.as_numpy()
-        ecp = np.matmul(self.tr, im)  # im unit nA, ecp unit mV
+        return im
+
+    def calc_ecp(self) -> np.ndarray:
+        """Calculate ECP after simulation. Unit: mV."""
+        ecp = np.matmul(self.tr, self.calc_im())
         return ecp
 
 
