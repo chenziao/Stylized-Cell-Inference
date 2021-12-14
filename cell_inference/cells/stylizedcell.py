@@ -57,7 +57,6 @@ class StylizedCell(ABC):
         sec.pt3dadd(*pt1, sec.diam)
         sec.nseg = nseg
 
-    #  TODO Remove this function or make it useful
     def add_injection(self, sec_index, **kwargs):
         """Add current injection to a section by its index"""
         self.injection.append(CurrentInjection(self, sec_index, **kwargs))
@@ -87,40 +86,37 @@ class StylizedCell(ABC):
             raise ValueError("Warning: geometry is not loaded.")
         self._nsec = 0
         rot = 2 * math.pi / self._nbranch
-        r0 = None
-        for geo_id, sec in self.geometry.iterrows():
+        for sec_id, sec in self.geometry.iterrows():
             start_idx = self._nsec
-            if geo_id == 0:
+            if sec_id == 0:
                 r0 = sec['R']
                 pt0 = [0., -2 * r0, 0.]
                 pt1 = [0., 0., 0.]
                 self.soma = self.create_section(name=sec['name'], diam=2 * r0)
                 self.set_location(self.soma, pt0, pt1, 1)
             else:
-                left = sec['L']
-                right = sec['R']
+                length = sec['L']
+                radius = sec['R']
                 ang = sec['ang']
-                nseg = math.ceil(left / self._dL)
+                nseg = math.ceil(length / self._dL)
                 pid = self.sec_id_lookup[sec['pid']][0]
                 psec = self.all[pid]
-                pt1 = [0., 0., 0.]  # TODO Verify this is correct
-                r0 = sec['R']  # TODO Verify this is correct
                 pt0 = [psec.x3d(1), psec.y3d(1), psec.z3d(1)]
                 if sec['axial']:
                     nbranch = 1
                     x = 0
-                    pt1[1] = pt0[1] + left
+                    pt1[1] = pt0[1] + length
                 else:
                     nbranch = self._nbranch
-                    x = left * math.cos(ang)
-                    pt1[1] = pt0[1] + left * math.sin(ang)
+                    x = length * math.cos(ang)
+                    pt1[1] = pt0[1] + length * math.sin(ang)
                 for i in range(nbranch):
                     pt1[0] = pt0[0] + x * math.cos(i * rot)
                     pt1[2] = pt0[2] + x * math.sin(i * rot)
-                    section = self.create_section(name=sec['name'], diam=2 * right)
+                    section = self.create_section(name=sec['name'], diam=2 * radius)
                     section.connect(psec(1), 0)
                     self.set_location(section, pt0, pt1, nseg)
-            self.sec_id_lookup[geo_id] = list(range(start_idx, self._nsec))
+            self.sec_id_lookup[sec_id] = list(range(start_idx, self._nsec))
         self.set_location(self.soma, [0., -r0, 0.], [0., r0, 0.], 1)
         self.__store_segments()
 

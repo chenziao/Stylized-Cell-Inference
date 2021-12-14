@@ -86,7 +86,7 @@ class EcpMod(object):
         im = self.im_rec.as_numpy()
         for inj in self.cell.injection:
             im[inj.get_segment_id(), :] -= inj.rec_vec.as_numpy()
-        ecp = np.dot(self.tr, im)  # im unit nA, ecp unit mV
+        ecp = np.matmul(self.tr, im)  # im unit nA, ecp unit mV
         return ecp
 
 
