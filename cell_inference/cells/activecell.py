@@ -52,7 +52,8 @@ class ActiveCell(StylizedCell):
             for i in ids:
                 secs.extend(self.sec_id_lookup[i])
             self.grp_ids.append(secs)
-        default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
+        default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112])
+        #default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
         if biophys is not None:
             for i in range(len(biophys)):
                 if biophys[i] >= 0:
@@ -81,13 +82,6 @@ class ActiveCell(StylizedCell):
         soma.ek = -85
         for isec in self.grp_ids[2]:
             sec = self.get_sec_by_id(isec)  # apical dendrites
-            # if not hasattr(sec, '__len__'):
-            #     for s in sec:
-            #         s.insert('NaTa_t')
-            #         s.insert('SKv3_1')
-            #         s.ena = 50
-            #         s.ek = -85
-            # else:
             sec.insert('NaTa_t')
             sec.insert('SKv3_1')
             sec.ena = 50
