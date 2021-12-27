@@ -212,19 +212,37 @@ class Simulation(object):
         """Return simulation time vector"""
         return self.t_vec.as_numpy()
 
-    def get_lfp(self, index: Union[np.ndarray, List[int], int] = 0) -> np.ndarray:
+    def get_lfp(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
         Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
 
         Parameters
         index: index of the cell to retrieve the LFP from
         """
+        if index is 'all':
+            index = range(self.ncell)
         if not hasattr(index, '__len__'):
             lfp = self.lfp[index].calc_ecp()
         else:
             index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index], axis=0)
         return lfp
+    
+    def v(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
+        """
+        Return soma membrane potential of the cell by index (indices), (cells-by-)time
+
+        Parameters
+        index: index of the cell to retrieve the soma Vm from
+        """
+        if index is 'all':
+            index = range(self.ncell)
+        if not hasattr(index, '__len__'):
+            v = self.cells[index].v()
+        else:
+            index = np.asarray(index).ravel()
+            v = np.stack([self.cells[i].v() for i in index], axis=0)
+        return v
 
 
 """
