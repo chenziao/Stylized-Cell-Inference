@@ -246,7 +246,7 @@ class Simulation(object):
 
 
 """
-Function to create and run a passive model simulation
+Function to create and run a simulation
 """
 
 

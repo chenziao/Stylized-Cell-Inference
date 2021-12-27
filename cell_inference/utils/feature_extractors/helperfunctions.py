@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
+from sklearn.linear_model import LinearRegression
 from typing import Optional, Tuple
 import os
 
@@ -69,6 +70,17 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
     date_time = now.strftime("%H_%M_%S__%m_%d_%Y")
     torch.save(model, paths.MODELS_ROOT + date_time + ".pt")
     df.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
+
+
+def train_gmax_predictor(input_arr: np.ndarray, labels_arr: np.ndarray) -> dict:
+    classifier = LinearRegression().fit(input_arr, labels_arr)
+    return classifier.get_params()
+
+
+def predict_gmax(parameters: dict, input_arr: np.ndarray) -> np.ndarray:
+    classifier = LinearRegression()
+    classifier.set_params(parameters)
+    return classifier.predict(input_arr)
 
 
 def build_dataloader_from_numpy(input_arr: np.ndarray,
