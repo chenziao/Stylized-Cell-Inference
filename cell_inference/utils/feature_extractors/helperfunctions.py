@@ -72,14 +72,12 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
     df.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
 
 
-def train_gmax_predictor(input_arr: np.ndarray, labels_arr: np.ndarray) -> dict:
+def train_gmax_predictor(input_arr: np.ndarray, labels_arr: np.ndarray) -> LinearRegression:
     classifier = LinearRegression().fit(input_arr, labels_arr)
-    return classifier.get_params()
+    return classifier
 
 
-def predict_gmax(parameters: dict, input_arr: np.ndarray) -> np.ndarray:
-    classifier = LinearRegression()
-    classifier.set_params(parameters)
+def predict_gmax(classifier: LinearRegression, input_arr: np.ndarray) -> np.ndarray:
     return classifier.predict(input_arr)
 
 
