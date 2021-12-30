@@ -1,10 +1,12 @@
-# Dependencies
-from neuron import h
+from __future__ import annotations
 
-# Project Imports
-from cell_inference.cells.stylizedcell import StylizedCell
+from neuron import h
+from typing import TYPE_CHECKING
+
 from cell_inference.utils.currents.pointcurrent import PointCurrent
 
+if TYPE_CHECKING:
+    from cell_inference.cells.stylizedcell import StylizedCell
 
 class Synapse(PointCurrent):
     def __init__(self, cell: StylizedCell, stim: h.NetStim, sec_index: int,

@@ -2,11 +2,10 @@
 from neuron import h
 import pandas as pd
 import numpy as np
-from typing import Optional, Any, Union
+from typing import Optional, Union
 
 # Project Imports
 from cell_inference.cells.stylizedcell import StylizedCell
-from cell_inference.cells.synapse import Synapse
 from cell_inference.utils.currents.recorder import Recorder
 
 h.load_file('stdrun.hoc')
@@ -16,8 +15,7 @@ class ActiveCell(StylizedCell):
     """Define single cell model using parent class Stylized_Cell"""
 
     def __init__(self, geometry: Optional[pd.DataFrame] = None,
-                 biophys: Optional[np.ndarray] = None,
-                 dl: int = 30, vrest: float = -70.0) -> None:
+                 biophys: Optional[np.ndarray] = None, **kwargs) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
@@ -34,7 +32,7 @@ class ActiveCell(StylizedCell):
             (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
         ]
         
-        super(ActiveCell, self).__init__(geometry, dl, vrest)
+        super(ActiveCell, self).__init__(geometry, **kwargs)
         self.v_rec = self.__record_soma_v()
         
 #         self.set_channels()
@@ -91,10 +89,6 @@ class ActiveCell(StylizedCell):
             for sec in self.get_sec_by_id(self.grp_ids[entry[0]]):
                 setattr(sec, entry[1], self.biophys[i])
         h.v_init = self._vrest
-
-    def add_synapse(self, stim: h.NetStim, sec_index: int, **kwargs: Any) -> None:
-        """Add synapse to a section by its index"""
-        self.injection.append(Synapse(self, stim, sec_index, **kwargs))
 
     def v(self) -> Optional[Union[str, np.ndarray]]:
         """Return recorded soma membrane voltage in numpy array"""

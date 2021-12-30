@@ -13,14 +13,14 @@ h.load_file('stdrun.hoc')
 class PassiveCell(StylizedCell):
     """Define single cell model using parent class Stylized_Cell"""
 
-    def __init__(self, geometry: pd.DataFrame = None, dl: int = 30, vrest: float = -70.0) -> None:
+    def __init__(self, geometry: pd.DataFrame = None, **kwargs) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
         dL: maximum segment length
         vrest: reversal potential of leak channel for all segments
         """
-        super().__init__(geometry, dl, vrest)
+        super().__init__(geometry, **kwargs)
         self.v_rec = self.__record_soma_v()
         self.set_channels()
 

@@ -18,6 +18,7 @@ class Simulation(object):
                  loc_param: Union[np.ndarray, List[int], List[float]] = None,
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
                  biophys: Union[np.ndarray, List[int], List[float]] = None,
+                 spike_threshold: float = None,
                  gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """
@@ -28,6 +29,7 @@ class Simulation(object):
         loc_param: location parameters, ncell-by-6 array, (x,y,z,theta,h,phi)
         geo_param: geometry parameters, ncell-by-k array, if not specified, use default properties in geometry
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
+        spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
         gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells'
         soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
@@ -36,12 +38,13 @@ class Simulation(object):
         self.cell_type = cell_type
         self.ncell = ncell  # number of cells in this simulation
         self.cells = []  # list of cell object
-        self.lfp = []  # list of EcpMod object
-        self.geometry = geometry.copy()
         self.electrodes = electrodes
+        self.lfp = []  # list of EcpMod object
         self.loc_param = None
-        self.geo_param = None
-        self.scale = None
+        if loc_param is None:
+            loc_param = [0., 0., 0., 0., 1., 0.]
+        self.set_loc_param(loc_param)
+        self.geometry = geometry.copy()
         self.geo_entries = [
             (0, 'R'),  # change soma radius
             (3, 'L'),  # change trunk length
@@ -50,12 +53,11 @@ class Simulation(object):
             (4, 'R'),  # change tuft radius
             ([1, 2, 4], 'L')  # change all dendrites length
         ]
-        if loc_param is None:
-            loc_param = [0., 0., 0., 0., 1., 0.]
-        self.set_loc_param(loc_param)
+        self.geo_param = None
         if geo_param is None:
             geo_param = [-1]
         self.set_geo_param(geo_param)
+        self.scale = None
         self.set_scale(scale)
 
         self.soma_injection = None
@@ -81,6 +83,8 @@ class Simulation(object):
 
         self.__create_cells(cell_type=cell_type)  # create cell objects with properties set up
         self.t_vec = h.Vector(round(h.tstop / h.dt) + 1).record(h._ref_t)  # record time
+        self.spike_threshold = None
+        self.record_spikes(spike_threshold)
 
     @staticmethod
     def run_neuron_sim() -> None:
@@ -184,6 +188,8 @@ class Simulation(object):
         gmax: cell gmax value
         """
         self.gmax = self.__pack_parameters(gmax, 0, "gmax")
+        for i, cell in enumerate(self.cells):
+            cell.synapse[0].set_gmax(self.gmax[i])
 
     def set_scale(self, scale: float) -> None:
         """
@@ -208,6 +214,12 @@ class Simulation(object):
                 geom.loc[self.geo_entries[i]] = x
         return geom
 
+    def record_spikes(self, threshold: Optional[float]) -> None:
+        """Setup spike recorder for all cells"""
+        for cell in self.cells:
+            cell.set_spike_recorder(threshold)
+        self.spike_threshold = threshold
+
     def t(self) -> np.ndarray:
         """Return simulation time vector"""
         return self.t_vec.as_numpy()
@@ -227,7 +239,7 @@ class Simulation(object):
             index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index], axis=0)
         return lfp
-    
+
     def v(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
         Return soma membrane potential of the cell by index (indices), (cells-by-)time
@@ -243,6 +255,43 @@ class Simulation(object):
             index = np.asarray(index).ravel()
             v = np.stack([self.cells[i].v() for i in index], axis=0)
         return v
+
+    def get_spike_time(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
+        """
+        Return soma spike time of the cell by index (indices), ndarray (list of ndarray)
+
+        Parameters
+        index: index of the cell to retrieve the spikes from
+        """
+        if self.spike_threshold is None:
+            raise ValueError("Spike recorder was not set up.")
+        if index is 'all':
+            index = range(self.ncell)
+        if not hasattr(index, '__len__'):
+            spk = self.cells[index].spikes.as_numpy()
+        else:
+            index = np.asarray(index).ravel()
+            spk = np.array([self.cells[i].spikes.as_numpy() for i in index], dtype=object)
+        return spk
+
+    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int,np.ndarray]:
+        """
+        Return soma spike number of the cell by index (indices), int (ndarray)
+
+        Parameters
+        index: index of the cell to retrieve the spikes from
+        """
+        if self.spike_threshold is None:
+            raise ValueError("Spike recorder was not set up.")
+        if index is 'all':
+            index = range(self.ncell)
+        if not hasattr(index, '__len__'):
+            nspk = self.get_spike_time(index).size()
+        else:
+            index = np.asarray(index).ravel()
+            spk = self.get_spike_time(index)
+            nspk = np.array([s.size for s in spk])
+        return nspk
 
 
 """

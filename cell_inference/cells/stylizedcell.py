@@ -7,6 +7,7 @@ from typing import List, Optional, Sequence, Dict, Union, TypeVar
 from enum import Enum
 
 from cell_inference.utils.currents.currentinjection import CurrentInjection
+from cell_inference.utils.currents.synapse import Synapse
 
 _T = TypeVar("_T", bound=Sequence)
 
@@ -20,25 +21,30 @@ class CellTypes(Enum):
 
 class StylizedCell(ABC):
     def __init__(self, geometry: Optional[pd.DataFrame] = None,
-                 dl: int = 30, vrest: float = -70.0, nbranch: int = 4) -> None:
+                 dl: int = 30, vrest: float = -70.0, nbranch: int = 4,
+                 record_spike: bool = False) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
         dL: maximum segment length
         vrest: reversal potential of leak channel for all segments
         nbranch: number of branches of each non-axial section
+        record_spike: whether or not to record spikes
         """
         self._h = h
         self._dL = dl
         self._vrest = vrest
         self._nbranch = max(nbranch, 2)
+        self._record_spike = record_spike
         self._nsec = 0
         self._nseg = 0
         self.all = []  # list of all sections
         self.segments = []  # list of all segments
         self.sec_id_lookup = {}  # dictionary from section type id to section index
-        self.sec_id_in_seg = []
-        self.injection = []
+        self.sec_id_in_seg = []  # index of the first segment of each section in the segment list
+        self.injection = []  # current injection objects
+        self.synapse = []  # synapse objects
+        self.spikes = None
         self.geometry = None
         self.soma = None
         self.set_geometry(geometry)
@@ -51,17 +57,22 @@ class StylizedCell(ABC):
         raise NotImplementedError("Biophysical Channel Properties must be set!")
 
     @staticmethod
-    def set_location(sec, pt0: List[float], pt1: List[float], nseg: int) -> None:
-        sec.pt3dclear()
-        sec.pt3dadd(*pt0, sec.diam)
-        sec.pt3dadd(*pt1, sec.diam)
-        sec.nseg = nseg
-
-    def add_injection(self, sec_index, **kwargs):
+    def add_injection(self, sec_index, **kwargs) -> None:
         """Add current injection to a section by its index"""
         self.injection.append(CurrentInjection(self, sec_index, **kwargs))
 
+    def add_synapse(self, stim: h.NetStim, sec_index: int, **kwargs) -> None:
+        """Add synapse to a section by its index"""
+        self.synapse.append(Synapse(self, stim, sec_index, **kwargs))
+
     #  PRIVATE METHODS
+    def __setup_all(self) -> None:
+        if self.geometry is not None:
+            self.__create_morphology()
+            self.set_channels()
+            if self._record_spike:
+                self.set_spike_recorder()
+
     def __calc_seg_coords(self) -> Dict:
         """Calculate segment coordinates for ECP calculation"""
         p0 = np.empty((self._nseg, 3))
@@ -92,8 +103,8 @@ class StylizedCell(ABC):
                 r0 = sec['R']
                 pt0 = [0., -2 * r0, 0.]
                 pt1 = [0., 0., 0.]
-                self.soma = self.create_section(name=sec['name'], diam=2 * r0)
-                self.set_location(self.soma, pt0, pt1, 1)
+                self.soma = self.__create_section(name=sec['name'], diam=2 * r0)
+                self.__set_location(self.soma, pt0, pt1, 1)
             else:
                 length = sec['L']
                 radius = sec['R']
@@ -113,17 +124,25 @@ class StylizedCell(ABC):
                 for i in range(nbranch):
                     pt1[0] = pt0[0] + x * math.cos(i * rot)
                     pt1[2] = pt0[2] + x * math.sin(i * rot)
-                    section = self.create_section(name=sec['name'], diam=2 * radius)
+                    section = self.__create_section(name=sec['name'], diam=2 * radius)
                     section.connect(psec(1), 0)
-                    self.set_location(section, pt0, pt1, nseg)
+                    self.__set_location(section, pt0, pt1, nseg)
             self.sec_id_lookup[sec_id] = list(range(start_idx, self._nsec))
-        self.set_location(self.soma, [0., -r0, 0.], [0., r0, 0.], 1)
+        self.__set_location(self.soma, [0., -r0, 0.], [0., r0, 0.], 1)
         self.__store_segments()
 
-    def __setup_all(self) -> None:
-        if self.geometry is not None:
-            self.__create_morphology()
-            self.set_channels()
+    def __create_section(self, name: str = 'null_sec', diam: float = 500.0) -> h.Section:
+        sec = h.Section(name=name, cell=self)
+        sec.diam = diam
+        self.all.append(sec)
+        self._nsec += 1
+        return sec
+
+    def __set_location(self, sec: h.Section, pt0: List[float], pt1: List[float], nseg: int) -> None:
+        sec.pt3dclear()
+        sec.pt3dadd(*pt0, sec.diam)
+        sec.pt3dadd(*pt1, sec.diam)
+        sec.nseg = nseg
 
     def __store_segments(self) -> None:
         self.segments = []
@@ -137,12 +156,17 @@ class StylizedCell(ABC):
         self._nseg = nseg
 
     #  PUBLIC METHODS
-    def create_section(self, name: str = 'null_sec', diam: float = 500.0) -> h.Section:
-        sec = h.Section(name=name, cell=self)
-        sec.diam = diam
-        self.all.append(sec)
-        self._nsec += 1
-        return sec
+    def set_spike_recorder(self, threshold: Optional[float] = 0) -> None:
+        if threshold is None:
+            self.spikes = None
+            self._record_spike = False
+        else:
+            vec = h.Vector()
+            nc = h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma)
+            nc.threshold = threshold
+            nc.record(vec)
+            self.spikes = vec
+            self._record_spike = True
 
     def get_sec_by_id(self, index: Optional[_T] = None) -> Optional[Union[List[h.Section], h.Section]]:
         """Get section(s) objects by index(indices) in the section list"""
