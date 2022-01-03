@@ -8,6 +8,7 @@ from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from typing import Optional, Tuple
 import os
+from joblib import dump, load
 
 from cell_inference.config import paths
 
@@ -72,12 +73,8 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
     df.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
 
 
-def train_gmax_predictor(input_arr: np.ndarray, labels_arr: np.ndarray) -> LinearRegression:
-    classifier = LinearRegression().fit(input_arr, labels_arr)
-    return classifier
-
-
-def predict_gmax(classifier: LinearRegression, input_arr: np.ndarray) -> np.ndarray:
+def predict_gmax(input_arr: np.ndarray, clf: str = paths.RESOURCES_ROOT + "gmax_classifier.joblib") -> np.ndarray:
+    classifier = load(clf)
     return classifier.predict(input_arr)
 
 

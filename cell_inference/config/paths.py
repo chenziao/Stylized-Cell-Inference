@@ -13,6 +13,8 @@ MORPHOLOGY_DATA_FILE = os.path.join(ROOT_DIR, 'resources/detailed_groundtruth.h5
 INVIVO_DATA_FILE = os.path.join(ROOT_DIR, 'resources/cell360LFP.h5')
 INVIVO2D_DATA_FILE = os.path.join(ROOT_DIR, 'resources/cell360LFP2D.h5')
 
+RESOURCES_ROOT = os.path.join(ROOT_DIR, 'resources/')
+
 RESULTS_ROOT = os.path.join(ROOT_DIR, 'resources/results')
 
 MODELS_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_models/')
