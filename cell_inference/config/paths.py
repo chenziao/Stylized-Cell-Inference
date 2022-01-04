@@ -1,21 +1,25 @@
 import os
 import platform
 
-ROOT_DIR = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 LIBRARY = 'mechanisms/nrnmech.dll' if platform.system() == 'Windows' else 'x86_64/.libs/libnrnmech.so'
-COMPILED_LIBRARY = os.path.join(ROOT_DIR, 'resources/compiled', LIBRARY)
-MECHANISMS = os.path.join(ROOT_DIR, 'resources/compiled/mechanisms')
-GEO_STANDARD = os.path.join(ROOT_DIR, 'resources/geom_standard.csv')
-ELECTRODES = os.path.join(ROOT_DIR, 'resources/Electrode2D.h5')
 
-SIMULATED_DATA_FILE = os.path.join(ROOT_DIR, 'resources/active_groundtruth.h5')
-MORPHOLOGY_DATA_FILE = os.path.join(ROOT_DIR, 'resources/detailed_groundtruth.h5')  # Allen Morphology Cell Data
-INVIVO_DATA_FILE = os.path.join(ROOT_DIR, 'resources/cell360LFP.h5')
-INVIVO2D_DATA_FILE = os.path.join(ROOT_DIR, 'resources/cell360LFP2D.h5')
+ROOT_DIR = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 
 RESOURCES_ROOT = os.path.join(ROOT_DIR, 'resources/')
 
-RESULTS_ROOT = os.path.join(ROOT_DIR, 'resources/results')
+COMPILED_LIBRARY = os.path.join(RESOURCES_ROOT, 'compiled', LIBRARY)
+MECHANISMS = os.path.join(RESOURCES_ROOT, 'compiled/mechanisms')
+GEO_STANDARD = os.path.join(RESOURCES_ROOT, 'geom_standard.csv')
+ELECTRODES = os.path.join(RESOURCES_ROOT, 'Electrode2D.h5')
+GMAX_MAPPING = os.path.join(RESOURCES_ROOT, 'gmax_mapping.h5')
+
+SIMULATED_DATA_FILE = os.path.join(RESOURCES_ROOT, 'active_groundtruth.h5')
+MORPHOLOGY_DATA_FILE = os.path.join(RESOURCES_ROOT, 'detailed_groundtruth.h5')  # Allen Morphology Cell Data
+INVIVO_DATA_FILE = os.path.join(RESOURCES_ROOT, 'cell360LFP.h5')
+INVIVO2D_DATA_FILE = os.path.join(RESOURCES_ROOT, 'cell360LFP2D.h5')
+
+
+RESULTS_ROOT = os.path.join(RESOURCES_ROOT, 'results')
 
 MODELS_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_models/')
 
