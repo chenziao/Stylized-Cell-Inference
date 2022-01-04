@@ -50,6 +50,8 @@ class ConvolutionalNetwork(nn.Module):
             nn.Conv2d(64, 64, (1, 5), (1, 1)),
             self.activation,
             nn.Conv2d(64, 64, (1, 3), (1, 1)),
+            self.activation,
+            nn.Conv2d(64, 64, (1, 3), (1, 1)),
             self.activation
         )
         # Produces (batch, 64, 378, 378)
