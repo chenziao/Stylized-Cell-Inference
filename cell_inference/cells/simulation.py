@@ -18,7 +18,7 @@ class Simulation(object):
                  loc_param: Union[np.ndarray, List[int], List[float]] = None,
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
                  biophys: Union[np.ndarray, List[int], List[float]] = None,
-                 spike_threshold: float = None,
+                 spike_threshold: float = -20.,
                  gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """
