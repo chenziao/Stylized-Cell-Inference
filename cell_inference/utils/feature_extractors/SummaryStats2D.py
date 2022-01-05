@@ -29,7 +29,8 @@ def build_lfp_grid(lfp: np.ndarray,
 
 
 def calculate_stats(g_lfp: np.ndarray,
-                    grid: np.ndarray = None) -> np.ndarray:
+                    grid: np.ndarray = None,
+                    additional_stats: bool = True) -> np.ndarray:
     """
     Calculates summary statistics. This includes:
         - Average Voltage of Each Channel
@@ -77,7 +78,8 @@ def calculate_stats(g_lfp: np.ndarray,
                                              single_lfp_max_idx_y, sing_lfp_max_val,
                                              single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val])
         else:
-            single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x, sing_lfp_max_val])  # My,max_val])
+            single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
+                                             sing_lfp_max_val, single_lfp_max_idx_y])  # My,max_val])
         return single_lfp_all_stats
 
     def searchheights(lfp: np.ndarray, height: Optional[Union[float, int, np.ndarray]],
@@ -93,15 +95,18 @@ def calculate_stats(g_lfp: np.ndarray,
                 break
         return idx_left, idx_right
 
-    def lfp_as_fy(lfp: np.ndarray, time: Optional[Union[int, np.ndarray]],
-                  height: Optional[Union[float, int, np.ndarray]] = None) -> Tuple[int, int]:
-        lfp_wrt_time = (lfp[time, :].reshape(4, 190))  # just removing the extra dimension for time with reshape
-        x0_idx_wrt_time = np.argmax(np.max(np.abs(lfp_wrt_time), axis=1), axis=0)
-        fy_wrt_x0_wrt_time = lfp_wrt_time[x0_idx_wrt_time, :]
-        y0_idx_wrt_x0_wrt_time = np.argmax(np.abs(fy_wrt_x0_wrt_time), axis=0)
-        half_height_fy_wrt_x0_wrt_time = np.abs(fy_wrt_x0_wrt_time[y0_idx_wrt_x0_wrt_time]) / 2 if height is None \
-            else np.abs(fy_wrt_x0_wrt_time[y0_idx_wrt_x0_wrt_time])
-        return searchheights(np.abs(fy_wrt_x0_wrt_time), half_height_fy_wrt_x0_wrt_time, y0_idx_wrt_x0_wrt_time)
+    def half_height_width_wrt_y(lfp: np.ndarray) -> Tuple[int, int]:
+        # channel with max amplitude
+        idx_wrt_time = np.argmax(np.abs(lfp))
+        # max amplitude
+        height = lfp[idx_wrt_time]
+        # half height of max amplitude
+        half_height = np.abs(height)/2
+        # x, y index of max channel
+        x0_idx_wrt_time, y0_idx_wrt_time = np.unravel_index(idx_wrt_time, grid_shape)
+        # make sure height in fy is positive
+        fy_wrt_x0_wrt_time = np.sign(height) * lfp.reshape(grid_shape)[x0_idx_wrt_time, :]
+        return searchheights(fy_wrt_x0_wrt_time, half_height, y0_idx_wrt_time)
 
     # Calculation of statistics across channels
     sl = [statscalc(x, i < i_min) for i, x in enumerate(stats_list)]
@@ -111,31 +116,27 @@ def calculate_stats(g_lfp: np.ndarray,
     Calculates width of the first peak and adds it to the stats
     if grid parameter is provided
     """
-    if grid is not None:
-        reshaped_full_lfp = np.zeros((g_lfp.shape[0], 4, 190))
-        for t in range(g_lfp.shape[0]):
-            reshaped_full_lfp[t, :, :] = g_lfp[t, :].reshape(4, 190)
-        ft_x = np.argmax(np.max(np.abs(reshaped_full_lfp), axis=2), axis=1)
-        ft_y = np.argmax(np.max(np.abs(reshaped_full_lfp), axis=1), axis=1)
-        ft_lfp = np.zeros((g_lfp.shape[0],))
-        for i in range(g_lfp.shape[0]):
-            ft_lfp[i] = reshaped_full_lfp[i, ft_x[i], ft_y[i]]
+    if additional_stats:
+        # Trough and Peak times with maximum amplitude
+        t_T = t_t[np.argmax(troughs)]
+        t_P = t_p[np.argmax(peaks)]
 
-        t0 = first_pk_tr(g_lfp)
-        t1 = t0
-        for i in range(t0, g_lfp.shape[0] - t0):
-            if ft_lfp[i] >= 0.0:  # TODO Fix this for the condition when it is an initial peak!!!
-                t1 = i
-                #                 print(y0)
-                break
+        t0 = min(t_T, t_P)
+        t2 = max(t_T, t_P)
 
-        t2 = first_pk_tr(g_lfp[t1:, :]) + t1
+        # Find channel with maximum amplitude
+        max_idx = np.argmax(np.max(np.abs(g_lfp), axis=0))
+        # Find time when LFP changes sign
+        t_idx = np.nonzero(np.diff(np.sign(g_lfp[t0:t2, max_idx])))[0]
+        t1 = t0 + 1 + t_idx[0] if t_idx.size > 0 else t0
 
         idx_list = []
-        idx_list.extend(lfp_as_fy(g_lfp, t0))
-        idx_list.extend(lfp_as_fy(g_lfp, t1, height=0))
-        idx_list.extend(lfp_as_fy(g_lfp, t2))
         idx_list.extend((t0, t1, t2))
+        idx_list.extend(half_height_width_wrt_y(g_lfp[t0, :]))
+        idx_list.extend(half_height_width_wrt_y(g_lfp[t2, :]))
+
+        t1_stats = statscalc(g_lfp[t1, :], include_min=True)
+        idx_list.extend((t1_stats[3], t1_stats[6]))
         sl += [np.array(idx_list)]
 
     all_stats = np.concatenate(sl)
