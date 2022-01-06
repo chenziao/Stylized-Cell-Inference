@@ -7,20 +7,40 @@ from typing import Tuple, Optional, Union
 import cell_inference.config.params as params
 from cell_inference.utils.spike_window import first_pk_tr
 
+GRID_SHAPE = tuple(v.size for v in params.ELECTRODE_GRID[:2])
 
 def build_lfp_grid(lfp: np.ndarray,
                    coord: np.ndarray,
-                   grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]
+                   grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]],
+                   y_window_size: Optional[Union[float, int, np.ndarray]] = None
                    ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build a grid to match the Neuropixel Probe used to collect
     LFP signals: https://www.neuropixels.org/probe
     
     Then interpolate the LFP onto the grid for each timestep
+        y_window_size - If specified, get the grid within a window along y-axis instead,
+        with the window centered at the maximum amplitude location. (micron)
+        Return None if the window falls outside the given electrode array range.
     """
     t = lfp.shape[0]
     xy = coord[:, :2]
-    xx, yy = np.meshgrid(grid_v[0], grid_v[1], indexing='ij')
+    grid_y = grid_v[1]
+    if y_window_size is not None:
+        # relative index of window in y grid
+        dy = abs(grid_y[-1] - grid_y[0]) / (GRID_SHAPE[1] - 1)
+        ny = max(np.floor(y_window_size/dy, dtype=int) + 1, 3)
+        rel_idx = np.floor((ny - 1) / 2, dtype=int) + np.arange(ny, dtype=int)
+        # find maximum amplitude location
+        max_idx = np.argmax(np.amax(np.abs(lfp), axis=0))
+        center_y = xy[max_idx, 1]
+        center_y_idx = np.argmin(np.abs(grid_y - center_y))
+        if center_y_idx + rel_idx[0] < 0 or center_y_idx + rel_idx[-1] > GRID_SHAPE[1]:
+            print("The window falls outside the given electrode array range.")
+            return None, None
+        else:
+            grid_y = grid_y[center_y_idx + rel_idx]
+    xx, yy = np.meshgrid(grid_v[0], grid_y, indexing='ij')
     grid = np.column_stack((xx.ravel(), yy.ravel()))
     grid_lfp = np.empty((t, grid.shape[0]))
     for i in range(t):
@@ -37,11 +57,11 @@ def calculate_stats(g_lfp: np.ndarray,
         - Standard Deviation Voltage of Each Channel
         - troughs of Each Channel
         - peaks of Each Channel
-        - Difference between Peak and Trough amplitudes
-        - Width of Waveform from half height (if grid specified)
+        - Difference between Peak and Trough time
+        - Width of Waveform from half height (if additional_stats True)
     """
     g_lfp = np.asarray(g_lfp)
-    grid_shape = tuple(v.size for v in params.ELECTRODE_GRID[:2])
+    grid_shape = (GRID_SHAPE[0], g_lfp.shape[1]/GRID_SHAPE[0])
     avg = np.mean(g_lfp, axis=0)  # average voltage of each channel
     std_dev = np.std(g_lfp, axis=0)  # stDev of the voltage of each channel
     t_t = np.argmin(g_lfp, axis=0)
@@ -79,11 +99,10 @@ def calculate_stats(g_lfp: np.ndarray,
                                              single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val])
         else:
             single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
-                                             sing_lfp_max_val, single_lfp_max_idx_y])  # My,max_val])
+                                             single_lfp_max_idx_y, sing_lfp_max_val])  # My,max_val])
         return single_lfp_all_stats
 
-    def searchheights(lfp: np.ndarray, height: Optional[Union[float, int, np.ndarray]],
-                      idx: Optional[Union[int, np.ndarray]]) -> Tuple[int, int]:
+    def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
         idx_left, idx_right = 0, lfp.size
         for i in range(idx - 1, idx_left, -1):
             if lfp[i] <= height:
@@ -125,7 +144,7 @@ def calculate_stats(g_lfp: np.ndarray,
         t2 = max(t_T, t_P)
 
         # Find channel with maximum amplitude
-        max_idx = np.argmax(np.max(np.abs(g_lfp), axis=0))
+        max_idx = np.argmax(np.amax(np.abs(g_lfp), axis=0))
         # Find time when LFP changes sign
         t_idx = np.nonzero(np.diff(np.sign(g_lfp[t0:t2, max_idx])))[0]
         t1 = t0 + 1 + t_idx[0] if t_idx.size > 0 else t0
