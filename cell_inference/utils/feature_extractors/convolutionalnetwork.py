@@ -89,11 +89,11 @@ class ConvolutionalNetwork(nn.Module):
         # Produces (batch, 512, 32, 32)
 
         self.downchannel_conv_block = nn.Sequential(
-            nn.Conv2d(32, 16, 3, 1),
+            nn.Conv2d(32, 16, (3, 3), (1, 1)),
             self.activation,
-            nn.Conv2d(16, 8, 3, 1),
+            nn.Conv2d(16, 8, (3, 3), (1, 1)),
             self.activation,
-            nn.Conv2d(8, 1, 3, 1),
+            nn.Conv2d(8, 1, (3, 3), (1, 1)),
             self.activation
         )
         # Produces (batch, 1, 26, 26)
@@ -122,4 +122,3 @@ class ConvolutionalNetwork(nn.Module):
         x = self.fc3(x)
         # print("Final Shape: {}".format(x.shape))
         return x
-
