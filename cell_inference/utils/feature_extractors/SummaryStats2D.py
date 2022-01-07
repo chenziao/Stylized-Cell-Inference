@@ -29,8 +29,8 @@ def build_lfp_grid(lfp: np.ndarray,
     if y_window_size is not None:
         # relative index of window in y grid
         dy = abs(grid_y[-1] - grid_y[0]) / (GRID_SHAPE[1] - 1)
-        ny = max(np.floor(y_window_size/dy, dtype=int) + 1, 3)
-        rel_idx = np.floor((ny - 1) / 2, dtype=int) + np.arange(ny, dtype=int)
+        ny = max(int(np.floor(y_window_size/dy)) + 1, 3)
+        rel_idx = int(np.floor((ny - 1) / 2)) + np.arange(ny, dtype=int)
         # find maximum amplitude location
         max_idx = np.argmax(np.amax(np.abs(lfp), axis=0))
         center_y = xy[max_idx, 1]
