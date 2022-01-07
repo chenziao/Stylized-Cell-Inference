@@ -222,7 +222,7 @@ class Simulation(object):
 
     def t(self) -> np.ndarray:
         """Return simulation time vector"""
-        return self.t_vec.as_numpy()
+        return self.t_vec.as_numpy().copy()
 
     def get_lfp(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
@@ -238,7 +238,7 @@ class Simulation(object):
         else:
             index = np.asarray(index).ravel()
             lfp = np.stack([self.lfp[i].calc_ecp() for i in index], axis=0)
-        return lfp
+        return lfp.copy()
 
     def v(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
@@ -268,10 +268,10 @@ class Simulation(object):
         if index is 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
-            spk = self.cells[index].spikes.as_numpy()
+            spk = self.cells[index].spikes.as_numpy().copy()
         else:
             index = np.asarray(index).ravel()
-            spk = np.array([self.cells[i].spikes.as_numpy() for i in index], dtype=object)
+            spk = np.array([self.cells[i].spikes.as_numpy().copy() for i in index], dtype=object)
         return spk
 
     def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int,np.ndarray]:
@@ -286,7 +286,7 @@ class Simulation(object):
         if index is 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
-            nspk = self.get_spike_time(index).size()
+            nspk = self.get_spike_time(index).size
         else:
             index = np.asarray(index).ravel()
             spk = self.get_spike_time(index)

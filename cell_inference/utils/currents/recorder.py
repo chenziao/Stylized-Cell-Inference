@@ -34,7 +34,7 @@ class Recorder(object):
         Return a 1d-array if a single object is being recorded
         """
         if self.single:
-            x = self.vectors[0].as_numpy()
+            x = self.vectors[0].as_numpy().copy()
         else:
-            x = np.array([v.as_numpy() for v in self.vectors])
+            x = np.array([v.as_numpy().copy() for v in self.vectors])
         return x
