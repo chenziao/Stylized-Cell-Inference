@@ -5,9 +5,9 @@ from typing import Tuple, Optional, Union
 
 # Project Imports
 import cell_inference.config.params as params
-from cell_inference.utils.spike_window import first_pk_tr
 
 GRID_SHAPE = tuple(v.size for v in params.ELECTRODE_GRID[:2])
+
 
 def build_lfp_grid(lfp: np.ndarray,
                    coord: np.ndarray,
@@ -36,8 +36,7 @@ def build_lfp_grid(lfp: np.ndarray,
         center_y = xy[max_idx, 1]
         center_y_idx = np.argmin(np.abs(grid_y - center_y))
         if center_y_idx + rel_idx[0] < 0 or center_y_idx + rel_idx[-1] > GRID_SHAPE[1]:
-            print("The window falls outside the given electrode array range.")
-            return None, None
+            raise ValueError("The window falls outside the given electrode array range.")
         else:
             grid_y = grid_y[center_y_idx + rel_idx]
     xx, yy = np.meshgrid(grid_v[0], grid_y, indexing='ij')
@@ -61,7 +60,7 @@ def calculate_stats(g_lfp: np.ndarray,
         - Width of Waveform from half height (if additional_stats True)
     """
     g_lfp = np.asarray(g_lfp)
-    grid_shape = (GRID_SHAPE[0], g_lfp.shape[1]/GRID_SHAPE[0])
+    grid_shape = (GRID_SHAPE[0], int(g_lfp.shape[1]/GRID_SHAPE[0]))
     avg = np.mean(g_lfp, axis=0)  # average voltage of each channel
     std_dev = np.std(g_lfp, axis=0)  # stDev of the voltage of each channel
     t_t = np.argmin(g_lfp, axis=0)
@@ -150,12 +149,12 @@ def calculate_stats(g_lfp: np.ndarray,
         t1 = t0 + 1 + t_idx[0] if t_idx.size > 0 else t0
 
         idx_list = []
-        idx_list.extend((t0, t1, t2))
         idx_list.extend(half_height_width_wrt_y(g_lfp[t0, :]))
         idx_list.extend(half_height_width_wrt_y(g_lfp[t2, :]))
 
         t1_stats = statscalc(g_lfp[t1, :], include_min=True)
         idx_list.extend((t1_stats[3], t1_stats[6]))
+        idx_list.extend((t0, t1, t2))
         sl += [np.array(idx_list)]
 
     all_stats = np.concatenate(sl)

@@ -231,7 +231,7 @@ class Simulation(object):
         Parameters
         index: index of the cell to retrieve the LFP from
         """
-        if index is 'all':
+        if index == 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
             lfp = self.lfp[index].calc_ecp()
@@ -247,7 +247,7 @@ class Simulation(object):
         Parameters
         index: index of the cell to retrieve the soma Vm from
         """
-        if index is 'all':
+        if index == 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
             v = self.cells[index].v()
@@ -265,7 +265,7 @@ class Simulation(object):
         """
         if self.spike_threshold is None:
             raise ValueError("Spike recorder was not set up.")
-        if index is 'all':
+        if type(index) is str and index == 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
             spk = self.cells[index].spikes.as_numpy().copy()
@@ -283,7 +283,7 @@ class Simulation(object):
         """
         if self.spike_threshold is None:
             raise ValueError("Spike recorder was not set up.")
-        if index is 'all':
+        if index == 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
             nspk = self.get_spike_time(index).size
