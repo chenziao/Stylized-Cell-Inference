@@ -274,7 +274,7 @@ class Simulation(object):
             spk = np.array([self.cells[i].spikes.as_numpy().copy() for i in index], dtype=object)
         return spk
 
-    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int,np.ndarray]:
+    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int, np.ndarray]:
         """
         Return soma spike number of the cell by index (indices), int (ndarray)
 
