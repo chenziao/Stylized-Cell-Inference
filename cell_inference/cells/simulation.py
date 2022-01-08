@@ -14,11 +14,12 @@ from cell_inference.config import paths, params
 
 
 class Simulation(object):
-    def __init__(self, geometry: pd.DataFrame, electrodes: np.ndarray, cell_type: CellTypes,
+    def __init__(self, geometry: pd.DataFrame, cell_type: CellTypes,
+                 electrodes: Optional[np.ndarray] = None,
                  loc_param: Union[np.ndarray, List[int], List[float]] = None,
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
                  biophys: Union[np.ndarray, List[int], List[float]] = None,
-                 spike_threshold: float = -20.,
+                 spike_threshold: float = -30.,
                  gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """
@@ -118,8 +119,9 @@ class Simulation(object):
             else:
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
             # Move cell location
-            self.lfp.append(
-                EcpMod(cell, self.electrodes, move_cell=self.loc_param[i], scale=self.scale[i], min_distance=min_dist))
+            if self.electrodes is not None:
+                self.lfp.append(
+                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i], scale=self.scale[i], min_distance=min_dist))
 
     def __create_netstim(self) -> h.NetStim:
         """Setup synaptic input event"""
@@ -274,7 +276,7 @@ class Simulation(object):
             spk = np.array([self.cells[i].spikes.as_numpy().copy() for i in index], dtype=object)
         return spk
 
-    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int,np.ndarray]:
+    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int, np.ndarray]:
         """
         Return soma spike number of the cell by index (indices), int (ndarray)
 
