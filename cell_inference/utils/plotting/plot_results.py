@@ -86,3 +86,50 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
             savefig = 'LFP_heatmap.pdf'
         fig.savefig(savefig, bbox_inches='tight', transparent=True)
     return fig, ax
+
+
+# TODO Needs to have the cell membrane voltage be a 2D array instead of just the soma
+def plot_intracellular_spike_heatmap(t: np.ndarray, elec_d: np.ndarray, intracellular_spikes: np.ndarray,
+                                     savefig: Optional[str] = None, vlim: str = 'auto', fontsize: int = 40,
+                                     ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
+                                     cbbox: Optional[List[float]] = None, cmap: str = 'viridis') -> Tuple[Figure, Axes]:
+    """
+    Plot Intracellular Spike heatmap.
+
+    t: time points (ms). 1D array
+    elec_d: electrode distance (um). 1D array
+    intracellular_spikes: intracellular_spikes
+    savefig: if specified as string, save figure with the string as file name.
+    vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
+    fontsize: size of font for display
+    labelpad: Spacing in points from the Axes bounding box including ticks and tick labels.
+    tick_length: length between ticks
+    nbins: number of bins to create
+    cbbox: dimensions of figure
+    cmap: A Colormap instance or registered colormap name. The colormap maps the C values to color.
+    """
+    if cbbox is None:
+        cbbox = [.91, 0.118, .03, 0.76]
+    intracellular_spikes = np.asarray(intracellular_spikes).T
+    elec_d = np.asarray(elec_d) / 1000
+    if vlim == 'auto':
+        vlim = 3 * np.std(intracellular_spikes) * np.array([-1, 1])
+    elif vlim == 'max':
+        vlim = [np.min(intracellular_spikes), np.max(intracellular_spikes)]
+    fig, ax = plt.subplots()
+    pcm = plt.pcolormesh(t, elec_d, intracellular_spikes, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
+    cbaxes = fig.add_axes(cbbox)
+    cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
+    cbar.ax.tick_params(labelsize=ticksize)
+    cbar.set_label('Intracellular Spikes (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    ax.set_xticks(np.linspace(t[0], t[-1], nbins))
+    ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
+    ax.tick_params(labelsize=ticksize)
+    ax.set_xlabel('time (ms)', fontsize=fontsize)
+    ax.set_ylabel('dist_y (mm)', fontsize=fontsize)
+    plt.show()
+    if savefig is not None:
+        if type(savefig) is not str:
+            savefig = 'intracellular_spikes_heatmap.pdf'
+        fig.savefig(savefig, bbox_inches='tight', transparent=True)
+    return fig, ax
