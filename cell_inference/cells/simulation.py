@@ -19,7 +19,7 @@ class Simulation(object):
                  loc_param: Union[np.ndarray, List[int], List[float]] = None,
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
                  biophys: Union[np.ndarray, List[int], List[float]] = None,
-                 spike_threshold: float = -30.,
+                 spike_threshold: Optional[float] = None,
                  gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """
@@ -288,12 +288,13 @@ class Simulation(object):
         if index == 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
-            nspk = self.get_spike_time(index).size
+            spk = self.get_spike_time(index)
+            nspk = spk.size
         else:
             index = np.asarray(index).ravel()
             spk = self.get_spike_time(index)
             nspk = np.array([s.size for s in spk])
-        return nspk
+        return nspk, spk
 
 
 """

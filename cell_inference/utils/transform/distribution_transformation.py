@@ -10,16 +10,19 @@ def norm2unif(x: Optional[Union[float, int, np.ndarray]],
     y = a + (b - a) * norm.cdf(np.asarray(x))
     return y
 
+def range2norm(a: Optional[Union[float, int, np.ndarray]],
+               b: Optional[Union[float, int, np.ndarray]],
+               n_sigma: int = 3) -> Tuple[np.ndarray, np.ndarray]:
+    """Get the normal parameters given range [a,b] that corresponds to n_sigma"""
+    mu = (a + b) / 2
+    sigma = np.abs(b - a) / n_sigma / 2
+    return mu, sigma
 
 def range2logn(a: Optional[Union[float, int, np.ndarray]],
                b: Optional[Union[float, int, np.ndarray]],
-               n_sigma: int = 2) -> Tuple[np.ndarray, np.ndarray]:
+               n_sigma: int = 3) -> Tuple[np.ndarray, np.ndarray]:
     """Get the lognormal parameters given range [a,b] in linear scale that corresponds to n_sigma"""
-    log_a = np.log(a)
-    log_b = np.log(b)
-    mu = (log_a + log_b) / 2
-    sigma = (log_b - log_a) / n_sigma / 2
-    return mu, sigma
+    return range2norm(np.log(a), np.log(b), n_sigma)
 
 
 def norm2logn(x: Optional[Union[float, int, np.ndarray]],
