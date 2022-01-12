@@ -6,12 +6,13 @@ from typing import Tuple, Optional, Union
 # Project Imports
 import cell_inference.config.params as params
 
-GRID_SHAPE = tuple(v.size for v in params.ELECTRODE_GRID[:2])
+GRID = params.ELECTRODE_GRID
+GRID_SHAPE = tuple(v.size for v in GRID)
 
 
 def build_lfp_grid(lfp: np.ndarray,
                    coord: np.ndarray,
-                   grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]],
+                   grid_v: Optional[Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None,
                    y_window_size: Optional[Union[float, int, np.ndarray]] = None
                    ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -23,6 +24,8 @@ def build_lfp_grid(lfp: np.ndarray,
         with the window centered at the maximum amplitude location. (micron)
         Return None if the window falls outside the given electrode array range.
     """
+    if grid_v is None:
+        grid_v = GRID
     t = lfp.shape[0]
     xy = coord[:, :2]
     grid_y = grid_v[1]
@@ -48,7 +51,6 @@ def build_lfp_grid(lfp: np.ndarray,
 
 
 def calculate_stats(g_lfp: np.ndarray,
-                    grid: np.ndarray = None,
                     additional_stats: bool = True) -> np.ndarray:
     """
     Calculates summary statistics. This includes:
@@ -149,12 +151,14 @@ def calculate_stats(g_lfp: np.ndarray,
         t1 = t0 + 1 + t_idx[0] if t_idx.size > 0 else t0
 
         idx_list = []
+        idx_list.extend((t0, t1, t2))
+        
         idx_list.extend(half_height_width_wrt_y(g_lfp[t0, :]))
         idx_list.extend(half_height_width_wrt_y(g_lfp[t2, :]))
 
         t1_stats = statscalc(g_lfp[t1, :], include_min=True)
         idx_list.extend((t1_stats[3], t1_stats[6]))
-        idx_list.extend((t0, t1, t2))
+        
         sl += [np.array(idx_list)]
 
     all_stats = np.concatenate(sl)

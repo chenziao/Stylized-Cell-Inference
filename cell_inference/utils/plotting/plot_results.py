@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import numpy as np
-from typing import Optional, Tuple, List
+from typing import Union, Optional, Tuple, List
 
 
 def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
@@ -65,10 +65,11 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
         cbbox = [.91, 0.118, .03, 0.76]
     lfp = np.asarray(lfp).T
     elec_d = np.asarray(elec_d) / 1000
-    if vlim == 'auto':
-        vlim = 3 * np.std(lfp) * np.array([-1, 1])
-    elif vlim == 'max':
-        vlim = [np.min(lfp), np.max(lfp)]
+    if type(vlim) is str:
+        if vlim == 'max':
+            vlim = [np.min(lfp), np.max(lfp)]
+        else:
+            vlim = 3 * np.std(lfp) * np.array([-1, 1])
     fig, ax = plt.subplots()
     pcm = plt.pcolormesh(t, elec_d, lfp, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
     cbaxes = fig.add_axes(cbbox)
@@ -90,8 +91,8 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
 
 # TODO Needs to have the cell membrane voltage be a 2D array instead of just the soma
 def plot_intracellular_spike_heatmap(t: np.ndarray, elec_d: np.ndarray, intracellular_spikes: np.ndarray,
-                                     savefig: Optional[str] = None, vlim: str = 'auto', fontsize: int = 40,
-                                     ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
+                                     savefig: Optional[str] = None, vlim: Union[str,Tuple,List,np.ndarray] = 'auto',
+                                     fontsize: int = 40, ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
                                      cbbox: Optional[List[float]] = None, cmap: str = 'viridis') -> Tuple[Figure, Axes]:
     """
     Plot Intracellular Spike heatmap.
@@ -112,10 +113,11 @@ def plot_intracellular_spike_heatmap(t: np.ndarray, elec_d: np.ndarray, intracel
         cbbox = [.91, 0.118, .03, 0.76]
     intracellular_spikes = np.asarray(intracellular_spikes).T
     elec_d = np.asarray(elec_d) / 1000
-    if vlim == 'auto':
-        vlim = 3 * np.std(intracellular_spikes) * np.array([-1, 1])
-    elif vlim == 'max':
-        vlim = [np.min(intracellular_spikes), np.max(intracellular_spikes)]
+    if type(vlim) is str:
+        if vlim == 'max':
+            vlim = [np.min(intracellular_spikes), np.max(intracellular_spikes)]
+        else:
+            vlim = 3 * np.std(intracellular_spikes) * np.array([-1, 1])
     fig, ax = plt.subplots()
     pcm = plt.pcolormesh(t, elec_d, intracellular_spikes, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
     cbaxes = fig.add_axes(cbbox)
