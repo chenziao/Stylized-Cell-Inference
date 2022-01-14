@@ -31,9 +31,22 @@ class FullyConnectedNetwork(nn.Module):
         for i in range(hidden_layers * 2):
             layers[str(i)] = nn.Linear(hidden_layer_size, hidden_layer_size) if i % 2 == 0 else self.activation
 
-        self.hidden_layers = nn.Sequential(layers)
+        # self.hidden_layers = nn.Sequential(layers)
 
-        self.output_layers = nn.Linear(in_features=50, out_features=out_features)
+        self.hidden_layers = nn.Sequential(
+            nn.Linear(hidden_layer_size, 100),
+            nn.ReLU(),
+            nn.Linear(100, 124),
+            nn.ReLU(),
+            nn.Linear(124, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 10),
+            nn.ReLU()
+        )
+
+        self.output_layers = nn.Linear(in_features=10, out_features=out_features)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.activation(self.input_layer(x))
