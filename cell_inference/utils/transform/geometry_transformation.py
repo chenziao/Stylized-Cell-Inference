@@ -55,7 +55,7 @@ def unitsphere2hphi(x):
     x = x.reshape((-1, 3))
     h = x[:, 1]
     phi = np.arctan2(x[:, 0], x[:, 2])
-    y = np.column_stack(h, phi).reshape(shape)
+    y = np.stack((h, phi), axis=1)
     return y
 
 
