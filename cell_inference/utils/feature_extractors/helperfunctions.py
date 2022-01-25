@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
-from sklearn.linear_model import LinearRegression
 from typing import Optional, Tuple
 import os
 from joblib import dump, load
