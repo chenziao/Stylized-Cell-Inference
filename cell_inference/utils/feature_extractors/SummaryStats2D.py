@@ -9,6 +9,7 @@ import cell_inference.config.params as params
 GRID = params.ELECTRODE_GRID
 GRID_SHAPE = tuple(v.size for v in GRID)
 
+
 def get_y_window(lfp: np.ndarray, coord: np.ndarray,
                  y_window_size: float = 960.,
                  grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]] = None
@@ -38,6 +39,7 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray,
     grid_y = grid_y[y_window_idx]
     return grid_y, y_window_idx
 
+
 def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
                    y_window_size: Optional[float] = None,
                    grid_v: Optional[Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None
@@ -65,6 +67,7 @@ def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
     for i in range(t):
         grid_lfp[i, :] = griddata(coord[:, :2], lfp[i, :], grid)
     return grid_lfp, grid
+
 
 def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
                      y_window_size: float = 960.,
