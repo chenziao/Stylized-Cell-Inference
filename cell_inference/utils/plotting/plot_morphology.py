@@ -2,27 +2,27 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Union, Optional, List, Tuple
 
 from cell_inference.utils.currents.ecp import move_position
 from cell_inference.cells.simulation import Simulation
 
 
 def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.ndarray] = None,
-                    axes: Optional[List[int]] = None, clr: Optional[List[str]] = None, elev: int = 20,
-                    azim: int = 10, figsize: Optional[Tuple[float, float]] = None) -> Tuple[Figure, Axes]:
+                    axes: Union[List[int], Tuple[int]] = [2, 0, 1], clr: Optional[List[str]] = None,
+                    elev: int = 20, azim: int = 10,
+                    figsize: Optional[Tuple[float, float]] = None) -> Tuple[Figure, Axes]:
     """
     Plot morphology in 3D.
 
     sim: simulation object
     cellid: cell id. Default: 0
     electrodes: electrode positions. Default: None, not shown.
-    axes: sequence of axes to display in 3d plot axes. Default: [2,0,1] show z,x,
-    y in 3d plot x,y,z axes, so y is upward.
+    axes: sequence of axes to display in 3d plot axes.
+        Default: [2,0,1] show z,x,y in 3d plot x,y,z axes, so y is upward.
     clr: list of colors for each type of section
+    Return Figure object, Axes object
     """
-    if axes is None:
-        axes = [2, 0, 1]
     if clr is None:
         clr = ['g', 'b', 'c', 'pink', 'purple']
     cell = sim.cells[cellid]
