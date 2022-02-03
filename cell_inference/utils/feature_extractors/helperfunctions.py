@@ -91,7 +91,7 @@ def build_dataloader_from_numpy(input_arr: np.ndarray,
 
     training_dataset = TensorDataset(torch.Tensor(input_arr[:idx, :]), torch.Tensor(labels_arr[:idx, :]))
     testing_dataset = TensorDataset(torch.Tensor(input_arr[idx:, :]), torch.Tensor(labels_arr[idx:, :]))
-    train_loader = DataLoader(dataset=training_dataset, batch_size=batch_size)
+    train_loader = DataLoader(dataset=training_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(dataset=testing_dataset, batch_size=batch_size)
     return train_loader, test_loader
 
