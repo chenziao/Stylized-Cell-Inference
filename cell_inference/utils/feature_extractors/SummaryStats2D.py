@@ -33,7 +33,7 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray,
     max_idx = np.argmax(np.amax(np.abs(lfp), axis=0))
     center_y = coord[max_idx, 1]
     center_y_idx = np.argmin(np.abs(grid_y - center_y))
-    if center_y_idx + rel_idx[0] < 0 or center_y_idx + rel_idx[-1] > y_size:
+    if center_y_idx + rel_idx[0] < 0 or center_y_idx + rel_idx[-1] >= y_size:
         raise ValueError("The window falls outside the given electrode grid range.")
     y_window_idx = center_y_idx + rel_idx
     grid_y = grid_y[y_window_idx]
