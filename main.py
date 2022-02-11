@@ -17,7 +17,7 @@ if __name__ == '__main__':
     iteration = 40
     for i in tqdm(range(iteration)):
         ds = DataSimulator(inference_list=inference_list, number_samples=number_samples, random_seed=i)
-        ds.simulate_params(data_path=data_path, iteration=iteration)
+        ds.simulate_params(data_path=data_path, iteration=i)
     # print("Starting Training")
     # tr = Trainer(trial_path=data_path)
     # tr.normalize_labels()

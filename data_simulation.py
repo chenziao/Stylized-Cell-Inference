@@ -125,34 +125,31 @@ class DataSimulator(object):
                 param_array[key] = np.full(array_size, param_default[key])
         return param_array
 
-    def simulate_params(self, data_path: str = '10000s_y1Loc2Alt_Ori2_Geo3_params', iteration: int = 1,
-                        l_param: Optional[Dict[str, np.ndarray]] = None,
-                        g_param: Optional[Dict[str, np.ndarray]] = None):
+    def simulate_params(self, data_path: str = '10000s_y1Loc2Alt_Ori2_Geo3_params', iteration: int = 1):
         loc_param_gen = self.loc_param_list.copy()
         if 'd' in self.randomized_list and 'theta' in self.randomized_list:
             loc_param_gen[loc_param_gen.index('x')] = 'd'
             loc_param_gen[loc_param_gen.index('z')] = 'theta'
 
-        if l_param is None:
-            loc_param_samples = self.generate_parameters(self.number_samples,
-                                                         loc_param_gen,
-                                                         self.loc_param_default,
-                                                         self.loc_param_range,
-                                                         self.loc_param_dist)
+        loc_param_samples = self.generate_parameters(self.number_samples,
+                                                     loc_param_gen,
+                                                     self.loc_param_default,
+                                                     self.loc_param_range,
+                                                     self.loc_param_dist)
 
-        else:
-            loc_param = l_param
+        if 'd' in self.randomized_list and 'theta' in self.randomized_list:
+            loc_param_samples['x'], loc_param_samples['z'] = pol2cart(loc_param_samples['d'],
+                                                                      loc_param_samples['theta'])
 
-        if g_param is None:
-            geo_param_samples = self.generate_parameters(self.number_samples,
-                                                         self.geo_param_list,
-                                                         self.geo_param_default,
-                                                         self.geo_param_range,
-                                                         self.geo_param_dist)
-            geo_param = np.column_stack([geo_param_samples[key] for key in self.geo_param_list])
+        loc_param = np.column_stack([loc_param_samples[key] for key in self.loc_param_list])
 
-        else:
-            geo_param = g_param
+        geo_param_samples = self.generate_parameters(self.number_samples,
+                                                     self.geo_param_list,
+                                                     self.geo_param_default,
+                                                     self.geo_param_range,
+                                                     self.geo_param_dist)
+
+        geo_param = np.column_stack([geo_param_samples[key] for key in self.geo_param_list])
 
         self.gmax = self.pred_gmax(geo_param_samples)
 
@@ -174,6 +171,7 @@ class DataSimulator(object):
 
         self.sim.run_neuron_sim()
         self.verify_and_save(data_path=data_path, iteration=iteration)
+
 
     @staticmethod
     def invalid_index(simulation):
