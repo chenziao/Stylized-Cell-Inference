@@ -13,7 +13,7 @@ GRID_SHAPE = tuple(v.size for v in GRID)
 def get_y_window(lfp: np.ndarray, coord: np.ndarray,
                  y_window_size: float = 960.,
                  grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]] = None
-                 ) -> Tuple[np.ndarray, np.ndarray]:
+                 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Get a window along y-axis centered at the maximum amplitude location.
         lfp: LFP array with shape (time x channels)
@@ -77,7 +77,7 @@ def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
 def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
                      y_window_size: float = 960.,
                      grid_v: Optional[Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None
-                     ) -> Tuple[np.ndarray, np.ndarray]:
+                     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """
     Get LFP within a window along y-axis centered at the maximum amplitude location.
         g_lfp: Gridded LFP array with shape (time x channels)

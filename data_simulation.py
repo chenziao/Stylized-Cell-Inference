@@ -4,7 +4,7 @@ import h5py
 import json
 from scipy import signal
 from scipy.interpolate import LinearNDInterpolator
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, Optional
 import os
 from tqdm import tqdm
 
@@ -125,31 +125,34 @@ class DataSimulator(object):
                 param_array[key] = np.full(array_size, param_default[key])
         return param_array
 
-    def simulate_params(self, data_path: str = '10000s_y1Loc2Alt_Ori2_Geo3_params', iteration: int = 1):
+    def simulate_params(self, data_path: str = '10000s_y1Loc2Alt_Ori2_Geo3_params', iteration: int = 1,
+                        l_param: Optional[Dict[str, np.ndarray]] = None,
+                        g_param: Optional[Dict[str, np.ndarray]] = None):
         loc_param_gen = self.loc_param_list.copy()
         if 'd' in self.randomized_list and 'theta' in self.randomized_list:
             loc_param_gen[loc_param_gen.index('x')] = 'd'
             loc_param_gen[loc_param_gen.index('z')] = 'theta'
 
-        loc_param_samples = self.generate_parameters(self.number_samples,
-                                                     loc_param_gen,
-                                                     self.loc_param_default,
-                                                     self.loc_param_range,
-                                                     self.loc_param_dist)
+        if l_param is None:
+            loc_param_samples = self.generate_parameters(self.number_samples,
+                                                         loc_param_gen,
+                                                         self.loc_param_default,
+                                                         self.loc_param_range,
+                                                         self.loc_param_dist)
 
-        if 'd' in self.randomized_list and 'theta' in self.randomized_list:
-            loc_param_samples['x'], loc_param_samples['z'] = pol2cart(loc_param_samples['d'],
-                                                                      loc_param_samples['theta'])
+        else:
+            loc_param = l_param
 
-        loc_param = np.column_stack([loc_param_samples[key] for key in self.loc_param_list])
+        if g_param is None:
+            geo_param_samples = self.generate_parameters(self.number_samples,
+                                                         self.geo_param_list,
+                                                         self.geo_param_default,
+                                                         self.geo_param_range,
+                                                         self.geo_param_dist)
+            geo_param = np.column_stack([geo_param_samples[key] for key in self.geo_param_list])
 
-        geo_param_samples = self.generate_parameters(self.number_samples,
-                                                     self.geo_param_list,
-                                                     self.geo_param_default,
-                                                     self.geo_param_range,
-                                                     self.geo_param_dist)
-
-        geo_param = np.column_stack([geo_param_samples[key] for key in self.geo_param_list])
+        else:
+            geo_param = g_param
 
         self.gmax = self.pred_gmax(geo_param_samples)
 
@@ -227,28 +230,26 @@ class DataSimulator(object):
 
         summ_stats = []
         bad_indices = []
+        yshift = []
         for i in range(windowed_lfp.shape[0]):
             try:
                 g_lfp, _, y_i = build_lfp_grid(windowed_lfp[i, :, :], params.ELECTRODE_POSITION[:, :2], y_window_size=960.0)
+                print(y_i)
             except ValueError:
-                # windowed_lfp = np.delete(windowed_lfp, i, axis=0)
-                # self.labels = np.delete(self.labels, i, axis=0)
                 bad_indices.append(i)
                 continue
             summ_stats.append(calculate_stats(g_lfp))
-            self.labels[i, 0] = y_i
+            yshift.append(y_i - self.labels[i, 0])
 
-        ma = np.amax(self.labels[:, 0])
-        mi = np.amin(self.labels[:, 0])
-        self.loc_param_range['y'] = (mi, ma)
         summ_stats = np.array(summ_stats)
+        yshift = np.array(yshift)
         windowed_lfp = np.delete(windowed_lfp, bad_indices, axis=0)
         self.labels = np.delete(self.labels, bad_indices, axis=0)
 
         tqdm.write(str(summ_stats.shape))
         tqdm.write(str(self.labels.shape))
-        np.savez(lfp_path, t=t, x=windowed_lfp, y=self.labels, rand_param=self.rand_param, gmax=self.gmax)
-        np.savez(stats_path, t=t, x=summ_stats, y=self.labels, rand_param=self.rand_param, gmax=self.gmax)
+        np.savez(lfp_path, t=t, x=windowed_lfp, y=self.labels, ys=yshift, rand_param=self.rand_param, gmax=self.gmax)
+        np.savez(stats_path, t=t, x=summ_stats, y=self.labels, ys=yshift, rand_param=self.rand_param, gmax=self.gmax)
         np.savez(mem_volt_path, v=mem_volt, spk=tspk)
         with open(trial_config_path, 'w') as fout:
             json.dump(self.config_dict, fout, indent=2)
