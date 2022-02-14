@@ -232,7 +232,6 @@ class DataSimulator(object):
         for i in range(windowed_lfp.shape[0]):
             try:
                 g_lfp, _, y_i = build_lfp_grid(windowed_lfp[i, :, :], params.ELECTRODE_POSITION[:, :2], y_window_size=960.0)
-                print(y_i)
             except ValueError:
                 bad_indices.append(i)
                 continue

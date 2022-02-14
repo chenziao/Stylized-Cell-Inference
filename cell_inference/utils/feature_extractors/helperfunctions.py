@@ -88,8 +88,8 @@ def build_dataloader_from_numpy(input_arr: np.ndarray,
         labels_arr = labels_arr[shuffler]
 
     idx = int(input_arr.shape[0] * .75)
-    print(input_arr.shape)
-    print(labels_arr.shape)
+    # print(input_arr.shape)
+    # print(labels_arr.shape)
 
     training_dataset = TensorDataset(torch.Tensor(input_arr[:idx, :]), torch.Tensor(labels_arr[:idx, :]))
     testing_dataset = TensorDataset(torch.Tensor(input_arr[idx:, :]), torch.Tensor(labels_arr[idx:, :]))
