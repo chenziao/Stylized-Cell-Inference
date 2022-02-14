@@ -1,15 +1,15 @@
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 
-def corrcoef(x: Optional[float, int, np.ndarray], y: Optional[float, int, np.ndarray]) -> np.ndarray:
+def corrcoef(x: Union[float, int, np.ndarray], y: Union[float, int, np.ndarray]) -> np.ndarray:
     """
     function for calculating correlation coefficient
     """
     return (np.mean(x * y) - np.mean(x) * np.mean(y)) / (np.std(x) * np.std(y))
 
 
-def max_corrcoef(x: Optional[float, int, np.ndarray], y: Optional[float, int, np.ndarray],
+def max_corrcoef(x: Union[float, int, np.ndarray], y: Union[float, int, np.ndarray],
                  window_size: Optional[int] = None) -> Tuple:
     """
     Calculate correlation coefficient between input x and y inside sliding time window (time should be the first

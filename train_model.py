@@ -37,8 +37,8 @@ class Trainer(object):
 
         # Using Summary Stats as the Input Data
         for i, ssp in enumerate(summ_stat_paths):
-            if i == 50:
-                break
+            # if i == 50:
+            #     break
             with np.load(ssp) as data:
                 if self.data is None:
                     self.data = data['x']
@@ -49,9 +49,17 @@ class Trainer(object):
                     self.labels = np.concatenate((self.labels, data['y']), axis=0)
                     self.ys = np.concatenate((self.ys, data['ys']), axis=0)
 
-        # print(self.data.shape)
+        print(self.data.shape)
         self.labels[:, 0] = self.ys
-        # print(self.labels.shape)
+        print(self.labels.shape)
+
+        sample_idx_nans = np.argwhere(np.isnan(self.data))[:, 0]
+        print(sample_idx_nans)
+
+        self.data = np.delete(self.data, sample_idx_nans, axis=0)
+        self.labels = np.delete(self.labels, sample_idx_nans, axis=0)
+
+        # print(self.data[~np.isnan(self.data).any(axis=1)].shape)
 
         with open(config_paths[0], 'r') as f:
             self.config = json.load(f)
@@ -68,6 +76,8 @@ class Trainer(object):
 
         self.labels = self.labels[df_bet_la, :]
         self.data = self.data[df_bet_la, :]
+        print(self.data.shape)
+        print(self.labels.shape)
 
     def convert_hphi_to_dv(self, labels: Optional[np.ndarray] = None) -> np.ndarray:
         if labels is not None:
@@ -109,7 +119,7 @@ class Trainer(object):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # torch.device("cpu")
         model.to(device)
 
-        train_regression(model, train_loader, test_loader, 100, learning_rate=0.0001, decay_rate=0.98, device=device)
+        train_regression(model, train_loader, test_loader, 200, learning_rate=0.001, decay_rate=0.98, device=device)
         model.eval()
         torch.save(model.state_dict(), os.path.join(self.trial_path, 'batch128_model.pth'))
         return model
