@@ -4,7 +4,7 @@ import h5py
 import json
 from scipy import signal
 from scipy.interpolate import LinearNDInterpolator
-from typing import Union, List, Tuple, Dict, Optional
+from typing import Union, List, Tuple, Dict
 import os
 from tqdm import tqdm
 

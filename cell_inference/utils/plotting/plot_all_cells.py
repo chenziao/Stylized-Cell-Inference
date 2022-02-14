@@ -64,7 +64,10 @@ def plot_all_cells(df: pd.DataFrame, s: float = 10, w: float = 2,
     box = np.vstack((np.vstack((p0, p1)).min(axis=0), np.vstack((p0, p1)).max(axis=0)))
     center = box.mean(axis=0)
     box = center + (box[1] - box[0]).max() / 2 * np.array([[-1], [1]])
-    ax.auto_scale_xyz(*box.T[axes])
+    # ax.auto_scale_xyz(*box.T[axes])
+    # ax.set_xlim(box.T[axes[0]])
+    # ax.set_ylim(box.T[axes[1]])
+    # ax.set_zlim(box.T[axes[2]])
 
     if type(view) is str:
         if view == '2D':
