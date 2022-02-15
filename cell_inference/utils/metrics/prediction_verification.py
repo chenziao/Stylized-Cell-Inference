@@ -97,6 +97,7 @@ class InVivoParamSimulator(object):
     def invalid_index(simulation):
         # index of valid spiking cells
         nspk, tspike = simulation.get_spike_number('all')
+        print(nspk)
         invalid = np.nonzero(nspk != 1)[0]
         return invalid, tspike
 

@@ -49,9 +49,7 @@ class Trainer(object):
                     self.labels = np.concatenate((self.labels, data['y']), axis=0)
                     self.ys = np.concatenate((self.ys, data['ys']), axis=0)
 
-        print(self.data.shape)
         self.labels[:, 0] = self.ys
-        print(self.labels.shape)
 
         sample_idx_nans = np.argwhere(np.isnan(self.data))[:, 0]
         print(sample_idx_nans)

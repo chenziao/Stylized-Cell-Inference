@@ -3,6 +3,7 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import numpy as np
 from typing import Union, Optional, Tuple, List
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 
 def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
@@ -89,9 +90,53 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
     return fig, ax
 
 
+def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
+                               vlim: str = 'auto', fontsize: int = 40, ticksize: int = 30, labelpad: int = -12,
+                               nbins: int = 3, cmap: str = 'viridis',
+                               fig: Optional[Figure] = None, outer: GridSpec = None, col: int = 0, cell_num: int = 0) -> Tuple[Figure, Axes]:
+    """
+    Plot LFP heatmap.
+
+    t: time points (ms). 1D array
+    elec_d: electrode distance (um). 1D array
+    lfp: LFP traces (uV). If is 2D array, each column is a channel.
+    savefig: if specified as string, save figure with the string as file name.
+    vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
+    fontsize: size of font for display
+    labelpad: Spacing in points from the Axes bounding box including ticks and tick labels.
+    tick_length: length between ticks
+    nbins: number of bins to create
+    cbbox: dimensions of figure
+    cmap: A Colormap instance or registered colormap name. The colormap maps the C values to color.
+    """
+    lfp = np.asarray(lfp).T
+    elec_d = np.asarray(elec_d) / 1000
+    if type(vlim) is str:
+        if vlim == 'max':
+            vlim = [np.min(lfp), np.max(lfp)]
+        else:
+            vlim = 3 * np.std(lfp) * np.array([-1, 1])
+
+    gs = GridSpecFromSubplotSpec(1, 15, subplot_spec=outer[cell_num, col], wspace=0.25)
+    cbaxes = fig.add_subplot(gs[14])
+    ax = fig.add_subplot(gs[:14])
+    lfp = np.asarray(lfp)
+    elec_d = np.asarray(elec_d) / 1000
+    pcm = ax.pcolormesh(t, elec_d, lfp, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
+    cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
+    cbar.ax.tick_params(labelsize=ticksize)
+    cbar.set_label('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    ax.set_xticks(np.linspace(t[0], t[-1], nbins))
+    ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
+    ax.tick_params(labelsize=ticksize)
+    ax.set_xlabel('time (ms)', fontsize=fontsize)
+    ax.set_ylabel('dist_y (mm)', fontsize=fontsize)
+    ax.set_title('Predicted In Vivo Cell {}'.format(cell_num), fontsize=fontsize)
+
+
 # TODO Needs to have the cell membrane voltage be a 2D array instead of just the soma
 def plot_intracellular_spike_heatmap(t: np.ndarray, elec_d: np.ndarray, intracellular_spikes: np.ndarray,
-                                     savefig: Optional[str] = None, vlim: Union[str,Tuple,List,np.ndarray] = 'auto',
+                                     savefig: Optional[str] = None, vlim: Union[str, Tuple, List, np.ndarray] = 'auto',
                                      fontsize: int = 40, ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
                                      cbbox: Optional[List[float]] = None, cmap: str = 'viridis') -> Tuple[Figure, Axes]:
     """
