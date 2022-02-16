@@ -110,7 +110,7 @@ class Trainer(object):
             self.labels = labels
         train_loader, test_loader = build_dataloader_from_numpy(input_arr=self.data,
                                                                 labels_arr=self.labels,
-                                                                batch_size=128,
+                                                                batch_size=512,
                                                                 shuffle=True)
 
         model = FullyConnectedNetwork(in_features=40, out_features=8)
@@ -118,7 +118,7 @@ class Trainer(object):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # torch.device("cpu")
         model.to(device)
 
-        train_regression(model, train_loader, test_loader, 300, learning_rate=0.005, decay_rate=0.98, device=device)
+        train_regression(model, train_loader, test_loader, 300, learning_rate=0.001, decay_rate=0.98, device=device)
         model.eval()
-        torch.save(model.state_dict(), os.path.join(self.trial_path, 'batch128_model.pth'))
+        torch.save(model.state_dict(), os.path.join(self.trial_path, 'batch512_150ksamples_model.pth'))
         return model

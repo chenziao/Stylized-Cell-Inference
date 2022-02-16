@@ -93,7 +93,8 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
 def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
                                vlim: str = 'auto', fontsize: int = 40, ticksize: int = 30, labelpad: int = -12,
                                nbins: int = 3, cmap: str = 'viridis',
-                               fig: Optional[Figure] = None, outer: GridSpec = None, col: int = 0, cell_num: int = 0) -> Tuple[Figure, Axes]:
+                               fig: Optional[Figure] = None, outer: GridSpec = None, col: int = 0,
+                               cell_num: int = 0, title: str = '') -> Tuple[Figure, Axes]:
     """
     Plot LFP heatmap.
 
@@ -131,7 +132,7 @@ def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarra
     ax.tick_params(labelsize=ticksize)
     ax.set_xlabel('time (ms)', fontsize=fontsize)
     ax.set_ylabel('dist_y (mm)', fontsize=fontsize)
-    ax.set_title('Predicted In Vivo Cell {}'.format(cell_num), fontsize=fontsize)
+    ax.set_title('{} In Vivo Cell {}'.format(title, cell_num), fontsize=fontsize)
 
 
 # TODO Needs to have the cell membrane voltage be a 2D array instead of just the soma
