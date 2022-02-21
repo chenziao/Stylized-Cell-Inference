@@ -4,6 +4,7 @@ from matplotlib.axes import Axes
 import numpy as np
 from typing import Union, Optional, Tuple, List
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from matplotlib.ticker import FormatStrFormatter
 
 
 def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
@@ -110,7 +111,7 @@ def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarra
     cbbox: dimensions of figure
     cmap: A Colormap instance or registered colormap name. The colormap maps the C values to color.
     """
-    lfp = np.asarray(lfp).T
+    lfp = np.asarray(lfp).T * 7720
     elec_d = np.asarray(elec_d) / 1000
     if type(vlim) is str:
         if vlim == 'max':
@@ -122,17 +123,21 @@ def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarra
     cbaxes = fig.add_subplot(gs[14])
     ax = fig.add_subplot(gs[:14])
     lfp = np.asarray(lfp)
-    elec_d = np.asarray(elec_d) / 1000
+    # elec_d = np.asarray(elec_d) / 1000
     pcm = ax.pcolormesh(t, elec_d, lfp, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
-    cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
+    cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes, format='%.2f')
     cbar.ax.tick_params(labelsize=ticksize)
     cbar.set_label('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    # print(t[-1])
     ax.set_xticks(np.linspace(t[0], t[-1], nbins))
     ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
     ax.tick_params(labelsize=ticksize)
     ax.set_xlabel('time (ms)', fontsize=fontsize)
     ax.set_ylabel('dist_y (mm)', fontsize=fontsize)
-    ax.set_title('{} In Vivo Cell {}'.format(title, cell_num), fontsize=fontsize)
+    ax.set_title(title, fontsize=fontsize)
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
 
 
 # TODO Needs to have the cell membrane voltage be a 2D array instead of just the soma
