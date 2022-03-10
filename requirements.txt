@@ -108,9 +108,6 @@ terminado==0.9.3
 testpath==0.4.4
 threadpoolctl==2.1.0
 tifffile==2021.8.30
-torch==1.10.1+cu113
-torchaudio==0.10.1+cu113
-torchvision==0.11.2+cu113
 tornado==6.1
 tqdm==4.59.0
 traitlets==5.0.5
