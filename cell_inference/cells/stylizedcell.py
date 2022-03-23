@@ -56,7 +56,7 @@ class StylizedCell(ABC):
         """Abstract method for setting biophysical properties, inserting channels"""
         raise NotImplementedError("Biophysical Channel Properties must be set!")
 
-    @staticmethod
+    # @staticmethod
     def add_injection(self, sec_index, **kwargs) -> None:
         """Add current injection to a section by its index"""
         self.injection.append(CurrentInjection(self, sec_index, **kwargs))
