@@ -29,8 +29,8 @@ class ActiveCell(StylizedCell):
         self.v_rec = None
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
-            (0, 'NaV'), (1, 'NaV'), (2, 'NaV'),
-            (0, 'Kv3'), (1, 'Kv3'), (2, 'Kv3')
+            (0, 'gbar_NaV'), (1, 'gbar_NaV'), (2, 'gbar_NaV'),
+            (0, 'gbar_Kv3'), (1, 'gbar_Kv3'), (2, 'gbar_Kv3')
             # (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
             # (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
         ]
@@ -53,7 +53,7 @@ class ActiveCell(StylizedCell):
             for i in ids:
                 secs.extend(self.sec_id_lookup[i])
             self.grp_ids.append(secs)
-        default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112])
+        default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112, 0.016563, 0.0564755])
         #default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
         if biophys is not None:
             for i in range(len(biophys)):
