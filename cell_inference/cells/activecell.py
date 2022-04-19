@@ -3,6 +3,7 @@ from neuron import h
 import pandas as pd
 import numpy as np
 from typing import Optional, Union
+import warnings
 
 # Project Imports
 from cell_inference.cells.stylizedcell import StylizedCell
@@ -28,8 +29,10 @@ class ActiveCell(StylizedCell):
         self.v_rec = None
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
-            (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
-            (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
+            (0, 'NaV'), (1, 'NaV'), (2, 'NaV'),
+            (0, 'Kv3'), (1, 'Kv3'), (2, 'Kv3')
+            # (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
+            # (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
         ]
         
         super(ActiveCell, self).__init__(geometry, **kwargs)
@@ -74,20 +77,31 @@ class ActiveCell(StylizedCell):
         # fixed parameters
         soma = self.soma
         soma.cm = 1.0
-        soma.insert('NaTa_t')  # Sodium channel
-        soma.insert('SKv3_1')  # Potassium channel
+        soma.insert('NaV')  # Sodium channel
+        soma.insert('Kv3_1')  # Potassium channel
         soma.ena = 50
         soma.ek = -85
         for isec in self.grp_ids[2]:
             sec = self.get_sec_by_id(isec)  # apical dendrites
-            sec.insert('NaTa_t')
-            sec.insert('SKv3_1')
+            sec.insert('NaV')
+            sec.insert('Kv3_1')
+            sec.ena = 50
+            sec.ek = -85
+
+        for isec in self.grp_ids[1]:
+            sec = self.get_sec_by_id(isec)  # basal dendrites
+            sec.insert('NaV')
+            sec.insert('Kv3_1')
             sec.ena = 50
             sec.ek = -85
         # variable parameters
         for i, entry in enumerate(self.biophys_entries):
             for sec in self.get_sec_by_id(self.grp_ids[entry[0]]):
-                setattr(sec, entry[1], self.biophys[i])
+                try:
+                    setattr(sec, entry[1], self.biophys[i])
+                except AttributeError:
+                    warnings.warn("Error: {} not found in {}".format(entry[1], sec))
+
         h.v_init = self._vrest
 
     def v(self) -> Optional[Union[str, np.ndarray]]:
