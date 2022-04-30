@@ -12,7 +12,7 @@ from cell_inference.utils.currents.recorder import Recorder
 h.load_file('stdrun.hoc')
 
 
-class ActiveCell(StylizedCell):
+class ActiveCellAxon(StylizedCell):
     """Define single cell model using parent class Stylized_Cell"""
 
     def __init__(self, geometry: Optional[pd.DataFrame] = None,
@@ -27,13 +27,12 @@ class ActiveCell(StylizedCell):
         self.grp_ids = []
         self.biophys = biophys
         self.v_rec = None
-        self.grp_sec_type_ids = [[0], [1, 2], [3, 4]]  # select section id's for each group
+        self.grp_sec_type_ids = [[0], [1, 2], [3, 4], [5]]  # select section id's for each group
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
             (0, 'gbar_NaV'), (1, 'gbar_NaV'), (2, 'gbar_NaV'),
-            (0, 'gbar_Kv3_1'), (1, 'gbar_Kv3_1'), (2, 'gbar_Kv3_1')
-            # (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
-            # (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
+            (0, 'gbar_Kv3_1'), (1, 'gbar_Kv3_1'), (2, 'gbar_Kv3_1'),
+            (3, 'g_pas'), 3, 'gbar_NaV'), (3, 'gbar_Kv3_1')
         ]
         
         super(ActiveCell, self).__init__(geometry, **kwargs)
@@ -53,7 +52,7 @@ class ActiveCell(StylizedCell):
             for i in ids:
                 secs.extend(self.sec_id_lookup[i])
             self.grp_ids.append(secs)
-        default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.0433967, 0.016563, 0.0109506, 0.00639898, 0.0564755, 0.913327])
+        default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.0433967, 0.016563, 0.0109506, 0.00639898, 0.0564755, 0.913327, 0.00951182, 0.000326646, 0.770355])
         #default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112])
         #default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
         if biophys is not None:

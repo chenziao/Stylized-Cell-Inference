@@ -72,7 +72,7 @@ class Simulation(object):
         self.biophys = None
         self.gmax = None
         self.stim = None
-        if cell_type == CellTypes.ACTIVE:
+        if cell_type != CellTypes.PASSIVE:
             if biophys is None:
                 biophys = [-1]
             self.set_biophys(biophys)
@@ -80,6 +80,9 @@ class Simulation(object):
                 raise ValueError("gmax is Required for an Active Cell")
             else:
                 self.set_gmax(gmax)
+            self.stim = self.__create_netstim()
+            # if cell_type == CellTypes.ACTIVE_AXON:
+            #    self.geo_entries.append((5, 'R'))
             self.stim = self.__create_netstim()
 
         self.__create_cells(cell_type=cell_type)  # create cell objects with properties set up
@@ -106,7 +109,7 @@ class Simulation(object):
         # Create cell with morphology and biophysical parameters
         for i in range(self.ncell):
             geometry = self.set_geometry(self.geometry, self.geo_param[i, :])
-            if cell_type == CellTypes.ACTIVE:
+            if cell_type != CellTypes.PASSIVE:
                 self.cells.append(ActiveCell(geometry=geometry, biophys=self.biophys[i, :]))
             else:
                 self.cells.append(PassiveCell(geometry=geometry))
@@ -114,7 +117,7 @@ class Simulation(object):
         for i, cell in enumerate(self.cells):
             # # Pulse injection cell.add_injection(sec_index=0,record=True,delay=0.1,dur=0.2,amp=5.0) # Tune for
             # proper action potential Synpatic input
-            if cell_type == CellTypes.ACTIVE:
+            if cell_type != CellTypes.PASSIVE:
                 cell.add_synapse(self.stim, sec_index=0, gmax=self.gmax[i])
             else:
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
@@ -320,7 +323,7 @@ def run_simulation(cell_type: CellTypes) -> Tuple[Simulation, int, np.ndarray, n
                          cell_type=CellTypes.PASSIVE, soma_injection=soma_injection)
     else:
         sim = Simulation(geo_standard, params.ELECTRODE_POSITION,
-                         cell_type=CellTypes.ACTIVE,
+                         cell_type=cell_type,
                          loc_param=params.LOCATION_PARAMETERS, gmax=params.GMAX)
 
     sim.run_neuron_sim()

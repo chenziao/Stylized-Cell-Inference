@@ -17,6 +17,7 @@ h.load_file('stdrun.hoc')
 class CellTypes(Enum):
     PASSIVE = 1
     ACTIVE = 2
+    ACTIVE_AXON = 3
 
 
 class StylizedCell(ABC):
@@ -116,7 +117,7 @@ class StylizedCell(ABC):
                 if sec['axial']:
                     nbranch = 1
                     x = 0
-                    pt1[1] = pt0[1] + length
+                    pt1[1] = pt0[1] + length*((ang>=0)*2-1)
                 else:
                     nbranch = self._nbranch
                     x = length * math.cos(ang)

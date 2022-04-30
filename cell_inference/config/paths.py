@@ -10,6 +10,7 @@ RESOURCES_ROOT = os.path.join(ROOT_DIR, 'resources/')
 COMPILED_LIBRARY = os.path.join(RESOURCES_ROOT, 'compiled', LIBRARY)
 MECHANISMS = os.path.join(RESOURCES_ROOT, 'compiled/mechanisms')
 GEO_STANDARD = os.path.join(RESOURCES_ROOT, 'geom_standard.csv')
+GEO_STANDARD_AXON = os.path.join(RESOURCES_ROOT, 'geom_standard_axon.csv')
 ELECTRODES = os.path.join(RESOURCES_ROOT, 'Electrode2D.h5')
 GMAX_MAPPING = os.path.join(RESOURCES_ROOT, 'gmax_mapping.h5')
 

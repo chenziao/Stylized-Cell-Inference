@@ -24,7 +24,7 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
     Return Figure object, Axes object
     """
     if clr is None:
-        clr = ['g', 'b', 'c', 'pink', 'purple']
+        clr = ['g', 'b', 'c', 'pink', 'purple', 'r']
     cell = sim.cells[cellid]
     move_cell = sim.loc_param[cellid]
     dl = move_position([0., 0., 0.], move_cell[1], cell.seg_coords['dl'])
@@ -46,7 +46,7 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
         p1 = pc[i1] + dl[i1] / 2
         if pretype != sec.name():
             pretype = sec.name()
-            label = pretype
+            label = pretype.split('.')[-1]
             itype += 1
         else:
             label = None
