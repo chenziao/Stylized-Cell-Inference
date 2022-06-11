@@ -111,18 +111,21 @@ class StylizedCell(ABC):
                 radius = sec['R']
                 ang = sec['ang']
                 nseg = math.ceil(length / self._dL)
-                pid = self.sec_id_lookup[sec['pid']][0]
-                psec = self.all[pid]
-                pt0 = [psec.x3d(1), psec.y3d(1), psec.z3d(1)]
+                pid = self.sec_id_lookup[sec['pid']]
                 if sec['axial']:
                     nbranch = 1
                     x = 0
-                    pt1[1] = pt0[1] + length*((ang>=0)*2-1)
+                    y = length*((ang>=0)*2-1)
                 else:
                     nbranch = self._nbranch
                     x = length * math.cos(ang)
-                    pt1[1] = pt0[1] + length * math.sin(ang)
+                    y = length * math.sin(ang)
+                    if len(pid) == 1:
+                        pid = pid*nbranch
                 for i in range(nbranch):
+                    psec = self.all[pid[i]]
+                    pt0 = [psec.x3d(1), psec.y3d(1), psec.z3d(1)]
+                    pt1[1] = pt0[1] + y
                     pt1[0] = pt0[0] + x * math.cos(i * rot)
                     pt1[2] = pt0[2] + x * math.sin(i * rot)
                     section = self.__create_section(name=sec['name'], diam=2 * radius)
