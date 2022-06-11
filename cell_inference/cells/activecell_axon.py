@@ -81,15 +81,20 @@ class ActiveCellAxon(StylizedCell):
         soma.insert('Kv3_1')  # Potassium channel
         soma.ena = 50
         soma.ek = -85
+        for isec in self.grp_ids[1]:
+            sec = self.get_sec_by_id(isec)  # basal dendrites
+            sec.insert('NaV')
+            sec.insert('Kv3_1')
+            sec.ena = 50
+            sec.ek = -85
         for isec in self.grp_ids[2]:
             sec = self.get_sec_by_id(isec)  # apical dendrites
             sec.insert('NaV')
             sec.insert('Kv3_1')
             sec.ena = 50
             sec.ek = -85
-
-        for isec in self.grp_ids[1]:
-            sec = self.get_sec_by_id(isec)  # basal dendrites
+        for isec in self.grp_ids[3]:
+            sec = self.get_sec_by_id(isec)  # axon
             sec.insert('NaV')
             sec.insert('Kv3_1')
             sec.ena = 50
