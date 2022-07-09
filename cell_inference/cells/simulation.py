@@ -19,7 +19,8 @@ class Simulation(object):
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
                  biophys: Union[np.ndarray, List[int], List[float]] = None,
                  spike_threshold: Optional[float] = None,
-                 gmax: Optional[float] = None, soma_injection: Optional[np.ndarray] = None,
+                 gmax: Optional[float] = None, stim_param: Optional[dict] = {},
+                 soma_injection: Optional[np.ndarray] = None,
                  scale: float = 1.0, ncell: int = 1) -> None:
         """
         Initialize simulation object
@@ -56,35 +57,37 @@ class Simulation(object):
         ]
         self.geo_param = None
         if geo_param is None:
-            geo_param = [-1]
+            geo_param = []
         self.set_geo_param(geo_param)
         self.scale = None
         self.set_scale(scale)
 
         self.soma_injection = None
-
         if cell_type == CellTypes.PASSIVE:
             if soma_injection is None:
                 raise ValueError("Soma Injection is Required for a Passive Cell")
             else:
                 self.soma_injection = soma_injection
 
-        self.full_biophys = full_biophys
+        self.full_biophys = None
         self.biophys = None
         self.gmax = None
         self.stim = None
         if cell_type != CellTypes.PASSIVE:
+            if full_biophys is not None:
+                self.full_biophys = full_biophys
+                for genome in self.full_biophys['genome']:
+                    genome['value'] = float(genome['value'])
             if biophys is None:
-                biophys = [-1]
+                biophys = []
             self.set_biophys(biophys)
             if gmax is None:
-                raise ValueError("gmax is Required for an Active Cell")
+                print("Warning: Not using synaptic input. gmax is required for synaptic input in an Active Cell.")
             else:
                 self.set_gmax(gmax)
-            self.stim = self.__create_netstim()
+                self.stim = self.__create_netstim(stim_param)
             # if cell_type == CellTypes.ACTIVE_AXON:
             #    self.geo_entries.append((5, 'R'))
-            self.stim = self.__create_netstim()
 
         self.__load_cell_module()
         self.__create_cells()  # create cell objects with properties set up
@@ -99,35 +102,35 @@ class Simulation(object):
 
     # PRIVATE METHODS
     def __load_cell_module(self,) -> None:
+        """Load cell module and define arguments for initializing cell instance according to cell type"""
+        def pass_geometry(CellClass):
+            def create_cell(i,**kwargs):
+                return CellClass(geometry=self.set_geometry(self.geometry, self.geo_param[i, :]),**kwargs)
+            return create_cell
         if self.cell_type == CellTypes.PASSIVE:
             from cell_inference.cells.passivecell import PassiveCell
-            self.CellClass = PassiveCell
+            self.CreateCell = pass_geometry(PassiveCell)
         if self.cell_type == CellTypes.ACTIVE:
             from cell_inference.cells.activecell import ActiveCell
-            self.CellClass = ActiveCell
+            create_cell = pass_geometry(ActiveCell)
+            self.CreateCell = lambda i: create_cell(i,biophys=self.biophys[i, :])
         if self.cell_type == CellTypes.ACTIVE_AXON:
             from cell_inference.cells.activecell_axon import ActiveAxonCell
-            def CellClass(**kwargs):
-                return ActiveAxonCell(full_biophys=self.full_biophys,**kwargs)
-            self.CellClass = CellClass
+            create_cell = pass_geometry(ActiveAxonCell)
+            self.CreateCell = lambda i: create_cell(i,full_biophys=self.full_biophys,biophys=self.biophys[i, :])
     
     def __create_cells(self) -> None:
-        """
-        Create cell objects with properties set up
-        """
+        """Create cell objects with properties set up"""
         self.cells.clear()  # remove cell objects from previous run
         self.lfp.clear()
         # Create cell with morphology and biophysical parameters
         for i in range(self.ncell):
-            geometry = self.set_geometry(self.geometry, self.geo_param[i, :])
-            if self.cell_type != CellTypes.PASSIVE:
-                self.cells.append(self.CellClass(geometry=geometry, biophys=self.biophys[i, :]))
-            else:
-                self.cells.append(self.CellClass(geometry=geometry))
+            self.cells.append(self.CreateCell(i))
         # add injection current or synaptic current and set up lfp recording
         for i, cell in enumerate(self.cells):
             if self.cell_type != CellTypes.PASSIVE:
-                cell.add_synapse(self.stim, sec_index=0, gmax=self.gmax[i])
+                if self.gmax is not None:
+                    cell.add_synapse(self.stim, sec_index=0, gmax=self.gmax[i])
             else:
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
             # Move cell location
@@ -135,11 +138,13 @@ class Simulation(object):
                 self.lfp.append(
                     EcpMod(cell, self.electrodes, move_cell=self.loc_param[i], scale=self.scale[i], min_distance=self.min_dist))
 
-    def __create_netstim(self) -> h.NetStim:
+    def __create_netstim(self, stim_param: Optional[dict] = {}) -> h.NetStim:
         """Setup synaptic input event"""
         stim = h.NetStim()
         stim.number = 1  # only one event
         stim.start = 0.1  # delay
+        for key, value in stim_param.items():
+            setattr(stim, key, value)
         return stim
 
     def __pack_parameters(self, param: Optional[Union[np.ndarray, List[float], int, float]],
@@ -312,7 +317,6 @@ class Simulation(object):
 """
 Function to create and run a simulation
 """
-
 
 def run_simulation(cell_type: CellTypes) -> Tuple[Simulation, int, np.ndarray, np.ndarray]:
     h.nrn_load_dll(paths.COMPILED_LIBRARY)

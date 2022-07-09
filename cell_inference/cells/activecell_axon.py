@@ -73,11 +73,6 @@ class ActiveAxonCell(StylizedCell):
 #             sec.e_pas = self._vrest
 #             sec.cm = 2.0
         # section specific parameters
-#         bio_sec_ids = {}
-#         for name, ids in self.section_map.items():
-#             bio_sec_ids[name] = []
-#             for i in ids:
-#                 bio_sec_ids[name].extend(self.sec_id_lookup[i])
         bio_sec_ids = {name:[isec for i in ids for isec in self.sec_id_lookup[i]] for name, ids in self.section_map.items()}
         self.bio_sec_ids = bio_sec_ids
         for genome in fb['genome']:
@@ -87,7 +82,7 @@ class ActiveAxonCell(StylizedCell):
                 sec = self.get_sec_by_id(isec)
                 if insert:
                     sec.insert(mech)
-                setattr(sec, genome['name'], float(genome['value']))
+                setattr(sec, genome['name'], genome['value'])
         for erev in fb['conditions'][0]['erev']:
             enames = [x for x in erev.keys() if x != 'section']
             for isec in bio_sec_ids[erev['section']]:
