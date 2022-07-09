@@ -6,15 +6,14 @@ from typing import Optional, List, Tuple, Union
 import h5py
 
 # Project Imports
-from cell_inference.utils.currents.ecp import EcpMod
-from cell_inference.cells.activecell import ActiveCell
-from cell_inference.cells.passivecell import PassiveCell
 from cell_inference.cells.stylizedcell import CellTypes
+from cell_inference.utils.currents.ecp import EcpMod
 from cell_inference.config import paths, params
 
 
 class Simulation(object):
-    def __init__(self, geometry: pd.DataFrame, cell_type: CellTypes,
+    def __init__(self, geometry: pd.DataFrame, full_biophys: Optional[dict] = None,
+                 cell_type: CellTypes = CellTypes.ACTIVE,
                  electrodes: Optional[np.ndarray] = None,
                  loc_param: Union[np.ndarray, List[int], List[float]] = None,
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
@@ -41,6 +40,7 @@ class Simulation(object):
         self.cells = []  # list of cell object
         self.electrodes = electrodes
         self.lfp = []  # list of EcpMod object
+        self.min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
         self.loc_param = None
         if loc_param is None:
             loc_param = [0., 0., 0., 0., 1., 0.]
@@ -69,6 +69,7 @@ class Simulation(object):
             else:
                 self.soma_injection = soma_injection
 
+        self.full_biophys = full_biophys
         self.biophys = None
         self.gmax = None
         self.stim = None
@@ -85,7 +86,8 @@ class Simulation(object):
             #    self.geo_entries.append((5, 'R'))
             self.stim = self.__create_netstim()
 
-        self.__create_cells(cell_type=cell_type)  # create cell objects with properties set up
+        self.__load_cell_module()
+        self.__create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector(round(h.tstop / h.dt) + 1).record(h._ref_t)  # record time
         self.spike_threshold = None
         self.record_spikes(spike_threshold)
@@ -96,35 +98,42 @@ class Simulation(object):
         h.run()
 
     # PRIVATE METHODS
-    def __create_cells(self, min_dist: float = 10.0, cell_type: CellTypes = CellTypes.ACTIVE) -> None:
+    def __load_cell_module(self,) -> None:
+        if self.cell_type == CellTypes.PASSIVE:
+            from cell_inference.cells.passivecell import PassiveCell
+            self.CellClass = PassiveCell
+        if self.cell_type == CellTypes.ACTIVE:
+            from cell_inference.cells.activecell import ActiveCell
+            self.CellClass = ActiveCell
+        if self.cell_type == CellTypes.ACTIVE_AXON:
+            from cell_inference.cells.activecell_axon import ActiveAxonCell
+            def CellClass(**kwargs):
+                return ActiveAxonCell(full_biophys=self.full_biophys,**kwargs)
+            self.CellClass = CellClass
+    
+    def __create_cells(self) -> None:
         """
         Create cell objects with properties set up
-
-        Parameters
-        min_dist: minimum distance allowed between segment and electrode. Set to None if not using.
-        cell_type: CellTypes enum value to indicate type of cell simulation
         """
         self.cells.clear()  # remove cell objects from previous run
         self.lfp.clear()
         # Create cell with morphology and biophysical parameters
         for i in range(self.ncell):
             geometry = self.set_geometry(self.geometry, self.geo_param[i, :])
-            if cell_type != CellTypes.PASSIVE:
-                self.cells.append(ActiveCell(geometry=geometry, biophys=self.biophys[i, :]))
+            if self.cell_type != CellTypes.PASSIVE:
+                self.cells.append(self.CellClass(geometry=geometry, biophys=self.biophys[i, :]))
             else:
-                self.cells.append(PassiveCell(geometry=geometry))
+                self.cells.append(self.CellClass(geometry=geometry))
         # add injection current or synaptic current and set up lfp recording
         for i, cell in enumerate(self.cells):
-            # # Pulse injection cell.add_injection(sec_index=0,record=True,delay=0.1,dur=0.2,amp=5.0) # Tune for
-            # proper action potential Synpatic input
-            if cell_type != CellTypes.PASSIVE:
+            if self.cell_type != CellTypes.PASSIVE:
                 cell.add_synapse(self.stim, sec_index=0, gmax=self.gmax[i])
             else:
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
             # Move cell location
             if self.electrodes is not None:
                 self.lfp.append(
-                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i], scale=self.scale[i], min_distance=min_dist))
+                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i], scale=self.scale[i], min_distance=self.min_dist))
 
     def __create_netstim(self) -> h.NetStim:
         """Setup synaptic input event"""

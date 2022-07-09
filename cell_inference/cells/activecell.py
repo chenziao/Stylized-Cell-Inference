@@ -24,9 +24,7 @@ class ActiveCell(StylizedCell):
         dL: maximum segment length
         vrest: reversal potential for leak channels
         """
-        self.grp_ids = []
         self.biophys = biophys
-        self.v_rec = None
         self.grp_sec_type_ids = [[0], [1, 2], [3, 4]]  # select section id's for each group
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
@@ -35,8 +33,9 @@ class ActiveCell(StylizedCell):
             # (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
             # (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
         ]
+        self.grp_ids = []
         
-        super(ActiveCell, self).__init__(geometry, **kwargs)
+        super().__init__(geometry, **kwargs)
         self.v_rec = self.__record_soma_v()
         
 #         self.set_channels()
@@ -48,11 +47,7 @@ class ActiveCell(StylizedCell):
         Each entry is a pair of group id and parameter reference string.
         Define default values and set parameters in "biophys".
         """
-        for ids in self.grp_sec_type_ids:
-            secs = []
-            for i in ids:
-                secs.extend(self.sec_id_lookup[i])
-            self.grp_ids.append(secs)
+        self.grp_ids = [[isec for i in ids for isec in self.sec_id_lookup[i]] for ids in self.grp_sec_type_ids]
         default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.0433967, 0.016563, 0.0109506, 0.00639898, 0.0564755, 0.913327])
         #default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112])
         #default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])

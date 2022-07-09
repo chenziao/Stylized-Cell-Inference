@@ -68,11 +68,10 @@ class StylizedCell(ABC):
 
     #  PRIVATE METHODS
     def __setup_all(self) -> None:
-        if self.geometry is not None:
-            self.__create_morphology()
-            self.set_channels()
-            if self._record_spike:
-                self.set_spike_recorder()
+        self.__create_morphology()
+        self.set_channels()
+        if self._record_spike:
+            self.set_spike_recorder()
 
     def __calc_seg_coords(self) -> Dict:
         """Calculate segment coordinates for ECP calculation"""

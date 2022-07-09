@@ -13,6 +13,8 @@ active_groundtruth.h5
 detailed_groundtruth.h5
 Results_ActiveGroundTruth_CNN_Passive_locOnly.h5
 cell360LFP.h5
+*.o
+*.c
 *.pt
 *.pth
 *.mat

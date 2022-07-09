@@ -5,7 +5,14 @@ from cell_inference.utils.currents.recorder import Recorder
 from typing import Optional
 
 class Soma_Axial_Current(object):
+    """A module for recording axial currents from soma to segments attached to soma"""
     def __init__(self, soma: nrn.Section, dend_type: Optional[str] = None, record_t: bool = False, single_seg: bool = False) -> None:
+        """
+        soma: soma section object
+        dend_type: list of section names of the dendrite types that need to be recorded
+        record_t: whether or not to record time points
+        single_seg: whether or not to record only one segment for each dendrite type
+        """
         self.soma = soma
         if dend_type is None:
             sec_names = [sec.name().split('.')[-1].split('[')[0] for sec in soma.children()]
@@ -43,7 +50,12 @@ class Soma_Axial_Current(object):
         return axial_current
 
 class Adjacent_Section(object):
+    """A module for recording and calculating axial current from the soma to its adjacent sections of a dendrite type"""
     def __init__(self, soma: nrn.Section, name: Optional[str] = 'dend') -> None:
+        """
+        soma: soma section object
+        name: section names of the dendrite type
+        """
         self.name = name
         self.init_sec = [s for s in soma.children() if name in s.name()]
         self.nseg = [s.nseg for s in self.init_sec]
