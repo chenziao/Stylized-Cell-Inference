@@ -89,6 +89,9 @@ class ActiveAxonCell(StylizedCell):
                 sec = self.get_sec_by_id(isec)
                 for en in enames:
                     setattr(sec, en, erev[en])
+        # fix capacitance
+        for sec in self.all:
+            sec.cm = 2.0
         
         # variable parameters
         if not self.grp_ids:

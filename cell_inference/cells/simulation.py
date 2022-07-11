@@ -86,8 +86,8 @@ class Simulation(object):
             else:
                 self.set_gmax(gmax)
                 self.stim = self.__create_netstim(stim_param)
-            # if cell_type == CellTypes.ACTIVE_AXON:
-            #    self.geo_entries.append((5, 'R'))
+            if cell_type == CellTypes.ACTIVE_AXON:
+               self.geo_entries.append((5, 'R'))
 
         self.__load_cell_module()
         self.__create_cells()  # create cell objects with properties set up
