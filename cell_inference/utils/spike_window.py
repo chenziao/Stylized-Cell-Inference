@@ -6,9 +6,7 @@ def first_pk_tr(lfp: np.ndarray) -> np.ndarray:
     """
     Find the time index of first peak/trough in "lfp" (2D array, each column is a channel).
     """
-    min_idx = np.argmin(np.amin(lfp, axis=1))
-    max_idx = np.argmax(np.amax(lfp, axis=1))
-    return min(min_idx, max_idx)
+    return min(first_tr(lfp), first_pk(lfp))
 
 
 def first_pk(lfp: np.ndarray) -> np.ndarray:
