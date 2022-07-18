@@ -16,7 +16,7 @@ class ActiveAxonCell(StylizedCell):
     """Define single cell model using parent class Stylized_Cell"""
 
     def __init__(self, geometry: Optional[pd.DataFrame] = None, full_biophys: dict = None,
-                 biophys: Optional[np.ndarray] = None, **kwargs) -> None:
+                 biophys: Optional[np.ndarray] = None, biophys_comm = Optional[dict], **kwargs) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
@@ -27,6 +27,7 @@ class ActiveAxonCell(StylizedCell):
         """
         self.full_biophys = full_biophys
         self.biophys = biophys
+        self.biophys_comm = biophys_comm
         self.section_map = {'soma':[0],'dend':[1,2],'apic':[3,4],'axon':[5]}  # map from biophysic section name to secion id in geometry
         self.grp_sec_type_ids = [[0], [1, 2], [3, 4], [5]]  # select section id's for each group
         self.biophys_entries = [
@@ -90,8 +91,9 @@ class ActiveAxonCell(StylizedCell):
                 for en in enames:
                     setattr(sec, en, erev[en])
         # fix capacitance
-        # for sec in self.all:
-            # sec.cm = 2.0
+        for key, value in self.biophys_comm.items():
+            for sec in self.all:
+                setattr(sec, key, value)
         
         # variable parameters
         if not self.grp_ids:

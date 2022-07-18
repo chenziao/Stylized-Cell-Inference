@@ -21,15 +21,15 @@ class EcpMod(object):
         electrode_positions: n-by-3 array of electrodes coordinates
         move_cell, scale, min_distance: see method 'calc_transfer_resistance'
         """
-        self.tr = None
         self.cell = cell
         self.elec_coords = np.array(electrode_positions)
         if self.elec_coords.ndim != 2 or self.elec_coords.shape[1] != 3:
             raise ValueError("electrode_positions must be an n-by-3 2-D array")
         self.nelec = self.elec_coords.shape[0]
+        self.move_cell = move_cell
+        self.scale = scale
+        self.min_distance = min_distance
         self.im_rec = self.__record_im()
-        # self.cell.calc_seg_coords()
-        self.calc_transfer_resistance(move_cell, scale, min_distance)
 
     # PRIVATE METHODS
     def __record_im(self) -> Recorder:
@@ -45,28 +45,35 @@ class EcpMod(object):
 
     # PUBLIC METHODS
     def calc_transfer_resistance(self, move_cell: Optional[Union[Tuple[List[float], Tuple[float, float, float]]]] = None,
-                                 scale: float = 1.0, min_distance: Optional[float] = None) -> None:
+                                 scale: float = 1.0, min_distance: Optional[float] = None,
+                                 move_elec: Optional[bool] = False, sigma: float = 0.3,) -> None:
         """
         Precompute mapping from segment to electrode locations
         move_cell: tuple of (translate,rotate), rotate the cell followed by translating it
         scale: scaling factor of ECP magnitude
         min_distance: minimum distance allowed between segment and electrode, if specified
+        sigma: resistivity of medium (mS/mm)
+        move_elec: whether or not to relatively move electrodes for calculation
         """
-        sigma = 0.3  # mS/mm
         seg_coords = self.cell.seg_coords
-        if move_cell is None:
-            dl = seg_coords['dl']
-            pc = seg_coords['pc']
+        if move_elec and move_cell is not None:
+            elec_coords = move_position(move_cell[0], move_cell[1], self.elec_coords, True)
         else:
+            elec_coords = self.elec_coords
+        if not move_elec and move_cell is not None:
             dl = move_position([0., 0., 0.], move_cell[1], seg_coords['dl'])
             pc = move_position(move_cell[0], move_cell[1], seg_coords['pc'])
+        else:
+            dl = seg_coords['dl']
+            pc = seg_coords['pc']
         if min_distance is None:
             r = seg_coords['r']
         else:
             r = np.fmax(seg_coords['r'], min_distance)
+        
         tr = np.empty((self.nelec, self.cell._nseg))
         for j in range(self.nelec):  # calculate mapping for each site on the electrode
-            rel_pc = self.elec_coords[j, :] - pc  # distance between electrode and segment centers
+            rel_pc = elec_coords[j, :] - pc  # distance between electrode and segment centers
             # compute dot product row-wise, the resulting array has as many rows as original
             r2 = np.einsum('ij,ij->i', rel_pc, rel_pc)
             rlldl = np.einsum('ij,ij->i', rel_pc, dl)
@@ -79,7 +86,8 @@ class EcpMod(object):
             num = up + np.sqrt(up ** 2 + r_t2)
             den = low + np.sqrt(low ** 2 + r_t2)
             tr[j, :] = np.log(num / den) / dlmag  # units of (um) use with im_ (total seg current)
-        self.tr = scale / (4 * np.pi * sigma) * tr
+        tr *= scale / (4 * np.pi * sigma)
+        return tr
 
     def calc_im(self) -> np.ndarray:
         """Calculate transmembrane current after simulation. Unit: nA."""
@@ -88,14 +96,24 @@ class EcpMod(object):
             im[inj.get_segment_id(), :] -= inj.rec_vec.as_numpy()
         return im
 
-    def calc_ecp(self) -> np.ndarray:
+    def calc_ecp(self, **kwargs) -> np.ndarray:
         """Calculate ECP after simulation. Unit: mV."""
-        ecp = np.matmul(self.tr, self.calc_im())
-        return ecp
+        kwargs0 = {
+                    'move_cell': self.move_cell,
+                    'scale': self.scale,
+                    'min_distance': self.min_distance,
+                   }
+        for key, value in kwargs.items():
+            kwargs0[key] = value
+        tr = self.calc_transfer_resistance(**kwargs0)
+        im = self.calc_im()
+        return np.matmul(tr, im)
 
 
-def move_position(translate: List[float], rotate: Tuple[float, float, float],
-                  old_position: Optional[Union[List[float], np.ndarray]] = None, move_frame: bool = False) -> np.ndarray:
+def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
+                  rotate: Union[List[float],Tuple[float],np.ndarray],
+                  old_position: Optional[Union[List[float], np.ndarray]] = None,
+                  move_frame: bool = False) -> np.ndarray:
     """
     Rotate and translate an object with old_position and calculate its new coordinates. Rotate(alpha,h,phi): first
     rotate alpha about y-axis (spin), then rotate arccos(h) about x-axis (elevation), then rotate phi about y axis (

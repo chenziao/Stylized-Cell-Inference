@@ -18,6 +18,7 @@ class Simulation(object):
                  loc_param: Union[np.ndarray, List[int], List[float]] = None,
                  geo_param: Union[np.ndarray, List[int], List[float]] = None,
                  biophys: Union[np.ndarray, List[int], List[float]] = None,
+                 biophys_comm: Optional[dict] = None,
                  spike_threshold: Optional[float] = None,
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
                  soma_injection: Optional[np.ndarray] = None,
@@ -71,6 +72,7 @@ class Simulation(object):
 
         self.full_biophys = None
         self.biophys = None
+        self.biophys_comm = {}
         self.gmax = None
         self.stim = None
         if cell_type != CellTypes.PASSIVE:
@@ -80,6 +82,8 @@ class Simulation(object):
                     genome['value'] = float(genome['value'])
             if biophys is None:
                 biophys = []
+            if biophys_comm is not None:
+                self.biophys_comm = biophys_comm
             self.set_biophys(biophys)
             if gmax is None:
                 print("Warning: Not using synaptic input. gmax is required for synaptic input in an Active Cell.")
@@ -117,7 +121,8 @@ class Simulation(object):
         if self.cell_type == CellTypes.ACTIVE_AXON:
             from cell_inference.cells.activecell_axon import ActiveAxonCell
             create_cell = pass_geometry(ActiveAxonCell)
-            self.CreateCell = lambda i: create_cell(i,full_biophys=self.full_biophys,biophys=self.biophys[i, :])
+            self.CreateCell = lambda i: create_cell(i,biophys=self.biophys[i, :],
+                full_biophys=self.full_biophys,biophys_comm=self.biophys_comm)
     
     def __create_cells(self) -> None:
         """Create cell objects with properties set up"""
