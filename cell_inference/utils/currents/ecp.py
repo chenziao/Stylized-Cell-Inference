@@ -13,8 +13,8 @@ class EcpMod(object):
     and calculating extracellular potential ECP
     """
 
-    def __init__(self, cell: StylizedCell, electrode_positions: Optional[Union[List[int], np.ndarray]],
-                 move_cell: Optional[Union[Tuple[List[float], Tuple[float, float, float]]]] = None,
+    def __init__(self, cell: StylizedCell, electrode_positions: Optional[Union[List[List], np.ndarray]],
+                 move_cell: Optional[Union[List,Tuple]] = None,
                  scale: float = 1.0, min_distance: Optional[float] = None) -> None:
         """
         cell: cell object
@@ -44,12 +44,12 @@ class EcpMod(object):
         return Recorder(self.cell.segments, 'i_membrane_')
 
     # PUBLIC METHODS
-    def calc_transfer_resistance(self, move_cell: Optional[Union[Tuple[List[float], Tuple[float, float, float]]]] = None,
+    def calc_transfer_resistance(self, move_cell: Optional[Union[List,Tuple]] = None,
                                  scale: float = 1.0, min_distance: Optional[float] = None,
                                  move_elec: Optional[bool] = False, sigma: float = 0.3,) -> None:
         """
         Precompute mapping from segment to electrode locations
-        move_cell: tuple of (translate,rotate), rotate the cell followed by translating it
+        move_cell: list/tuple/2-by-3 array of (translate,rotate), rotate the cell followed by translating it
         scale: scaling factor of ECP magnitude
         min_distance: minimum distance allowed between segment and electrode, if specified
         sigma: resistivity of medium (mS/mm)
@@ -109,6 +109,21 @@ class EcpMod(object):
         im = self.calc_im()
         return np.matmul(tr, im)
 
+    def calc_ecps(self, move_cell: Optional[List] = None, **kwargs) -> np.ndarray:
+        """Calculate ECP with multiple positions after simulation. Unit: mV."""
+        kwargs0 = {
+                    'scale': self.scale,
+                    'min_distance': self.min_distance,
+                   }
+        for key, value in kwargs.items():
+            kwargs0[key] = value
+        if move_cell is None:
+            move_cell = [self.move_cell]
+        im = self.calc_im()
+        ecp = []
+        for mc in move_cell:
+            ecp.append(np.matmul(self.calc_transfer_resistance(move_cell=mc, **kwargs0), im))
+        return np.stack(ecp, axis=0)
 
 def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
                   rotate: Union[List[float],Tuple[float],np.ndarray],

@@ -28,7 +28,7 @@ class Simulation(object):
         geometry: pandas dataframe of cell morphology properties
         electrodes: array of electrode coordinates, n-by-3
         cell_type: CellTypes enum value to indicate type of cell simulation
-        loc_param: location parameters, ncell-by-6 array, (x,y,z,theta,h,phi)
+        loc_param: location parameters, ncell-by-6 (or ncell-by-nloc-by-6) array, (x,y,z,theta,h,phi)
         geo_param: geometry parameters, ncell-by-k array, if not specified, use default properties in geometry
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
         spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
@@ -141,7 +141,7 @@ class Simulation(object):
             # Move cell location
             if self.electrodes is not None:
                 self.lfp.append(
-                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i], scale=self.scale[i], min_distance=self.min_dist))
+                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i,0], scale=self.scale[i], min_distance=self.min_dist))
 
     def __create_netstim(self, stim_param: Optional[dict] = {}) -> h.NetStim:
         """Setup synaptic input event"""
@@ -154,25 +154,25 @@ class Simulation(object):
 
     def __pack_parameters(self, param: Optional[Union[np.ndarray, List[float], int, float]],
                           ndim: int, param_name: str) -> np.ndarray:
-        """Pack parameters for the simulation"""
-        if ndim == 0:
-            if not hasattr(param, '__len__'):
-                param = [param]
-            param = np.array(param).ravel()
-            if param.size != self.ncell:
-                if param.size == 1:
-                    param = np.broadcast_to(param, (self.ncell,))
-                else:
-                    raise ValueError(param_name + " size does not match ncell")
-        if ndim == 1:
-            param = np.array(param)
-            if param.ndim == 1:
-                param = np.expand_dims(param, 0)
-            if param.shape[0] != self.ncell:
-                if param.shape[0] == 1:
-                    param = np.broadcast_to(param, (self.ncell, param.shape[1]))
-                else:
-                    raise ValueError(param_name + " number of rows does not match ncell")
+        """
+        Pack parameters for the simulation into numpy arrays with cells along the first dimension.
+        
+        Parameters
+        param: (array of) input parameter(s)
+        ndim: number of dimension of parameters for each cell
+        param_name: parameter set name for printing error message
+        """
+        param = np.asarray(param)
+        if param.ndim > ndim + 1:
+            raise ValueError("%s has more dimensions size than expected" % param_name)
+        # add dimensions before the trailing dimension
+        param = np.expand_dims(param,tuple(range(param.ndim-1,ndim)))
+        if param.shape[0] != self.ncell:
+            if param.shape[0] == 1:
+                # repeat the same parameters for all cells
+                param = np.broadcast_to(param, (self.ncell,) + param.shape[1:])
+            else:
+                raise ValueError("%s first dimension size does not match ncell=%d" % (param_name,self.ncell))
         return param
 
     # PUBLIC METHODS
@@ -181,10 +181,11 @@ class Simulation(object):
         Setup location parameters.
 
         Parameters
-        loc_param: ncell-by-6 array describing the location of the cell
+        loc_param: ncell-by-6 (or ncell-by-nloc-by-6) array describing the location of the cell
         """
-        loc_param = self.__pack_parameters(loc_param, 1, "loc_param")
-        self.loc_param = [(loc_param[i, :3], loc_param[i, 3:]) for i in range(self.ncell)]
+        loc_param = self.__pack_parameters(loc_param, 2, "loc_param")
+        # reshape the trailing dimension to 2-by-3
+        self.loc_param = loc_param.reshape(loc_param.shape[:2] + (2, 3))
 
     def set_geo_param(self, geo_param: Optional[Union[np.ndarray, List[float]]]) -> None:
         """
@@ -248,21 +249,27 @@ class Simulation(object):
         """Return simulation time vector"""
         return self.t_vec.as_numpy().copy()
 
-    def get_lfp(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
+    def get_lfp(self, index: Union[np.ndarray, List[int], int, str] = 0,
+                multiple_position: bool = False) -> np.ndarray:
         """
         Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
 
         Parameters
         index: index of the cell to retrieve the LFP from
+        multiple_position: get from multiple positions for each cell along second dimension of the LFP array
         """
+        if multiple_position:
+            calc_ecp = lambda i: self.lfp[i].calc_ecps(move_cell=self.loc_param[i])
+        else:
+            calc_ecp = lambda i: self.lfp[i].calc_ecp()
         if index == 'all':
             index = range(self.ncell)
         if not hasattr(index, '__len__'):
-            lfp = self.lfp[index].calc_ecp()
+            lfp = calc_ecp(index)
         else:
             index = np.asarray(index).ravel()
-            lfp = np.stack([self.lfp[i].calc_ecp() for i in index], axis=0)
-        return lfp.copy()
+            lfp = np.stack([calc_ecp(i) for i in index], axis=0)
+        return lfp
 
     def v(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
@@ -278,7 +285,7 @@ class Simulation(object):
         else:
             index = np.asarray(index).ravel()
             v = np.stack([self.cells[i].v() for i in index], axis=0)
-        return v
+        return v.copy()
 
     def get_spike_time(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
