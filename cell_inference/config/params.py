@@ -19,7 +19,7 @@ ELECTRODE_POSITION = np.column_stack((elec_pos, np.zeros(elec_pos.shape[0])))
 ELECTRODE_GRID = (np.array(hf.get('grid/x')), np.array(hf.get('grid/y')), np.zeros(1))
 
 # GET GROUND TRUTH FROM ACTIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX GT
-TSTOP = 20.  # ms
+TSTOP = 10.  # ms
 DT = 0.025  # ms. does not allow change
 # x,     y,  z,    alpha,   h,  phi  # y,   d,  theta,   alpha, h,  phi
 LOCATION_PARAMETERS = [0., 0, 50., np.pi / 4, 1.0,
