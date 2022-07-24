@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional, Union, Tuple
 import os
 from joblib import dump, load
 
@@ -18,17 +18,17 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
                      learning_rate: float = 0.005,
                      decay_rate: float = 1.0,
                      device: torch.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")) -> None:
-    epochs_list = []
-    train_loss_list = []
-    val_loss_list = []
+    model.to(device)
 
     # splitting the dataloaders to generalize code
     data_loaders = {"train": training_loader, "val": validation_loader}
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     loss_func = nn.MSELoss()
-    decay_rate = decay_rate
     lr_sch = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=decay_rate)
 
+    epochs_list = []
+    train_loss_list = []
+    val_loss_list = []
     for epoch in tqdm(range(epochs), position=0, leave=True):
         train_loss = 0.0
         val_loss = 0.0
@@ -65,11 +65,11 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
         train_loss_list.append(train_loss)
         val_loss_list.append(val_loss)
 
-    df = pd.DataFrame({"Training_Loss": np.array(train_loss_list), "Validation_Loss": np.array(val_loss_list)})
-    now = datetime.now()
-    date_time = now.strftime("%H_%M_%S__%m_%d_%Y")
+    date_time = datetime.now().strftime("%H_%M_%S__%m_%d_%Y")
     torch.save(model, paths.MODELS_ROOT + date_time + ".pt")
-    df.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
+    history = pd.DataFrame({"Epochs": epochs_list, "Training_Loss": train_loss_list, "Validation_Loss": val_loss_list})
+    history.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
+    return history
 
 
 def predict_gmax(input_arr: np.ndarray, clf: str = paths.RESOURCES_ROOT + "gmax_classifier.joblib") -> np.ndarray:
@@ -80,6 +80,7 @@ def predict_gmax(input_arr: np.ndarray, clf: str = paths.RESOURCES_ROOT + "gmax_
 def build_dataloader_from_numpy(input_arr: np.ndarray,
                                 labels_arr: np.ndarray,
                                 batch_size: int = 1,
+                                train_size: Union[float,int] = 0.75,
                                 shuffle: bool = False) -> Tuple[DataLoader, DataLoader]:
 
     if shuffle:
@@ -87,9 +88,10 @@ def build_dataloader_from_numpy(input_arr: np.ndarray,
         input_arr = input_arr[shuffler]
         labels_arr = labels_arr[shuffler]
 
-    idx = int(input_arr.shape[0] * .75)
-    # print(input_arr.shape)
-    # print(labels_arr.shape)
+    if train_size<=1:
+        idx = int(np.floor(input_arr.shape[0] * max(train_size, 0)))
+    else:
+        idx = min(int(train_size), input_arr.shape[0])
 
     training_dataset = TensorDataset(torch.Tensor(input_arr[:idx, :]), torch.Tensor(labels_arr[:idx, :]))
     testing_dataset = TensorDataset(torch.Tensor(input_arr[idx:, :]), torch.Tensor(labels_arr[idx:, :]))
