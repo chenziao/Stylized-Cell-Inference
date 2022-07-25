@@ -1,6 +1,7 @@
 from neuron import h
 import numpy as np
 from scipy.spatial.transform import Rotation
+import h5py
 from typing import Optional, List, Tuple, Union
 
 from cell_inference.utils.currents.recorder import Recorder
@@ -13,35 +14,39 @@ class EcpMod(object):
     and calculating extracellular potential ECP
     """
 
-    def __init__(self, cell: StylizedCell, electrode_positions: Optional[Union[List[List], np.ndarray]],
+    def __init__(self, cell: StylizedCell, electrode_positions: Union[List[List], np.ndarray],
                  move_cell: Optional[Union[List,Tuple]] = None,
-                 scale: float = 1.0, min_distance: Optional[float] = None) -> None:
+                 scale: float = 1.0, min_distance: Optional[float] = None,
+                 ecp_cell: bool = False) -> None:
         """
         cell: cell object
         electrode_positions: n-by-3 array of electrodes coordinates
         move_cell, scale, min_distance: see method 'calc_transfer_resistance'
         """
         self.cell = cell
-        self.elec_coords = np.array(electrode_positions)
+        self.elec_coords = np.asarray(electrode_positions)
         if self.elec_coords.ndim != 2 or self.elec_coords.shape[1] != 3:
             raise ValueError("electrode_positions must be an n-by-3 2-D array")
         self.nelec = self.elec_coords.shape[0]
         self.move_cell = move_cell
         self.scale = scale
         self.min_distance = min_distance
-        self.im_rec = self.__record_im()
+        self.ecp_cell = ecp_cell
+        self.__record_im()
 
     # PRIVATE METHODS
     def __record_im(self) -> Recorder:
         """Enable extracellular mechanism in Neuron and record transmembrane currents"""
-        h.cvode.use_fast_imem(1)
-        for sec in self.cell.all:
-            sec.insert('extracellular')  # insert extracellular
-
-        for inj in self.cell.injection:
-            if inj.rec_vec is None:
-                inj.setup_recorder()
-        return Recorder(self.cell.segments, 'i_membrane_')
+        if self.ecp_cell:
+            self.im_rec = self.cell.im_rec
+        else:
+            h.cvode.use_fast_imem(1)
+            for sec in self.cell.all:
+                sec.insert('extracellular')  # insert extracellular
+            for inj in self.cell.injection:
+                if inj.rec_vec is None:
+                    inj.setup_recorder()
+            self.im_rec = Recorder(self.cell.segments, 'i_membrane_')
 
     # PUBLIC METHODS
     def calc_transfer_resistance(self, move_cell: Optional[Union[List,Tuple]] = None,
@@ -70,6 +75,7 @@ class EcpMod(object):
             r = seg_coords['r']
         else:
             r = np.fmax(seg_coords['r'], min_distance)
+        rr = r ** 2
         
         tr = np.empty((self.nelec, self.cell._nseg))
         for j in range(self.nelec):  # calculate mapping for each site on the electrode
@@ -82,7 +88,7 @@ class EcpMod(object):
             r_t2 = r2 - rll ** 2  # square of perpendicular component
             up = rll + dlmag / 2
             low = rll - dlmag / 2
-            np.fmax(r_t2, r ** 2, out=r_t2, where=low - r < 0)
+            np.fmax(r_t2, rr, out=r_t2, where=low - r < 0)
             num = up + np.sqrt(up ** 2 + r_t2)
             den = low + np.sqrt(low ** 2 + r_t2)
             tr[j, :] = np.log(num / den) / dlmag  # units of (um) use with im_ (total seg current)
@@ -125,6 +131,7 @@ class EcpMod(object):
             ecp.append(np.matmul(self.calc_transfer_resistance(move_cell=mc, **kwargs0), im))
         return np.stack(ecp, axis=0)
 
+
 def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
                   rotate: Union[List[float],Tuple[float],np.ndarray],
                   old_position: Optional[Union[List[float], np.ndarray]] = None,
@@ -145,3 +152,32 @@ def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
     else:
         new_position = rot.apply(old_position) + translate
     return new_position
+
+
+class EcpCell(object):
+    def __init__(self, file: Optional[str] = None,
+                 im: Optional[np.ndarray] = None,
+                 seg_coords: Optional[dict] = None) -> None:
+        if file is None:
+            self.im_rec = self.Im_rec(im)
+            self.seg_coords = seg_coords
+        else:
+            self.load_from_file(file)
+        self.im = self.im_rec.as_numpy()
+        self._nseg = self.im.shape[0]
+        self.injection = []
+
+    def load_from_file(self, file):
+        with h5py.File(file,'r') as hf:
+            seg_coords = {}
+            for key in hf['seg_coords']:
+                seg_coords[key] = hf['seg_coords'][key][()]
+            self.im_rec = self.Im_rec(hf['data'])
+            self.seg_coords = seg_coords
+
+    class Im_rec(object):
+        def __init__(self, im):
+            self.im = np.array(im)
+
+        def as_numpy(self):
+            return self.im

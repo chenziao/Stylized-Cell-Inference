@@ -74,5 +74,5 @@ class Adjacent_Section(object):
         v_soma = self.soma_v.as_numpy()
         v_dend = self.dend_v.as_numpy()
         axial_r = np.array([[seg.ri()] for seg in self.init_seg])
-        axial_current = (v_dend-v_soma)/axial_r
+        axial_current = (v_soma-v_dend)/axial_r
         return axial_current

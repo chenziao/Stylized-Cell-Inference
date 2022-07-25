@@ -40,7 +40,7 @@ class Simulation(object):
         self.cell_type = cell_type
         self.ncell = ncell  # number of cells in this simulation
         self.cells = []  # list of cell object
-        self.electrodes = electrodes
+        self.electrodes = np.array(electrodes)
         self.lfp = []  # list of EcpMod object
         self.min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
         self.loc_param = None
