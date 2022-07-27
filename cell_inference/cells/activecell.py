@@ -24,6 +24,7 @@ class ActiveCell(StylizedCell):
         dL: maximum segment length
         vrest: reversal potential for leak channels
         """
+        self.grp_ids = []
         self.biophys = biophys
         self.grp_sec_type_ids = [[0], [1, 2], [3, 4]]  # select section id's for each group
         self.biophys_entries = [
@@ -33,7 +34,9 @@ class ActiveCell(StylizedCell):
             # (0, 'gNaTa_tbar_NaTa_t'), (2, 'gNaTa_tbar_NaTa_t'),  # gNaTa_t of soma, apical
             # (0, 'gSKv3_1bar_SKv3_1'), (2, 'gSKv3_1bar_SKv3_1')  # gSKv3_1 of soma, apical
         ]
-        self.grp_ids = []
+        self.default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.0433967, 0.016563, 0.0109506, 0.00639898, 0.0564755, 0.913327])
+        # self.default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112])
+        # self.default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
         
         super().__init__(geometry, **kwargs)
         self.v_rec = self.__record_soma_v()
@@ -41,21 +44,19 @@ class ActiveCell(StylizedCell):
 #         self.set_channels()
 
     # PRIVATE METHODS
-    def __create_biophys_entries(self, biophys: Optional[np.ndarray] = None) -> np.ndarray:
+    def __create_biophys_entries(self) -> np.ndarray:
         """
         Define list of entries of biophysical parameters.
         Each entry is a pair of group id and parameter reference string.
         Define default values and set parameters in "biophys".
         """
         self.grp_ids = [[isec for i in ids for isec in self.sec_id_lookup[i]] for ids in self.grp_sec_type_ids]
-        default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.0433967, 0.016563, 0.0109506, 0.00639898, 0.0564755, 0.913327])
-        #default_biophys = np.array([3.3e-5, 6.3e-5, 8.8e-5, 2.43, 0.0252, 0.983, 0.0112])
-        #default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
-        if biophys is not None:
-            for i in range(len(biophys)):
-                if biophys[i] >= 0:
-                    default_biophys[i] = biophys[i]
-        return default_biophys
+        biophys = self.default_biophys
+        if self.biophys is not None:
+            for i in range(len(self.biophys)):
+                if self.biophys[i] >= 0:
+                    biophys[i] = self.biophys[i]
+        self.biophys = biophys
 
     def __record_soma_v(self) -> Recorder:
         return Recorder(self.soma(.5), 'v')
@@ -63,7 +64,7 @@ class ActiveCell(StylizedCell):
     # PUBLIC METHODS
     def set_channels(self) -> None:
         if not self.grp_ids:
-            self.biophys = self.__create_biophys_entries(self.biophys)
+            self.__create_biophys_entries()
         # common parameters
         for sec in self.all:
             sec.cm = 2.0

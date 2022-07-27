@@ -17,11 +17,11 @@ h.load_file('stdrun.hoc')
 class CellTypes(Enum):
     PASSIVE = 1
     ACTIVE = 2
-    ACTIVE_AXON = 3
+    ACTIVE_FULL = 3
 
 
 class StylizedCell(ABC):
-    def __init__(self, geometry: Optional[pd.DataFrame] = None,
+    def __init__(self, geometry: pd.DataFrame = None,
                  dl: int = 30, vrest: float = -70.0, nbranch: int = 4,
                  record_spike: bool = False) -> None:
         """
@@ -39,6 +39,7 @@ class StylizedCell(ABC):
         self._record_spike = record_spike
         self._nsec = 0
         self._nseg = 0
+        self.soma = None
         self.all = []  # list of all sections
         self.segments = []  # list of all segments
         self.sec_id_lookup = {}  # dictionary from section type id to section index
@@ -47,7 +48,6 @@ class StylizedCell(ABC):
         self.synapse = []  # synapse objects
         self.spikes = None
         self.geometry = None
-        self.soma = None
         self.set_geometry(geometry)
         self.__setup_all()
         self.seg_coords = self.__calc_seg_coords()

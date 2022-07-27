@@ -24,9 +24,9 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
     Return Figure object, Axes object
     """
     if clr is None:
-        clr = ['g', 'b', 'c', 'pink', 'purple', 'r']
+        clr = ['g', 'b', 'pink', 'purple', 'r', 'c']
     cell = sim.cells[cellid]
-    move_cell = sim.loc_param[cellid]
+    move_cell = sim.loc_param[cellid,0]
     dl = move_position([0., 0., 0.], move_cell[1], cell.seg_coords['dl'])
     pc = move_position(move_cell[0], move_cell[1], cell.seg_coords['pc'])
     xyz = 'xyz'
@@ -37,19 +37,20 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
     fig = plt.figure(figsize=figsize)
     ax = plt.axes(projection='3d')
     ax.scatter(*[pc[0, j] for j in axes], c=clr[0], s=30, label='soma')
-    pretype = 'soma'
+    pretype = ['soma']
     itype = 0
     for i, sec in enumerate(cell.all[1:], start=1):
         i0 = cell.sec_id_in_seg[i]
         i1 = i0 + sec.nseg - 1
         p0 = pc[i0] - dl[i0] / 2
         p1 = pc[i1] + dl[i1] / 2
-        if pretype != sec.name():
-            pretype = sec.name()
-            label = pretype.split('.')[-1]
-            itype += 1
+        name = sec.name()
+        if name not in pretype:
+            pretype.append(name)
+            label = name.split('.')[-1]
         else:
             label = None
+        itype = pretype.index(name)
         ax.plot3D(*[[p0[j], p1[j]] for j in axes], color=clr[itype], label=label)
         box[0, :] = np.minimum(box[0, :], np.minimum(p0, p1))
         box[1, :] = np.maximum(box[1, :], np.maximum(p0, p1))

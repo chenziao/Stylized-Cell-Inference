@@ -12,92 +12,68 @@ from cell_inference.config import paths, params
 
 
 class Simulation(object):
-    def __init__(self, geometry: pd.DataFrame, full_biophys: Optional[dict] = None,
-                 cell_type: CellTypes = CellTypes.ACTIVE,
-                 electrodes: Optional[np.ndarray] = None,
-                 loc_param: Union[np.ndarray, List[int], List[float]] = None,
-                 geo_param: Union[np.ndarray, List[int], List[float]] = None,
-                 biophys: Union[np.ndarray, List[int], List[float]] = None,
-                 biophys_comm: Optional[dict] = None,
+    def __init__(self, cell_type: CellTypes = CellTypes.ACTIVE, ncell: int = 1,
+                 geometry: pd.DataFrame = None, electrodes: Optional[np.ndarray] = None,
+                 loc_param: Union[np.ndarray, List[int], List[float]] = [0., 0., 0., 0., 1., 0.],
+                 geo_param: Union[np.ndarray, List[int], List[float]] = [],
+                 biophys: Union[np.ndarray, List[int], List[float]] = [],
+                 full_biophys: Optional[dict] = None, biophys_comm: Optional[dict] = {},
                  spike_threshold: Optional[float] = None,
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
                  soma_injection: Optional[np.ndarray] = None,
-                 scale: float = 1.0, ncell: int = 1) -> None:
+                 scale: Optional[float] = 1.0, min_dist: Optional[float] = 10.0) -> None:
         """
         Initialize simulation object
+        cell_type: CellTypes enum value to indicate type of cell simulation
+        ncell: number of cells in the simulation, required if simulating for multiple cells
         geometry: pandas dataframe of cell morphology properties
         electrodes: array of electrode coordinates, n-by-3
-        cell_type: CellTypes enum value to indicate type of cell simulation
         loc_param: location parameters, ncell-by-6 (or ncell-by-nloc-by-6) array, (x,y,z,theta,h,phi)
         geo_param: geometry parameters, ncell-by-k array, if not specified, use default properties in geometry
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
+        full_biophys: dictionary that includes full biophysical parameters (in Allen's celltype database model format)
+        biophys_comm: dictionary that specifies common biophysical parameters for all sections
         spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
         gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells'
         soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
-        ncell: number of cells in the simulation, required if simulating for multiple cells
+        min_dist: minimum distance allowed between segment and electrode. Set to None if not using.
         """
         self.cell_type = cell_type
+        # Common properties
         self.ncell = ncell  # number of cells in this simulation
         self.cells = []  # list of cell object
-        self.electrodes = np.array(electrodes)
+        self.geometry = geometry.copy() if geometry is not None else None
+        self.electrodes = np.array(electrodes) if electrodes is not None else None
         self.lfp = []  # list of EcpMod object
-        self.min_dist = 10.0 # minimum distance allowed between segment and electrode. Set to None if not using.
-        self.loc_param = None
-        if loc_param is None:
-            loc_param = [0., 0., 0., 0., 1., 0.]
-        self.set_loc_param(loc_param)
-        self.geometry = geometry.copy()
         self.geo_entries = [
-            (0, 'R'),  # change soma radius
-            (3, 'L'),  # change trunk length
-            (3, 'R'),  # change trunk radius
-            ([1, 2], 'R'),  # change basal dendrites radius
-            (4, 'R'),  # change tuft radius
-            ([1, 2, 4], 'L')  # change all dendrites length
+            (0, 'R'),  # soma radius
+            (3, 'L'),  # trunk length
+            (3, 'R'),  # trunk radius
+            ([1, 2], 'R'),  # basal dendrites radius
+            (4, 'R'),  # tuft radius
+            ([1, 2, 4], 'L')  # all dendrites length
         ]
-        self.geo_param = None
-        if geo_param is None:
-            geo_param = []
+        self.set_loc_param(loc_param)
         self.set_geo_param(geo_param)
-        self.scale = None
         self.set_scale(scale)
-
-        self.soma_injection = None
-        if cell_type == CellTypes.PASSIVE:
-            if soma_injection is None:
-                raise ValueError("Soma Injection is Required for a Passive Cell")
-            else:
-                self.soma_injection = soma_injection
-
-        self.full_biophys = None
-        self.biophys = None
-        self.biophys_comm = {}
-        self.gmax = None
-        self.stim = None
-        if cell_type != CellTypes.PASSIVE:
-            if full_biophys is not None:
-                self.full_biophys = full_biophys
-                for genome in self.full_biophys['genome']:
-                    genome['value'] = float(genome['value'])
-            if biophys is None:
-                biophys = []
-            if biophys_comm is not None:
-                self.biophys_comm = biophys_comm
-            self.set_biophys(biophys)
-            if gmax is None:
-                print("Warning: Not using synaptic input. gmax is required for synaptic input in an Active Cell.")
-            else:
-                self.set_gmax(gmax)
-                self.stim = self.__create_netstim(stim_param)
-            if cell_type == CellTypes.ACTIVE_AXON:
-               self.geo_entries.append((5, 'R'))
-
+        self.min_dist = min_dist
+        self.spike_threshold = spike_threshold
+        
+        # Cell type specific properties
+        self.biophys = biophys
+        self.full_biophys = full_biophys
+        self.biophys_comm = biophys_comm
+        self.gmax = gmax
+        self.stim_param = stim_param
+        self.soma_injection = soma_injection
+        self.__cell_type_settings()
         self.__load_cell_module()
+        
+        # Create
         self.__create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector(round(h.tstop / h.dt) + 1).record(h._ref_t)  # record time
-        self.spike_threshold = None
-        self.record_spikes(spike_threshold)
+        self.record_spikes(self.spike_threshold)
 
     @staticmethod
     def run_neuron_sim() -> None:
@@ -105,7 +81,34 @@ class Simulation(object):
         h.run()
 
     # PRIVATE METHODS
-    def __load_cell_module(self,) -> None:
+    def __cell_type_settings(self) -> None:
+        if self.cell_type == CellTypes.PASSIVE:
+            if self.soma_injection is None:
+                raise ValueError("'soma_injection' is required for a Passive Cell")
+        else:
+            self.set_biophys(self.biophys)
+            if self.gmax is None:
+                print("Warning: Not using synaptic input. 'gmax' is required for synaptic input in an Active Cell.")
+            else:
+                self.set_gmax(self.gmax)
+                self.__create_netstim(self.stim_param)
+            if self.cell_type == CellTypes.ACTIVE_FULL:
+                if self.full_biophys is None:
+                    raise ValueError("'full_biophys' is required for an Active Cell")
+                for genome in self.full_biophys['genome']:
+                    genome['value'] = float(genome['value'])
+                # self.geo_entries.append((5, 'R'))
+                self.geo_entries = [
+                    (0, 'R'),  # soma radius
+                    (4, 'L'),  # trunk length
+                    ([3, 4], 'R'),  # trunk radius
+                    ([1, 2], 'R'),  # basal dendrites radius
+                    ([5, 7], 'R'),  # tuft radius
+                    ([1, 2, 5], 'L'),  # all dendrites length
+                    (6, 'R')  # axon radius
+                ]
+    
+    def __load_cell_module(self) -> None:
         """Load cell module and define arguments for initializing cell instance according to cell type"""
         def pass_geometry(CellClass):
             def create_cell(i,**kwargs):
@@ -118,9 +121,11 @@ class Simulation(object):
             from cell_inference.cells.activecell import ActiveCell
             create_cell = pass_geometry(ActiveCell)
             self.CreateCell = lambda i: create_cell(i,biophys=self.biophys[i, :])
-        if self.cell_type == CellTypes.ACTIVE_AXON:
-            from cell_inference.cells.activecell_axon import ActiveAxonCell
-            create_cell = pass_geometry(ActiveAxonCell)
+        if self.cell_type == CellTypes.ACTIVE_FULL:
+            # from cell_inference.cells.activecell_axon import ActiveFullCell
+            # create_cell = pass_geometry(ActiveFullCell)
+            from cell_inference.cells.activecell_axon import ActiveObliqueCell
+            create_cell = pass_geometry(ActiveObliqueCell)
             self.CreateCell = lambda i: create_cell(i,biophys=self.biophys[i, :],
                 full_biophys=self.full_biophys,biophys_comm=self.biophys_comm)
     
@@ -150,7 +155,7 @@ class Simulation(object):
         stim.start = 0.1  # delay
         for key, value in stim_param.items():
             setattr(stim, key, value)
-        return stim
+        self.stim = stim
 
     def __pack_parameters(self, param: Optional[Union[np.ndarray, List[float], int, float]],
                           ndim: int, param_name: str) -> np.ndarray:
@@ -176,7 +181,7 @@ class Simulation(object):
         return param
 
     # PUBLIC METHODS
-    def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]]) -> None:
+    def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
         """
         Setup location parameters.
 
@@ -213,7 +218,7 @@ class Simulation(object):
         gmax: cell gmax value
         """
         self.gmax = self.__pack_parameters(gmax, 0, "gmax")
-        for i, cell in enumerate(self.cells):
+        for i, cell in enumerate(self.cells): # not executed during initializing
             cell.synapse[0].set_gmax(self.gmax[i])
 
     def set_scale(self, scale: float) -> None:
