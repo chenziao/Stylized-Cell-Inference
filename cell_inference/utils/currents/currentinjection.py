@@ -26,7 +26,7 @@ class CurrentInjection(PointCurrent):
         record: If True, enable recording current injection history
         """
         super().__init__(cell, sec_index, loc)
-        self.pp_obj = h.IClamp(self.get_section()(loc))
+        self.pp_obj = h.IClamp(self.get_section()(self.loc))
         self.inj_vec = None
         if pulse:
             self.setup_pulse(**pulse_param)

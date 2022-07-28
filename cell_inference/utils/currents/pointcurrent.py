@@ -16,6 +16,7 @@ class PointCurrent(ABC):
         """
         self.cell = cell
         self.sec_index = sec_index
+        self.loc = loc
         self.pp_obj = None  # point process object
         self.rec_vec = None  # vector for recording
 

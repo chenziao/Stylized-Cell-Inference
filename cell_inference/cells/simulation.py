@@ -101,11 +101,13 @@ class Simulation(object):
                 self.geo_entries = [
                     (0, 'R'),  # soma radius
                     (4, 'L'),  # trunk length
-                    ([3, 4], 'R'),  # trunk radius
+                    (3, 'R'),  # trunk radius
                     ([1, 2], 'R'),  # basal dendrites radius
                     ([5, 7], 'R'),  # tuft radius
                     ([1, 2, 5], 'L'),  # all dendrites length
-                    (6, 'R')  # axon radius
+                    (6, 'R'),  # axon radius
+                    (4, 'R'),  # trunk radius
+                    (7, 'L')  # oblique length
                 ]
     
     def __load_cell_module(self) -> None:
