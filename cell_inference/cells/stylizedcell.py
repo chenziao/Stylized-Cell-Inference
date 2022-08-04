@@ -22,7 +22,7 @@ class CellTypes(Enum):
 
 class StylizedCell(ABC):
     def __init__(self, geometry: pd.DataFrame = None,
-                 dl: int = 30, vrest: float = -70.0, nbranch: int = 4,
+                 dl: float = 30., vrest: float = -70.0, nbranch: int = 4,
                  record_spike: bool = False) -> None:
         """
         Initialize cell model
@@ -57,7 +57,6 @@ class StylizedCell(ABC):
         """Abstract method for setting biophysical properties, inserting channels"""
         raise NotImplementedError("Biophysical Channel Properties must be set!")
 
-    # @staticmethod
     def add_injection(self, sec_index, **kwargs) -> None:
         """Add current injection to a section by its index"""
         self.injection.append(CurrentInjection(self, sec_index, **kwargs))

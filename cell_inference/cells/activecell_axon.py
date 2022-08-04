@@ -30,23 +30,12 @@ class ActiveFullCell(StylizedCell):
         self.full_biophys = full_biophys
         self.biophys = biophys
         self.biophys_comm = biophys_comm
-        self.__morphological_properties()
+        self.morphological_properties()
 
         super().__init__(geometry, **kwargs)
         self.v_rec = self.__record_soma_v()
 
     # PRIVATE METHODS
-    def __morphological_properties(self):
-        """Define properties related to morphology"""
-        # map from biophysic section name to secion id in geometry
-        self.section_map = {'soma': [0], 'dend': [1, 2], 'apic': [3, 4], 'axon': [5]}
-        # select section id's for each group
-        self.grp_sec_type_ids = [[0], [1, 2], [3, 4], [5]]
-        self.biophys_entries = [
-            (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'), (3, 'g_pas')
-        ]
-        self.default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.00951182])
-
     def __create_biophys_entries(self) -> np.ndarray:
         """
         Define list of entries of biophysical parameters.
@@ -65,11 +54,24 @@ class ActiveFullCell(StylizedCell):
         return Recorder(self.soma(.5), 'v')
 
     # PUBLIC METHODS
+    def morphological_properties(self):
+        """Define properties related to morphology"""
+        # map from biophysic section name to secion id in geometry, used with "full_biophys"
+        self.section_map = {'soma': [0], 'dend': [1, 2], 'apic': [3, 4], 'axon': [5]}
+        # select section id's for each group, used with "biophys"
+        self.grp_sec_type_ids = [[0], [1, 2], [3, 4], [5]]
+        self.biophys_entries = [
+            (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'), (3, 'g_pas')
+        ]
+        self.default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.00951182])
+
     def set_channels(self) -> None:
         if self.full_biophys is None:
             raise ValueError("Warning: full_biophys is not loaded.")
         if set([x for xs in self.section_map.values() for x in xs])!=set(self.geometry.index.to_list()):
             print("Warning: Sections in 'section_map' are not consistent with 'geometry'.")
+            print(set([x for xs in self.section_map.values() for x in xs]))
+            print(set(self.geometry.index.to_list()))
         fb = self.full_biophys
         # common parameters
         self._vrest = fb['conditions'][0]['v_init']
@@ -78,7 +80,6 @@ class ActiveFullCell(StylizedCell):
             sec.Ra = fb['passive'][0]['ra']
             sec.insert('pas')
 #             sec.e_pas = self._vrest
-#             sec.cm = 2.0
         # section specific parameters
         bio_sec_ids = {name:[isec for i in ids for isec in self.sec_id_lookup[i]] for name, ids in self.section_map.items()}
         self.bio_sec_ids = bio_sec_ids
@@ -126,13 +127,13 @@ class ActiveObliqueCell(ActiveFullCell):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def __morphological_properties(self):
+    def morphological_properties(self):
         """Define properties related to morphology"""
         # map from biophysic section name to secion id in geometry
         self.section_map = {'soma': [0], 'dend': [1, 2], 'apic': [3, 4, 5, 7], 'axon': [6]}
         # select section id's for each group
-        self.grp_sec_type_ids = [[0], [1, 2], [3, 4, 5, 7], [6]]
+        self.grp_sec_type_ids = [[0], [1, 2], [3, 7], [4, 5], [6]] # soma, basal, trunk, tuft, axon
         self.biophys_entries = [
-            (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'), (3, 'g_pas')
+            (1, 'Ra'), (2, 'Ra'), (3, 'Ra')
         ]
-        self.default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.00951182])
+        self.default_biophys = np.array([100, 100, 100])
