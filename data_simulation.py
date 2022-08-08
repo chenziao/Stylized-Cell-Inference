@@ -12,7 +12,7 @@ from cell_inference.config import paths, params
 from cell_inference.cells.simulation import Simulation
 from cell_inference.cells.stylizedcell import CellTypes
 from cell_inference.utils.feature_extractors.SummaryStats2D import build_lfp_grid, calculate_stats
-from cell_inference.utils.transform.distribution_transformation import range2norm, range2logn
+from cell_inference.utils.random_parameter_generator import Random_Parameter_Generator
 from cell_inference.utils.transform.geometry_transformation import pol2cart, cart2pol
 from cell_inference.utils.spike_window import first_pk_tr, get_spike_window
 
@@ -83,7 +83,7 @@ class DataSimulator(object):
                                       'loc_param_dist': self.loc_param_dist, 'geo_param_dist': self.geo_param_dist}
         }
 
-        self.rng = np.random.default_rng(self.rand_seed)
+        self.rpg = Random_Parameter_Generator(seed=rand_seed, n_sigma=3)
 
     def pred_gmax(self, geo_samples: Dict):
         geo = []
@@ -95,44 +95,15 @@ class DataSimulator(object):
         gm = self.gmax_interp(np.column_stack(geo))
         return gm
 
-    @staticmethod
-    def generator_dist(p_range: Union[List[float], Tuple[float], np.ndarray],
-                       dist_type: str, rng: np.random.Generator):
-        if dist_type == 'unif':
-            def generator(size=None):
-                return rng.uniform(low=p_range[0], high=p_range[1], size=size)
-        if dist_type == 'norm':
-            mu, sigma = range2norm(p_range[0], p_range[1], n_sigma=3)
-
-            def generator(size=None):
-                return rng.normal(loc=mu, scale=sigma, size=size)
-        if dist_type == 'logn':
-            mu, sigma = range2logn(p_range[0], p_range[1], n_sigma=3)
-
-            def generator(size=None):
-                return rng.lognormal(mean=mu, sigma=sigma, size=size)
-        return generator
-
-    def generate_parameters(self, num: int, param_keys: List[str], param_default: List[float],
-                            param_range: List[Union[List[float], Tuple[float], np.ndarray]], param_dist: List[str]):
-        array_size = num
-        param_array = {}
-        for key in param_keys:
-            if key in self.randomized_list:
-                generator = self.generator_dist(param_range[key], param_dist[key], self.rng)
-                param_array[key] = generator(size=array_size)
-            else:
-                param_array[key] = np.full(array_size, param_default[key])
-        return param_array
-
     def simulate_params(self, data_path: str = '10000s_y1Loc2Alt_Ori2_Geo3_params', iteration: int = 1):
         loc_param_gen = self.loc_param_list.copy()
         if 'd' in self.randomized_list and 'theta' in self.randomized_list:
             loc_param_gen[loc_param_gen.index('x')] = 'd'
             loc_param_gen[loc_param_gen.index('z')] = 'theta'
 
-        loc_param_samples = self.generate_parameters(self.number_samples,
+        loc_param_samples = self.rpg.generate_parameters(self.number_samples,
                                                      loc_param_gen,
+                                                     self.randomized_list,
                                                      self.loc_param_default,
                                                      self.loc_param_range,
                                                      self.loc_param_dist)
@@ -143,8 +114,9 @@ class DataSimulator(object):
 
         loc_param = np.column_stack([loc_param_samples[key] for key in self.loc_param_list])
 
-        geo_param_samples = self.generate_parameters(self.number_samples,
+        geo_param_samples = self.rpg.generate_parameters(self.number_samples,
                                                      self.geo_param_list,
+                                                     self.randomized_list,
                                                      self.geo_param_default,
                                                      self.geo_param_range,
                                                      self.geo_param_dist)
