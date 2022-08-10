@@ -7,17 +7,44 @@ from typing import Optional, List, Tuple, Union
 from cell_inference.utils.currents.recorder import Recorder
 from cell_inference.cells.stylizedcell import StylizedCell
 
+class EcpCell(object):
+    def __init__(self, file: Optional[str] = None,
+                 im: Optional[np.ndarray] = None,
+                 seg_coords: Optional[dict] = None) -> None:
+        if file is None:
+            self.im_rec = self.Im_rec(im)
+            self.seg_coords = seg_coords
+        else:
+            self.load_from_file(file)
+        self.im = self.im_rec.as_numpy()
+        self._nseg = self.im.shape[0]
+        self.injection = []
 
+    def load_from_file(self, file):
+        with h5py.File(file,'r') as hf:
+            seg_coords = {}
+            for key in hf['seg_coords']:
+                seg_coords[key] = hf['seg_coords'][key][()]
+            self.im_rec = self.Im_rec(hf['data'])
+            self.seg_coords = seg_coords
+
+    class Im_rec(object):
+        def __init__(self, im):
+            self.im = np.array(im)
+
+        def as_numpy(self):
+            return self.im
+
+ 
 class EcpMod(object):
     """
     A module for recording single cell transmembrane currents
     and calculating extracellular potential ECP
     """
 
-    def __init__(self, cell: StylizedCell, electrode_positions: Union[List[List], np.ndarray],
+    def __init__(self, cell: Union[StylizedCell, EcpCell], electrode_positions: Union[List[List], np.ndarray],
                  move_cell: Optional[Union[List,Tuple]] = None,
-                 scale: float = 1.0, min_distance: Optional[float] = None,
-                 ecp_cell: bool = False) -> None:
+                 scale: float = 1.0, min_distance: Optional[float] = None) -> None:
         """
         cell: cell object
         electrode_positions: n-by-3 array of electrodes coordinates
@@ -31,7 +58,7 @@ class EcpMod(object):
         self.move_cell = move_cell
         self.scale = scale
         self.min_distance = min_distance
-        self.ecp_cell = ecp_cell
+        self.ecp_cell = isinstance(cell, EcpCell)
         self.__record_im()
 
     # PRIVATE METHODS
@@ -138,8 +165,8 @@ def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
                   move_frame: bool = False) -> np.ndarray:
     """
     Rotate and translate an object with old_position and calculate its new coordinates. Rotate(alpha,h,phi): first
-    rotate alpha about y-axis (spin), then rotate arccos(h) about x-axis (elevation), then rotate phi about y axis (
-    azimuth). Finally translate the object by translate(x,y,z). If move_frame is True, use the object as reference
+    rotate alpha about y-axis (spin), then rotate arccos(h) about x-axis (elevation), then rotate phi about y axis
+    (azimuth). Finally translate the object by translate(x,y,z). If move_frame is True, use the object as reference
     frame and move the old reference frame, calculate new coordinates of the old_position.
     """
     translate = np.asarray(translate)
@@ -152,32 +179,3 @@ def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
     else:
         new_position = rot.apply(old_position) + translate
     return new_position
-
-
-class EcpCell(object):
-    def __init__(self, file: Optional[str] = None,
-                 im: Optional[np.ndarray] = None,
-                 seg_coords: Optional[dict] = None) -> None:
-        if file is None:
-            self.im_rec = self.Im_rec(im)
-            self.seg_coords = seg_coords
-        else:
-            self.load_from_file(file)
-        self.im = self.im_rec.as_numpy()
-        self._nseg = self.im.shape[0]
-        self.injection = []
-
-    def load_from_file(self, file):
-        with h5py.File(file,'r') as hf:
-            seg_coords = {}
-            for key in hf['seg_coords']:
-                seg_coords[key] = hf['seg_coords'][key][()]
-            self.im_rec = self.Im_rec(hf['data'])
-            self.seg_coords = seg_coords
-
-    class Im_rec(object):
-        def __init__(self, im):
-            self.im = np.array(im)
-
-        def as_numpy(self):
-            return self.im

@@ -9,7 +9,7 @@ from matplotlib.ticker import FormatStrFormatter
 
 def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
                     fontsize: int = 40, labelpad: int = -30,
-                    tick_length: int = 15, nbins: int = 3) -> Tuple[Figure, Axes]:
+                    tick_length: int = 15, nbins: int = 3, axes: Axes = None) -> Tuple[Figure, Axes]:
     """
     Plot LFP traces.
 
@@ -24,7 +24,13 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
     """
     t = np.asarray(t)
     lfp = np.asarray(lfp)
-    fig = plt.figure()  # figsize=(15,15))
+    if axes is None:
+        fig = plt.figure()  # figsize=(15,15))
+        ax = plt.gca()
+    else:
+        ax = axes
+        fig = ax.get_figure()
+        plt.sca(ax)
     if lfp.ndim == 2:
         legend_elements = []
         for j in range(lfp.shape[1]):
@@ -36,8 +42,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
     plt.ylabel('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
     plt.locator_params(axis='both', nbins=nbins)
     plt.tick_params(length=tick_length, labelsize=fontsize)
-    ax = plt.gca()
-    plt.show()
+
     if savefig is not None:
         if type(savefig) is not str:
             savefig = 'LFP_trace.pdf'
@@ -47,7 +52,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
 
 def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
                      vlim: str = 'auto', fontsize: int = 40, ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
-                     cbbox: Optional[List[float]] = None, cmap: str = 'viridis') -> Tuple[Figure, Axes]:
+                     cbbox: Optional[List[float]] = None, cmap: str = 'viridis', axes: Axes = None) -> Tuple[Figure, Axes]:
     """
     Plot LFP heatmap.
 
@@ -72,9 +77,14 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
             vlim = [np.min(lfp), np.max(lfp)]
         else:
             vlim = 3 * np.std(lfp) * np.array([-1, 1])
-    fig, ax = plt.subplots()
+    if axes is None:
+        fig, ax = plt.subplots()
+    else:
+        ax = axes
+        fig = ax.get_figure()
+        plt.sca(ax)
     pcm = plt.pcolormesh(t, elec_d, lfp, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
-    cbaxes = fig.add_axes(cbbox)
+    cbaxes = fig.add_axes(cbbox) if axes is None else None
     cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
     cbar.ax.tick_params(labelsize=ticksize)
     cbar.set_label('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
@@ -83,7 +93,7 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
     ax.tick_params(labelsize=ticksize)
     ax.set_xlabel('time (ms)', fontsize=fontsize)
     ax.set_ylabel('dist_y (mm)', fontsize=fontsize)
-    plt.show()
+
     if savefig is not None:
         if type(savefig) is not str:
             savefig = 'LFP_heatmap.pdf'
