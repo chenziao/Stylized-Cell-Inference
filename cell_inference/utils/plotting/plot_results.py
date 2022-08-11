@@ -8,8 +8,8 @@ from matplotlib.ticker import FormatStrFormatter
 
 
 def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
-                    fontsize: int = 40, labelpad: int = -30,
-                    tick_length: int = 15, nbins: int = 3, axes: Axes = None) -> Tuple[Figure, Axes]:
+                    fontsize: int = 40, labelpad: int = -30, ticksize: int = 40, tick_length: int = 15,
+                    nbins: int = 3, axes: Axes = None) -> Tuple[Figure, Axes]:
     """
     Plot LFP traces.
 
@@ -41,7 +41,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
     plt.xlabel('ms', fontsize=fontsize)
     plt.ylabel('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
     plt.locator_params(axis='both', nbins=nbins)
-    plt.tick_params(length=tick_length, labelsize=fontsize)
+    plt.tick_params(length=tick_length, labelsize=ticksize)
 
     if savefig is not None:
         if type(savefig) is not str:
@@ -51,8 +51,9 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = Non
 
 
 def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig: Optional[str] = None,
-                     vlim: str = 'auto', fontsize: int = 40, ticksize: int = 30, labelpad: int = -12, nbins: int = 3,
-                     cbbox: Optional[List[float]] = None, cmap: str = 'viridis', axes: Axes = None) -> Tuple[Figure, Axes]:
+                     vlim: str = 'auto', cbbox: Optional[List[float]] = None, cmap: str = 'viridis',
+                     fontsize: int = 40, labelpad: int = -12, ticksize: int = 30, tick_length: int = 15,
+                     nbins: int = 3, axes: Axes = None) -> Tuple[Figure, Axes]:
     """
     Plot LFP heatmap.
 
@@ -86,11 +87,11 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, savefig
     pcm = plt.pcolormesh(t, elec_d, lfp, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
     cbaxes = fig.add_axes(cbbox) if axes is None else None
     cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
-    cbar.ax.tick_params(labelsize=ticksize)
+    cbar.ax.tick_params(length=tick_length, labelsize=ticksize)
     cbar.set_label('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
     ax.set_xticks(np.linspace(t[0], t[-1], nbins))
     ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
-    ax.tick_params(labelsize=ticksize)
+    ax.tick_params(length=tick_length, labelsize=ticksize)
     ax.set_xlabel('time (ms)', fontsize=fontsize)
     ax.set_ylabel('dist_y (mm)', fontsize=fontsize)
 
