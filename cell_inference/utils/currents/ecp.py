@@ -88,6 +88,8 @@ class EcpMod(object):
         move_elec: whether or not to relatively move electrodes for calculation
         """
         seg_coords = self.cell.seg_coords
+        if move_cell is not None:
+            move_cell = np.asarray(move_cell).reshape((2, 3))
         if move_elec and move_cell is not None:
             elec_coords = move_position(move_cell[0], move_cell[1], self.elec_coords, True)
         else:

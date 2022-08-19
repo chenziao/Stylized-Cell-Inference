@@ -8,7 +8,7 @@ def measure_passive_properties(V, t, iclamp: hoc.HocObject, ax: Optional[Axes] =
     """
     V: membrane voltage response to current injection (mV)
     t: time points (ms)
-    iclamp: IClamp object that specifies the current injection
+    iclamp: IClamp object that specifies the current injection (nA)
     ax: axes for plotting V vs. t
     Return passive properties: resting potential (mV), input resistance (megaohms), time constant (ms)
     """

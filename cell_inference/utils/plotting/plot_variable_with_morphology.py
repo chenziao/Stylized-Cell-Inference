@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredDirectionArrows
 
 def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes = ['x', 'y'],
@@ -8,7 +7,26 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
                                   select_seg=None, max_per_dist=None, varname='Variable',
                                   space=3, normalized_space=True, sort_by_dist=False,
                                   figsize=(15,12), fontsize=15, colormap='viridis', scalebar_size=50):
-
+    """
+    seg_coords: dictionary of segment coordinates including pc, dl, r
+    seg_prop: dictionary of segment properties including swc_type and distance
+    variable: segment-by-time array of time dependent variable to plot
+    t: array of time points (ms)
+    axes: two axes to display from the 3D coordinates system
+    distance_type: key of distance in seg_prop based on which to plot the variable
+    n_dist: number of distance points at which to plot the variable
+    distance_range: the bounds for selecting distance points
+    select_seg: index array of selected segment. Plot variable only on the selected segments.
+    max_per_dist: maximum number of segments of the same distance point to show
+    varname: name of variable being shown
+    space: space between traces of the variable
+    normalized_space: whether to use normalized space. If true, space in unit of standard deviation of max magnitude
+    sort_by_dist: whether to order traces based on distance. If false, use neat layout.
+    figsize: figure size
+    fontsize: font size
+    colormap: name of color map
+    scalebar_size: scale bar size (microns) on the morphology plot
+    """
     nseg = seg_coords['r'].size
 
     # Axes for plotting morphology
@@ -65,7 +83,7 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
 
 
     # Color map
-    sm = plt.cm.ScalarMappable(cmap=getattr(cm, colormap), norm=plt.Normalize())
+    sm = plt.cm.ScalarMappable(cmap=getattr(plt.cm, colormap), norm=plt.Normalize())
     sm.set_array(dist05)
     sm.autoscale()
 

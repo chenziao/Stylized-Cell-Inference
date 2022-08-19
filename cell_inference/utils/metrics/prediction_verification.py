@@ -75,7 +75,7 @@ class InVivoParamSimulator(object):
                               cell_type=CellTypes.ACTIVE,
                               loc_param=self.loc_param_samples,
                               geo_param=self.geo_param_samples,
-                              spike_threshold=-30,
+                              spike_threshold=params.SPIKE_THRESHOLD,
                               gmax=self.gmax,
                               scale=1.,
                               ncell=x.shape[0])

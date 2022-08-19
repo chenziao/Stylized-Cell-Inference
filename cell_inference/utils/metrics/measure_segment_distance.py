@@ -2,16 +2,23 @@ import numpy as np
 from neuron import h
 
 def measure_segment_distance(soma, section_list, sec_type, freq=0, extracellular_mechanism=True):
+    """
+    soma: soma section object
+    section_list: list of sections
+    sec_type: list of swc type id of sections
+    freq: frequency (Hz) at which electrotonic distance is evaluated
+    extracellular_mechanism: whether extracellular mechanism is used
+    """
     seg_prop = {}
     swc_type = []
     seg_area = []
     seg_dist = []
     seg_length = []
     elec_dist = []
-    elec_dist0 = [1]
+    elec_dist0 = []
 
     # set up distance origin
-    h.distance(0,soma(.5))
+    h.distance(0, soma(.5))
     # set up electrotonic origin
     zz = h.Impedance()
     zz.loc(soma(.5))
@@ -22,7 +29,9 @@ def measure_segment_distance(soma, section_list, sec_type, freq=0, extracellular
 
     # measure distance
     for i, sec in enumerate(section_list):
-        if sec_type[i]!=1:
+        if sec_type[i]==1:
+            elec_dist0.append(zz.ratio(sec(0.5/sec.nseg)))
+        else:
             elec_dist0.append(zz.ratio(sec.parentseg()))
         for j, seg in enumerate(sec):
             swc_type.append(sec_type[i])

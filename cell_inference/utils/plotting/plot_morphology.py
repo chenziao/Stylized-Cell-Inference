@@ -10,7 +10,7 @@ from cell_inference.cells.simulation import Simulation
 
 def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.ndarray] = None,
                     axes: Union[List[int], Tuple[int]] = [2, 0, 1], clr: Optional[List[str]] = None,
-                    elev: int = 20, azim: int = 10,
+                    elev: int = 20, azim: int = 10, move_cell: Optional[Union[List,np.ndarray]] = None,
                     figsize: Optional[Tuple[float, float]] = None) -> Tuple[Figure, Axes]:
     """
     Plot morphology in 3D.
@@ -24,9 +24,12 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
     Return Figure object, Axes object
     """
     if clr is None:
-        clr = ['g', 'b', 'pink', 'purple', 'r', 'c']
+        clr = ('g', 'b', 'pink', 'purple', 'r', 'c')
     cell = sim.cells[cellid]
-    move_cell = sim.loc_param[cellid,0]
+    if move_cell is None:
+        move_cell = sim.loc_param[cellid, 0].reshape((2, 3))
+    else:
+        move_cell = np.asarray(move_cell).reshape((2, 3))
     dl = move_position([0., 0., 0.], move_cell[1], cell.seg_coords['dl'])
     pc = move_position(move_cell[0], move_cell[1], cell.seg_coords['pc'])
     xyz = 'xyz'
@@ -45,11 +48,11 @@ def plot_morphology(sim: Simulation, cellid: int = 0, electrodes: Optional[np.nd
         p0 = pc[i0] - dl[i0] / 2
         p1 = pc[i1] + dl[i1] / 2
         name = sec.name()
-        if name not in pretype:
+        if name in pretype:
+            label = None
+        else:
             pretype.append(name)
             label = name.split('.')[-1]
-        else:
-            label = None
         itype = pretype.index(name)
         ax.plot3D(*[[p0[j], p1[j]] for j in axes], color=clr[itype], label=label)
         box[0, :] = np.minimum(box[0, :], np.minimum(p0, p1))

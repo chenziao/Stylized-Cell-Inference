@@ -21,7 +21,7 @@ class Simulation(object):
                  spike_threshold: Optional[float] = None,
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
                  soma_injection: Optional[np.ndarray] = None,
-                 scale: Optional[float] = 1.0, min_dist: Optional[float] = 10.0) -> None:
+                 scale: Optional[float] = 1.0, min_distance: Optional[float] = 10.0) -> None:
         """
         Initialize simulation object
         cell_type: CellTypes enum value to indicate type of cell simulation
@@ -37,7 +37,7 @@ class Simulation(object):
         gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells'
         soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
-        min_dist: minimum distance allowed between segment and electrode. Set to None if not using.
+        min_distance: minimum distance allowed between segment and electrode. Set to None if not using.
         """
         self.cell_type = cell_type
         # Common properties
@@ -57,7 +57,7 @@ class Simulation(object):
         self.set_loc_param(loc_param)
         self.set_geo_param(geo_param)
         self.set_scale(scale)
-        self.min_dist = min_dist
+        self.min_distance = min_distance
         self.spike_threshold = spike_threshold
         
         # Cell type specific properties
@@ -148,7 +148,7 @@ class Simulation(object):
             # Move cell location
             if self.electrodes is not None:
                 self.lfp.append(
-                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i,0], scale=self.scale[i], min_distance=self.min_dist))
+                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i,0], scale=self.scale[i], min_distance=self.min_distance))
 
     def __create_netstim(self, stim_param: Optional[dict] = {}) -> h.NetStim:
         """Setup synaptic input event"""
@@ -190,9 +190,7 @@ class Simulation(object):
         Parameters
         loc_param: ncell-by-6 (or ncell-by-nloc-by-6) array describing the location of the cell
         """
-        loc_param = self.__pack_parameters(loc_param, 2, "loc_param")
-        # reshape the trailing dimension to 2-by-3
-        self.loc_param = loc_param.reshape(loc_param.shape[:2] + (2, 3))
+        self.loc_param = self.__pack_parameters(loc_param, 2, "loc_param")
 
     def set_geo_param(self, geo_param: Optional[Union[np.ndarray, List[float]]]) -> None:
         """

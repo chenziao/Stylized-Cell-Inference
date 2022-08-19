@@ -136,7 +136,7 @@ class DataSimulator(object):
                               cell_type=CellTypes.ACTIVE,
                               loc_param=loc_param,
                               geo_param=geo_param,
-                              spike_threshold=-30,
+                              spike_threshold=params.SPIKE_THRESHOLD,
                               gmax=self.gmax,
                               scale=1.,
                               ncell=self.number_samples)
