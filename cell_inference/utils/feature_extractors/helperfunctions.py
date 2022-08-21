@@ -66,10 +66,12 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
         val_loss_list.append(val_loss)
 
     date_time = datetime.now().strftime("%H_%M_%S__%m_%d_%Y")
-    torch.save(model, paths.MODELS_ROOT + date_time + ".pt")
+    model_file = paths.MODELS_ROOT + date_time + ".pt"
+    history_file = paths.LOSSES_ROOT + date_time + ".csv"
+    torch.save(model, model_file)
     history = pd.DataFrame({"Epochs": epochs_list, "Training_Loss": train_loss_list, "Validation_Loss": val_loss_list})
-    history.to_csv(paths.LOSSES_ROOT + date_time + ".csv", index=False)
-    return history
+    history.to_csv(history_file, index=False)
+    return history, [model_file, history_file]
 
 
 def predict_gmax(input_arr: np.ndarray, clf: str = paths.RESOURCES_ROOT + "gmax_classifier.joblib") -> np.ndarray:

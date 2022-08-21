@@ -41,8 +41,9 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
 
     # Segment radius
     soma_idx = seg_prop['swc_type']==1 # soma segment indices
-    r = seg_coords['r'] / np.std(seg_coords['r'][~soma_idx]) # normalize radius
-    r[soma_idx] = 2 * np.amax(r[~soma_idx])
+    r_rms = np.mean(seg_coords['r'][~soma_idx] ** 2) ** 0.5 # root mean square radius
+    r = seg_coords['r'] / r_rms # normalize radius
+    r[soma_idx] = (r[soma_idx] + np.amax(r[~soma_idx])) / 2 # soma size for display
 
     # Segment coordinates
     pc = seg_coords['pc'][:,axes] # center
@@ -95,10 +96,10 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
     ax = plt.subplot(1,3,1)
     axs.append(ax)
     # Plot
-    for i in np.nonzero(~soma_idx)[0]:
-        ax.plot(*p01[i], color=sm.to_rgba(dist05[i]), linewidth=r[i])
     for i in np.nonzero(soma_idx)[0]:
         ax.plot(*pc[i], color='r', marker='s', markersize=r[i])
+    for i in np.nonzero(~soma_idx)[0]:
+        ax.plot(*p01[i], color=sm.to_rgba(dist05[i]), linewidth=r[i])
     # Scale bar
     bar = AnchoredDirectionArrows(ax.transData, str(scalebar_size),  r'{} $\mu m$'.format(scalebar_size),
                                   length=scalebar_size, fontsize=fontsize, loc=6, color='k',
