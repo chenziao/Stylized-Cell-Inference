@@ -1,0 +1,14 @@
+id,name,type,pid,axial,L,R,ang
+0,soma,1,0,TRUE,0.,10.,0.
+1,proxbasal,3,0,FALSE,39.,0.647857,-0.7071067812
+2,midbasal,3,1,FALSE,59.,0.33488,-0.7071067812
+3,distbasal,3,2,FALSE,98.,0.2539,-0.7071067812
+4,proxtrunk,4,0,TRUE,136.,1.7694,1.570796327
+5,oblique,4,4,FALSE,166.,0.7535,0.
+6,midtrunk,4,4,TRUE,543.,1.27448,1.570796327
+7,disttrunk,4,6,TRUE,271.,1.042659,1.570796327
+8,proxtuft,4,7,FALSE,105.,0.3877,1.309
+9,midtuft,4,8,FALSE,210.,0.30256,1.309
+10,disttuft,4,9,FALSE,210.,0.25999,1.309
+11,axon,3,0,TRUE,60.,2.,-1.570796327
+12,passivebasal,3,0,FALSE,45.,0.8,0.

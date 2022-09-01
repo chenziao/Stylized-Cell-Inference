@@ -1,0 +1,378 @@
+{
+  "passive": [
+    {
+      "ra": 100
+    }
+  ], 
+  "conditions": [
+    {
+      "celsius": 34, 
+      "erev": [
+        {
+          "ena": 50.0, 
+          "section": "soma", 
+          "ek": -85.0
+        }, 
+        {
+          "ena": 50.0, 
+          "section": "dend", 
+          "ek": -85.0
+        },
+        {
+          "ena": 50.0, 
+          "section": "apic", 
+          "ek": -85.0
+        }, 
+        {
+          "section": "axon", 
+          "ek": -85.0
+        }
+      ], 
+      "v_init": -72.0
+    }
+  ], 
+  "genome": [
+    {
+      "section": "soma", 
+      "name": "g_pas", 
+      "value": "0.0000338", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "soma", 
+      "name": "e_pas", 
+      "value": "-72.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "dend", 
+      "name": "g_pas", 
+      "value": "0.0000467", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "dend", 
+      "name": "e_pas", 
+      "value": "-72.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "apic", 
+      "name": "g_pas", 
+      "value": "0.0000589", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "apic", 
+      "name": "e_pas", 
+      "value": "-72.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "axon", 
+      "name": "g_pas", 
+      "value": "0.0000325", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "axon", 
+      "name": "e_pas", 
+      "value": "-72.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "g_pas", 
+      "value": "0.0000100", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "e_pas", 
+      "value": "-72.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "soma", 
+      "name": "cm", 
+      "value": "1.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "soma", 
+      "name": "Ra", 
+      "value": "100.", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "dend", 
+      "name": "cm", 
+      "value": "2.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "dend", 
+      "name": "Ra", 
+      "value": "100.", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "apic", 
+      "name": "cm", 
+      "value": "2.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "apic", 
+      "name": "Ra", 
+      "value": "100.", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "axon", 
+      "name": "cm", 
+      "value": "2.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "axon", 
+      "name": "Ra", 
+      "value": "100.", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "cm", 
+      "value": "3.0", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "Ra", 
+      "value": "100.", 
+      "mechanism": ""
+    }, 
+    {
+      "section": "soma", 
+      "name": "gNaTa_tbar_NaTa_t", 
+      "value": "2.04", 
+      "mechanism": "NaTa_t"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gSKv3_1bar_SKv3_1", 
+      "value": "0.693", 
+      "mechanism": "SKv3_1"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gCa_HVAbar_Ca_HVA", 
+      "value": "0.000992", 
+      "mechanism": "Ca_HVA"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gCa_LVAstbar_Ca_LVAst", 
+      "value": "0.00343", 
+      "mechanism": "Ca_LVAst"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gamma_CaDynamics_E2", 
+      "value": "0.000501", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "soma", 
+      "name": "decay_CaDynamics_E2", 
+      "value": "460.0", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "soma", 
+      "name": "", 
+      "value": "", 
+      "mechanism": "Im"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gIhbar_Ih", 
+      "value": "0.0002", 
+      "mechanism": "Ih"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gSK_E2bar_SK_E2", 
+      "value": "0.0441", 
+      "mechanism": "SK_E2"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gK_Tstbar_K_Tst", 
+      "value": "0.0812", 
+      "mechanism": "K_Tst"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gK_Pstbar_K_Pst", 
+      "value": "0.00223", 
+      "mechanism": "K_Pst"
+    }, 
+    {
+      "section": "soma", 
+      "name": "gNap_Et2bar_Nap_Et2", 
+      "value": "0.00172", 
+      "mechanism": "Nap_Et2"
+    }, 
+    {
+      "section": "dend", 
+      "name": "gNaTa_tbar_NaTa_t", 
+      "value": "0.0213", 
+      "mechanism": "NaTa_t"
+    }, 
+    {
+      "section": "dend", 
+      "name": "gSKv3_1bar_SKv3_1", 
+      "value": "0.000261", 
+      "mechanism": "SKv3_1"
+    }, 
+    {
+      "section": "dend", 
+      "name": "gamma_CaDynamics_E2", 
+      "value": "0.000509", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "dend", 
+      "name": "decay_CaDynamics_E2", 
+      "value": "122.0", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "dend", 
+      "name": "gIhbar_Ih", 
+      "value": "0.0002", 
+      "mechanism": "Ih"
+    }, 
+    {
+      "section": "dend", 
+      "name": "gSK_E2bar_SK_E2", 
+      "value": "0.0012", 
+      "mechanism": "SK_E2"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gNaTa_tbar_NaTa_t", 
+      "value": "0.0213", 
+      "mechanism": "NaTa_t"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gSKv3_1bar_SKv3_1", 
+      "value": "0.000261", 
+      "mechanism": "SKv3_1"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gCa_HVAbar_Ca_HVA", 
+      "value": "0.0000555", 
+      "mechanism": "Ca_HVA"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gCa_LVAstbar_Ca_LVAst", 
+      "value": "0.000187", 
+      "mechanism": "Ca_LVAst"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gamma_CaDynamics_E2", 
+      "value": "0.000509", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "apic", 
+      "name": "decay_CaDynamics_E2", 
+      "value": "122.0", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gImbar_Im", 
+      "value": "0.0000675", 
+      "mechanism": "Im"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gIhbar_Ih", 
+      "value": "0.0002", 
+      "mechanism": "Ih"
+    }, 
+    {
+      "section": "apic", 
+      "name": "gSK_E2bar_SK_E2", 
+      "value": "0.0012", 
+      "mechanism": "SK_E2"
+    }, 
+    {
+      "section": "axon", 
+      "name": "gamma_CaDynamics_E2", 
+      "value": "0.000525", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "axon", 
+      "name": "decay_CaDynamics_E2", 
+      "value": "277.300774", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "axon", 
+      "name": "gImbar_Im", 
+      "value": "0.0000675", 
+      "mechanism": "Im"
+    }, 
+    {
+      "section": "axon", 
+      "name": "gIhbar_Ih", 
+      "value": "0.0001", 
+      "mechanism": "Ih"
+    }, 
+    {
+      "section": "axon", 
+      "name": "gSK_E2bar_SK_E2", 
+      "value": "0.000047", 
+      "mechanism": "SK_E2"
+    }, 
+    {
+      "section": "axon", 
+      "name": "gK_Tstbar_K_Tst", 
+      "value": "0.077274", 
+      "mechanism": "K_Tst"
+    }, 
+    {
+      "section": "axon", 
+      "name": "gK_Pstbar_K_Pst", 
+      "value": "0.188851", 
+      "mechanism": "K_Pst"
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "gamma_CaDynamics_E2", 
+      "value": "0.000509", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "decay_CaDynamics_E2", 
+      "value": "122.0", 
+      "mechanism": "CaDynamics_E2"
+    }, 
+    {
+      "section": "pas_dend", 
+      "name": "gIhbar_Ih", 
+      "value": "0.0002", 
+      "mechanism": "Ih"
+    }
+  ]
+}

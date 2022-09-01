@@ -98,6 +98,8 @@ def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
     lfp_y_window = g_lfp.reshape((t, grid_shape[0], grid_shape[1]))[:,:,y_window_idx].reshape((t, -1))
     return lfp_y_window, center_y
 
+# TODO: process_lfp
+
 
 def calculate_stats(g_lfp: np.ndarray, additional_stats: bool = True,
                     grid_shape: Optional[Tuple[int]] = None

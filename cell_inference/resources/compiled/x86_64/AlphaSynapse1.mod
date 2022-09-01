@@ -1,1 +1,0 @@
-../AlphaSynapse1.mod

@@ -9,15 +9,14 @@ from enum import Enum
 from cell_inference.utils.currents.currentinjection import CurrentInjection
 from cell_inference.utils.currents.synapse import Synapse
 
-_T = TypeVar("_T", bound=Sequence)
 
 h.load_file('stdrun.hoc')
-
 
 class CellTypes(Enum):
     PASSIVE = 1
     ACTIVE = 2
     ACTIVE_FULL = 3
+    REDUCED_ORDER = 4
 
 
 class StylizedCell(ABC):
@@ -170,7 +169,7 @@ class StylizedCell(ABC):
             self.spikes = vec
             self._record_spike = True
 
-    def get_sec_by_id(self, index: Optional[_T] = None) -> Optional[Union[List[h.Section], h.Section]]:
+    def get_sec_by_id(self, index) -> Optional[Union[List[h.Section], h.Section]]:
         """Get section(s) objects by index(indices) in the section list"""
         if not hasattr(index, '__len__'):
             sec = self.all[index]
@@ -178,7 +177,7 @@ class StylizedCell(ABC):
             sec = [self.all[i] for i in index]
         return sec
 
-    def get_seg_by_id(self, index: Optional[_T] = None) -> List[h.Section]:
+    def get_seg_by_id(self, index) -> List[h.Section]:
         """Get segment(s) objects by index(indices) in the segment list"""
         if not hasattr(index, '__len__'):
             seg = self.segments[index]

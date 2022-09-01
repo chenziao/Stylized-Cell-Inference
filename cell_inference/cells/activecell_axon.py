@@ -64,6 +64,14 @@ class ActiveFullCell(StylizedCell):
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'), (3, 'g_pas')
         ]
         self.default_biophys = np.array([0.00051532, 0.000170972, 0.004506, 0.00951182])
+    
+    def get_grp_ids(self, index):
+        """Get section ids in groups(s) by index(indices) in the section group list"""
+        if not hasattr(index, '__len__'):
+            sec_ids = self.grp_ids[index]
+        else:
+            sec_ids = [isec for i in index for isec in self.grp_ids[i]]
+        return sec_ids
 
     def set_channels(self) -> None:
         if self.full_biophys is None:
@@ -86,11 +94,14 @@ class ActiveFullCell(StylizedCell):
         for genome in fb['genome']:
             mech = genome['mechanism']
             insert = mech != ""
+            varname = genome['name']
+            set_value = varname != ""
             for isec in bio_sec_ids[genome['section']]:
                 sec = self.get_sec_by_id(isec)
                 if insert:
                     sec.insert(mech)
-                setattr(sec, genome['name'], genome['value'])
+                if set_value:
+                    setattr(sec, varname, genome['value'])
         for erev in fb['conditions'][0]['erev']:
             enames = [x for x in erev.keys() if x != 'section']
             for isec in bio_sec_ids[erev['section']]:
@@ -106,7 +117,7 @@ class ActiveFullCell(StylizedCell):
         if not self.grp_ids:
             self.__create_biophys_entries()
         for i, entry in enumerate(self.biophys_entries):
-            for sec in self.get_sec_by_id(self.grp_ids[entry[0]]):
+            for sec in self.get_sec_by_id(self.get_grp_ids(entry[0])):
                 try:
                     setattr(sec, entry[1], self.biophys[i])
                 except AttributeError:
@@ -137,3 +148,29 @@ class ActiveObliqueCell(ActiveFullCell):
             (1, 'Ra'), (2, 'Ra'), (3, 'Ra')
         ]
         self.default_biophys = np.array([100, 100, 100])
+
+class ReducedOrderL5Cell(ActiveFullCell):
+    """Define single cell model using parent class ActiveFullCell"""
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+    def morphological_properties(self):
+        """Define properties related to morphology"""
+        # map from biophysic section name to secion id in geometry, used with "full_biophys"
+        self.section_map = {'soma': [0], 'dend': [1,2,3,4,5], 'apic': [6,7,8,9,10], 'axon': [11], 'pas_dend': [12]}
+        # select section id's for each group, used with "biophys"
+#         self.grp_sec_type_ids = [[0], [1, 2], [3, 4], [5]]
+        self.grp_sec_type_ids = [ # select section id's for each group
+                                 [0], # soma
+                                 [1,2,3], # basal group: prox,mid,dist;
+                                 [4,5], # prox trunk; oblique
+                                 [6], # mid trunk
+                                 [7,8,9,10], # distal trunk (nexus); tuft: prox,mid,dist
+                                 [11], # axon
+                                 [12] # passive basal
+                                ]
+        self.biophys_entries = [
+            (1, 'Ra'), (2, 'Ra'), ([3, 4], 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas')
+        ]
+        self.default_biophys = np.array([100, 100, 100, 100, 100, 0.0000489])

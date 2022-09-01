@@ -92,23 +92,30 @@ class Simulation(object):
             else:
                 self.set_gmax(self.gmax)
                 self.__create_netstim(self.stim_param)
-            if self.cell_type == CellTypes.ACTIVE_FULL:
+            if self.cell_type == CellTypes.ACTIVE_FULL or self.cell_type == CellTypes.REDUCED_ORDER:
                 if self.full_biophys is None:
                     raise ValueError("'full_biophys' is required for an Active Cell")
                 for genome in self.full_biophys['genome']:
-                    genome['value'] = float(genome['value'])
-                # self.geo_entries.append((5, 'R'))
-                self.geo_entries = [
-                    (0, 'R'),  # soma radius
-                    (4, 'L'),  # trunk length
-                    (3, 'R'),  # trunk radius
-                    ([1, 2], 'R'),  # basal radius
-                    ([4, 5], 'R'),  # tuft radius
-                    ([1, 2, 5], 'L'),  # all dendrites length
-                    (6, 'R'),  # axon radius
-                    (7, 'R'),  # oblique radius
-                    (7, 'L')  # oblique length
-                ]
+                    if genome['value'] != "": genome['value'] = float(genome['value'])
+                if self.cell_type == CellTypes.ACTIVE_FULL:
+                    # self.geo_entries.append((5, 'R'))
+                    self.geo_entries = [
+                        (0, 'R'),  # soma radius
+                        (4, 'L'),  # trunk length
+                        (3, 'R'),  # trunk radius
+                        ([1, 2], 'R'),  # basal radius
+                        ([4, 5], 'R'),  # tuft radius
+                        ([1, 2, 5], 'L'),  # all dendrites length
+                        (6, 'R'),  # axon radius
+                        (7, 'R'),  # oblique radius
+                        (7, 'L')  # oblique length
+                    ]
+                if self.cell_type == CellTypes.REDUCED_ORDER:
+                    self.geo_entries = [
+                        (4, 'L'),  # prox trunk length
+                        (6, 'L'),  # mid trunk length
+                        (7, 'L')  # distal trunk length
+                    ]
     
     def __load_cell_module(self) -> None:
         """Load cell module and define arguments for initializing cell instance according to cell type"""
@@ -122,14 +129,19 @@ class Simulation(object):
         if self.cell_type == CellTypes.ACTIVE:
             from cell_inference.cells.activecell import ActiveCell
             create_cell = pass_geometry(ActiveCell)
-            self.CreateCell = lambda i: create_cell(i,biophys=self.biophys[i, :])
+            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :])
         if self.cell_type == CellTypes.ACTIVE_FULL:
             # from cell_inference.cells.activecell_axon import ActiveFullCell
             # create_cell = pass_geometry(ActiveFullCell)
             from cell_inference.cells.activecell_axon import ActiveObliqueCell
             create_cell = pass_geometry(ActiveObliqueCell)
-            self.CreateCell = lambda i: create_cell(i,biophys=self.biophys[i, :],
-                full_biophys=self.full_biophys,biophys_comm=self.biophys_comm)
+            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
+                full_biophys=self.full_biophys, biophys_comm=self.biophys_comm)
+        if self.cell_type == CellTypes.REDUCED_ORDER:
+            from cell_inference.cells.activecell_axon import ReducedOrderL5Cell
+            create_cell = pass_geometry(ReducedOrderL5Cell)
+            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
+                full_biophys=self.full_biophys, biophys_comm=self.biophys_comm)
     
     def __create_cells(self) -> None:
         """Create cell objects with properties set up"""
