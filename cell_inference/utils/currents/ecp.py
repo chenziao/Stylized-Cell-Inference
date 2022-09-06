@@ -142,7 +142,7 @@ class EcpMod(object):
             kwargs0[key] = value
         tr = self.calc_transfer_resistance(**kwargs0)
         im = self.calc_im()
-        return np.matmul(tr, im)
+        return tr @ im
 
     def calc_ecps(self, move_cell: Optional[List] = None, **kwargs) -> np.ndarray:
         """Calculate ECP with multiple positions after simulation. Unit: mV."""
@@ -157,7 +157,7 @@ class EcpMod(object):
         im = self.calc_im()
         ecp = []
         for mc in move_cell:
-            ecp.append(np.matmul(self.calc_transfer_resistance(move_cell=mc, **kwargs0), im))
+            ecp.append(self.calc_transfer_resistance(move_cell=mc, **kwargs0) @ im)
         return np.stack(ecp, axis=0)
 
 

@@ -1,17 +1,22 @@
 import numpy as np
 import torch
 from scipy.interpolate import griddata
+from scipy import signal
 from typing import Tuple, Optional, Union
 
 # Project Imports
 import cell_inference.config.params as params
+from cell_inference.utils.spike_window import get_spike_window
 
 GRID = params.ELECTRODE_GRID
 GRID_SHAPE = tuple(v.size for v in GRID)
-
+filt_b, filt_a = signal.butter(params.BUTTERWORTH_ORDER,
+                               params.FILTER_CRITICAL_FREQUENCY,
+                               params.BANDFILTER_TYPE,
+                               fs=params.FILTER_SAMPLING_RATE)
 
 def get_y_window(lfp: np.ndarray, coord: np.ndarray,
-                 y_window_size: float = 960.,
+                 y_window_size: float = params.Y_WINDOW_SIZE,
                  grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]] = None
                  ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -75,7 +80,7 @@ def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
 
 
 def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
-                     y_window_size: float = 960.,
+                     y_window_size: float = params.Y_WINDOW_SIZE,
                      grid_v: Optional[Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None
                      ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """
@@ -97,8 +102,6 @@ def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
     t = g_lfp.shape[0]
     lfp_y_window = g_lfp.reshape((t, grid_shape[0], grid_shape[1]))[:,:,y_window_idx].reshape((t, -1))
     return lfp_y_window, center_y
-
-# TODO: process_lfp
 
 
 def calculate_stats(g_lfp: np.ndarray, additional_stats: bool = True,
@@ -235,3 +238,34 @@ def cat_output(lfp: np.ndarray, include_sumstats=True) -> torch.Tensor:
     g_lfp, grid = build_lfp_grid(lfp, params.ELECTRODE_POSITION, params.ELECTRODE_GRID)
     output = np.concatenate((g_lfp.ravel(), calculate_stats(g_lfp, grid))) if include_sumstats else lfp.ravel()
     return torch.from_numpy(output)
+
+
+def process_lfp(lfp: np.ndarray, dt: float = params.DT, y_window_size: float = params.Y_WINDOW_SIZE,
+                ycoord: float = None, calc_summ_stats: bool = True):
+    bad = 0
+    filtered_lfp = signal.lfilter(filt_b, filt_a, lfp, axis=0) # filter along time axis
+#     filtered_lfp /= np.max(np.abs(filtered_lfp))
+    try:
+        start, end = get_spike_window(filtered_lfp, win_size=params.WINDOW_SIZE, align_at=params.PK_TR_IDX_IN_WINDOW) # 24*0.025=0.6 ms
+        windowed_lfp = filtered_lfp[start:end,:]
+        t = dt * np.arange(params.WINDOW_SIZE)
+    except ValueError:
+        bad = 1
+        t = dt * np.arange(filtered_lfp.shape[0])
+    
+    elec_pos = params.ELECTRODE_POSITION[:, :2]
+    try:
+        g_lfp, g_coords, y_c = build_lfp_grid(windowed_lfp, elec_pos, y_window_size=y_window_size)
+    except ValueError:
+        bad = 2
+
+    if bad==1:
+        output = (bad, filtered_lfp, t, elec_pos)
+    elif bad==2:
+        output = (bad, windowed_lfp, t, elec_pos)
+    else:
+        yshift = None if ycoord is None else y_c - ycoord
+        output = (bad, g_lfp, t, g_coords, y_c, yshift)
+        if calc_summ_stats:
+            output += (calculate_stats(g_lfp), )
+    return output

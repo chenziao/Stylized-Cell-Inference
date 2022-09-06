@@ -112,9 +112,8 @@ class Simulation(object):
                     ]
                 if self.cell_type == CellTypes.REDUCED_ORDER:
                     self.geo_entries = [
+                        (6, 'L'),  # distal trunk length
                         (4, 'L'),  # prox trunk length
-                        (6, 'L'),  # mid trunk length
-                        (7, 'L')  # distal trunk length
                     ]
     
     def __load_cell_module(self) -> None:
