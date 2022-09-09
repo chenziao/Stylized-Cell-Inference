@@ -13,6 +13,7 @@ active_groundtruth.h5
 detailed_groundtruth.h5
 Results_ActiveGroundTruth_CNN_Passive_locOnly.h5
 cell360LFP.h5
+*.dll
 *.o
 *.c
 *.pt
@@ -22,10 +23,8 @@ cell360LFP.h5
 *.png
 *.jpg
 *.npy
-cell_inference/resources/results/old_run_results/
-/cell_inference/resources/results/detailed/
-/cell_inference/resources/results/simulation_data/
-/cell_inference/resources/results/pytorch_models/
-/cell_inference/resources/results/pytorch_losses/
-/cell_inference/resources/results/result_data/
+/cell_inference/resources/detailed/
+/cell_inference/resources/simulation_data/
+/cell_inference/resources/invivo/
+/cell_inference/resources/results/
 /venv/

@@ -76,10 +76,10 @@ class ActiveFullCell(StylizedCell):
     def set_channels(self) -> None:
         if self.full_biophys is None:
             raise ValueError("Warning: full_biophys is not loaded.")
-        if set([x for xs in self.section_map.values() for x in xs])!=set(self.geometry.index.to_list()):
+        if set([x for xs in self.section_map.values() for x in xs])!=set(self.geometry.index.tolist()):
             print("Warning: Sections in 'section_map' are not consistent with 'geometry'.")
             print(set([x for xs in self.section_map.values() for x in xs]))
-            print(set(self.geometry.index.to_list()))
+            print(set(self.geometry.index.tolist()))
         fb = self.full_biophys
         # common parameters
         self._vrest = fb['conditions'][0]['v_init']

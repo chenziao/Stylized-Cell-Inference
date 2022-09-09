@@ -23,7 +23,7 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray,
     Get a window along y-axis centered at the maximum amplitude location.
         lfp: LFP array with shape (time x channels)
         coord: Coordinates of each channel (channels x 2)
-        y_window_size: The width of the window (micron)
+        y_window_size: The width of the window along y-axis (micron)
         grid_v: The grid vectors we use to get the window index. (x grid, y grid, z grid)
             If not specified, use params.ELECTRODE_GRID.
     Return Windowed grid y coordinates, Index of the window in the grid, y coordinates of window center
@@ -138,68 +138,66 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: bool = True,
     stats_list = [avg, rel_t, std_dev, troughs, peaks]
     i_min = 2  # include minimum statistics for the first i_min in stats_list
 
-    """
-    Helper functions for calculating statistics across channels and searching for
-    a specified height
-        - statscalc: calculates the statistics across each channel
-            - include_min: include minimun value and position
-            
-        - searchheights: calculates width of waveform given a height
-    """
-
     def statscalc(stats: np.ndarray, include_min: bool = True) -> np.ndarray:
+        """
+        Helper functions for calculating statistics across channels and searching for
+        a specified height
+            - statscalc: calculates the statistics across each channel
+                - include_min: include minimun value and position
+                
+            - searchheights: calculates width of waveform given a height
+        """
         stats = stats.ravel()
         mean = np.mean(stats)
         std = np.std(stats)
         single_lfp_max_idx = np.argmax(stats)
-        sing_lfp_max_val = stats[single_lfp_max_idx]
+        single_lfp_max_val = stats[single_lfp_max_idx]
         single_lfp_max_idx_x, single_lfp_max_idx_y = np.unravel_index(single_lfp_max_idx, grid_shape)
         if include_min:
             single_lfp_min_idx = np.argmin(stats)
             single_lfp_min_val = stats[single_lfp_min_idx]
             single_lfp_min_idx_x, single_lfp_min_idx_y = np.unravel_index(single_lfp_min_idx, grid_shape)
             single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
-                                             single_lfp_max_idx_y, sing_lfp_max_val,
+                                             single_lfp_max_idx_y, single_lfp_max_val,
                                              single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val])
         else:
             single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
-                                             single_lfp_max_idx_y, sing_lfp_max_val])  # My,max_val])
+                                             single_lfp_max_idx_y, single_lfp_max_val])  # My,max_val])
         return single_lfp_all_stats
 
-    def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
-        idx_left, idx_right = 0, lfp.size
-        for i in range(idx - 1, idx_left, -1):
-            if lfp[i] <= height:
-                idx_left = i
-                break
-        for i in range(idx + 1, idx_right):
-            if lfp[i] <= height:
-                idx_right = i
-                break
-        return idx_left, idx_right
-
-    def half_height_width_wrt_y(lfp: np.ndarray) -> Tuple[int, int]:
-        # channel with max amplitude
-        idx_wrt_time = np.argmax(np.abs(lfp))
-        # max amplitude
-        height = lfp[idx_wrt_time]
-        # half height of max amplitude
-        half_height = np.abs(height)/2
-        # x, y index of max channel
-        x0_idx_wrt_time, y0_idx_wrt_time = np.unravel_index(idx_wrt_time, grid_shape)
-        # make sure height in fy is positive
-        fy_wrt_x0_wrt_time = np.sign(height) * lfp.reshape(grid_shape)[x0_idx_wrt_time, :]
-        return searchheights(fy_wrt_x0_wrt_time, half_height, y0_idx_wrt_time)
-
     # Calculation of statistics across channels
-    sl = [statscalc(x, i < i_min) for i, x in enumerate(stats_list)]
-    #     sl = []
+    ss = [statscalc(x, i < i_min) for i, x in enumerate(stats_list)]
 
     """
     Calculates width of the first peak and adds it to the stats
     if grid parameter is provided
     """
     if additional_stats:
+        def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
+            idx_left, idx_right = 0, lfp.size
+            for i in range(idx - 1, idx_left, -1):
+                if lfp[i] <= height:
+                    idx_left = i
+                    break
+            for i in range(idx + 1, idx_right):
+                if lfp[i] <= height:
+                    idx_right = i
+                    break
+            return idx_left, idx_right
+
+        def half_height_width_wrt_y(lfp: np.ndarray) -> Tuple[int, int]:
+            # channel with max amplitude
+            idx_wrt_time = np.argmax(np.abs(lfp))
+            # max amplitude
+            height = lfp[idx_wrt_time]
+            # half height of max amplitude
+            half_height = np.abs(height)/2
+            # x, y index of max channel
+            x0_idx_wrt_time, y0_idx_wrt_time = np.unravel_index(idx_wrt_time, grid_shape)
+            # make sure height in fy is positive
+            fy_wrt_x0_wrt_time = np.sign(height) * lfp.reshape(grid_shape)[x0_idx_wrt_time, :]
+            return searchheights(fy_wrt_x0_wrt_time, half_height, y0_idx_wrt_time)
+
         # Trough and Peak times with maximum amplitude
         t_T = t_t[np.argmax(troughs)]
         t_P = t_p[np.argmax(peaks)]
@@ -222,50 +220,109 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: bool = True,
         t1_stats = statscalc(g_lfp[t1, :], include_min=True)
         idx_list.extend((t1_stats[3], t1_stats[6]))
         
-        sl += [np.array(idx_list)]
+        ss += [np.array(idx_list)]
 
-    all_stats = np.concatenate(sl)
+    all_stats = np.concatenate(ss)
     return all_stats
+
+
+def scaled_stats_indices(boolean: bool = False, additional_stats: bool = True):
+    """
+    Return indices of summary statistics that scales with LFP magnitude.
+    Return a boolean list if boolean is True.
+    Edit this function if needed when summary statistics change.
+    """
+    # mean, std, single_lfp_max_val, (single_lfp_min_val)
+    n_stats = lambda include_min: 8 if include_min else 5  # number of stats across channels
+    stats_idx = lambda include_min: [0, 1, 4, 7] if include_min else [0, 1, 4]
+    # stats_list = [avg, rel_t, std_dev, troughs, peaks]
+    i_min = 2  # include minimum statistics for the first i_min in stats_list
+    scale_stats = np.array([1, 0, 1, 1, 1], dtype=bool)  # whether stats (for each channel) in the list scales
+    n = 0
+    indices = []
+    for i, scale in enumerate(scale_stats):
+        if scale:
+            for j in stats_idx(i < i_min):
+                indices.append(n + j)
+        n += n_stats(i < i_min)
+    if additional_stats:
+        n_addtn_stats = 9
+        n += n_addtn_stats
+    indices = np.array(indices)
+    if boolean:
+        indices_bool = np.full(n, False)
+        indices_bool[indices] = True
+        indices = indices_bool
+    return indices
 
 
 def cat_output(lfp: np.ndarray, include_sumstats=True) -> torch.Tensor:
     """
     Driver function. Creates grid and interpolates provided LFP then concatenates
-    calculated summary statistics to the interpolated LFP
-
-    Always include summary stats unless specified not to
+    calculated summary statistics to the interpolated LFP.
+    Always include summary stats unless specified not to.
     """
     g_lfp, grid = build_lfp_grid(lfp, params.ELECTRODE_POSITION, params.ELECTRODE_GRID)
     output = np.concatenate((g_lfp.ravel(), calculate_stats(g_lfp, grid))) if include_sumstats else lfp.ravel()
     return torch.from_numpy(output)
 
 
-def process_lfp(lfp: np.ndarray, dt: float = params.DT, y_window_size: float = params.Y_WINDOW_SIZE,
-                ycoord: float = None, calc_summ_stats: bool = True):
-    bad = 0
-    filtered_lfp = signal.lfilter(filt_b, filt_a, lfp, axis=0) # filter along time axis
-#     filtered_lfp /= np.max(np.abs(filtered_lfp))
-    try:
-        start, end = get_spike_window(filtered_lfp, win_size=params.WINDOW_SIZE, align_at=params.PK_TR_IDX_IN_WINDOW) # 24*0.025=0.6 ms
-        windowed_lfp = filtered_lfp[start:end,:]
-        t = dt * np.arange(params.WINDOW_SIZE)
-    except ValueError:
-        bad = 1
-        t = dt * np.arange(filtered_lfp.shape[0])
+def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, dt: float = params.DT,
+                pad_spike_window: bool = False, align_at: int = params.PK_TR_IDX_IN_WINDOW,
+                y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None,
+                calc_summ_stats: bool = True, err_msg: bool = False):
+    """
+    Process LFP: filter, find spike window, interpolate in grid, window along y-axis, shift in y, summary statistics.
     
-    elec_pos = params.ELECTRODE_POSITION[:, :2]
-    try:
-        g_lfp, g_coords, y_c = build_lfp_grid(windowed_lfp, elec_pos, y_window_size=y_window_size)
-    except ValueError:
-        bad = 2
+    lfp: LFP array with shape (time x channels)
+    coord: Coordinates of each channel (channels x 2 or 3)
+    dt: time step for generating time array. Do not generate if set to None
+    pad_spike_window: whether or not to pad when LFP duration is too short for time window
+    align_at: keyword argument "align_at" for the function "get_spike_window"
+    y_window_size: The width of the window along y-axis (micron)
+    ycoord: the y-coordinate of the soma. Specify to calculate the y-shift
+    calc_summ_stats: whether or not to calculate summary statistics
+    err_msg: whether or not to print error message
+    
+    Return: bad case id, LFP array, time array, electrode coordinates,
+            y coordinates of window center, y-shift, summary statistics
+    """
+    bad = -2
+    while bad < 0:
+        try:
+            filtered_lfp = signal.lfilter(filt_b, filt_a, lfp, axis=0) # filter along time axis
+            # filtered_lfp /= np.max(np.abs(filtered_lfp))
+            start, end = get_spike_window(filtered_lfp, win_size=params.WINDOW_SIZE, align_at=align_at)
+        except ValueError as e:
+            if err_msg: print(e)
+            if pad_spike_window:
+                bad = -1
+                pad_size = (params.PK_TR_IDX_IN_WINDOW, params.WINDOW_SIZE - params.PK_TR_IDX_IN_WINDOW)
+                lfp = np.pad(lfp, (pad_size, (0, 0)), 'linear_ramp', end_values=((0,),))
+            else:
+                bad = 1
+                t = None if dt is None else dt * np.arange(filtered_lfp.shape[0])
+        else:
+            windowed_lfp = filtered_lfp[start:end,:]
+            t = None if dt is None else dt * np.arange(params.WINDOW_SIZE)
+            if bad == -1:
+                break
+            else:
+                bad = 0
+
+    if bad != 1:
+        try:
+            g_lfp, g_coords, y_c = build_lfp_grid(windowed_lfp, coord, y_window_size=y_window_size)
+        except ValueError as e:
+            if err_msg: print(e)
+            bad = 2
 
     if bad==1:
-        output = (bad, filtered_lfp, t, elec_pos)
+        output = (bad, filtered_lfp, t, coord, None, None, None)
     elif bad==2:
-        output = (bad, windowed_lfp, t, elec_pos)
+        output = (bad, windowed_lfp, t, coord, None, None, None)
     else:
         yshift = None if ycoord is None else y_c - ycoord
-        output = (bad, g_lfp, t, g_coords, y_c, yshift)
-        if calc_summ_stats:
-            output += (calculate_stats(g_lfp), )
+        summ_stats = calculate_stats(g_lfp) if calc_summ_stats else None
+        output = (bad, g_lfp, t, g_coords, y_c, yshift, summ_stats)
     return output

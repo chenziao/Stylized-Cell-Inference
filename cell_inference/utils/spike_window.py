@@ -35,12 +35,11 @@ def get_spike_window(lfp: np.ndarray,
     align_at: time index in the window to align with the first peak/trough in "lfp"
     return (start,end), the time index of the window in "lfp"
     """
-    lfp_time = lfp.shape[0]
-    if win_size > lfp_time:
-        raise ValueError("win_size cannot be greater than length of lfp")
     align_pt = first_pk_tr(lfp)
-    start = max(align_pt - align_at, 0)
+    start = align_pt - align_at
+    if start < 0:
+        raise ValueError("Start of the window exceeds the data time frame")
     end = start + win_size
-    if end > lfp_time:
+    if end > lfp.shape[0]:
         raise ValueError("End of the window exceeds the data time frame")
     return start, end
