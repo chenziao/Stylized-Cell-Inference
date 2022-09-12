@@ -18,7 +18,7 @@ class Simulation(object):
                  geo_param: Union[np.ndarray, List[int], List[float]] = [],
                  biophys: Union[np.ndarray, List[int], List[float]] = [],
                  full_biophys: Optional[dict] = None, biophys_comm: Optional[dict] = {},
-                 spike_threshold: Optional[float] = None,
+                 record_soma_v: bool = True, spike_threshold: Optional[float] = None,
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
                  soma_injection: Optional[np.ndarray] = None,
                  scale: Optional[float] = 1.0, min_distance: Optional[float] = 10.0) -> None:
@@ -33,6 +33,7 @@ class Simulation(object):
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
         full_biophys: dictionary that includes full biophysical parameters (in Allen's celltype database model format)
         biophys_comm: dictionary that specifies common biophysical parameters for all sections
+        record_soma_v: whether or not to record soma membrane voltage
         spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
         gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells'
         soma_injection: scaling factor for passive cell soma_injections
@@ -58,6 +59,7 @@ class Simulation(object):
         self.set_geo_param(geo_param)
         self.set_scale(scale)
         self.min_distance = min_distance
+        self.record_soma_v = record_soma_v
         self.spike_threshold = spike_threshold
         
         # Cell type specific properties
@@ -73,7 +75,6 @@ class Simulation(object):
         # Create
         self.__create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector(round(h.tstop / h.dt) + 1).record(h._ref_t)  # record time
-        self.record_spikes(self.spike_threshold)
 
     @staticmethod
     def run_neuron_sim() -> None:
@@ -112,15 +113,18 @@ class Simulation(object):
                     ]
                 if self.cell_type == CellTypes.REDUCED_ORDER:
                     self.geo_entries = [
-                        (6, 'L'),  # distal trunk length
+                        (6, 'L'),  # mid trunk length
                         (4, 'L'),  # prox trunk length
+                        (7, 'L'),  # prox trunk length
                     ]
     
     def __load_cell_module(self) -> None:
         """Load cell module and define arguments for initializing cell instance according to cell type"""
         def pass_geometry(CellClass):
             def create_cell(i,**kwargs):
-                return CellClass(geometry=self.set_geometry(self.geometry, self.geo_param[i, :]),**kwargs)
+                cell = CellClass(geometry=self.set_geometry(self.geometry, self.geo_param[i, :]),
+                                 record_soma_v=self.record_soma_v, spike_threshold=self.spike_threshold, **kwargs)
+                return cell
             return create_cell
         if self.cell_type == CellTypes.PASSIVE:
             from cell_inference.cells.passivecell import PassiveCell
@@ -248,18 +252,16 @@ class Simulation(object):
         Parameters
         geometry: pandas dataframe describing the geometry
         geo_param: numpy array describing entries used
+        
+        Note:
+        Set negative value (e.g. -1) to use default value.
+        If default value is negative, setting nonnegative value only changes the magnitude of the negative value.
         """
         geom = geometry.copy()
         for i, x in enumerate(geo_param):
             if x >= 0:
-                geom.loc[self.geo_entries[i]] = x
+                geom.loc[self.geo_entries[i]] = x if geom.loc[self.geo_entries[i]] >= 0 else -x
         return geom
-
-    def record_spikes(self, threshold: Optional[float]) -> None:
-        """Setup spike recorder for all cells"""
-        for cell in self.cells:
-            cell.set_spike_recorder(threshold)
-        self.spike_threshold = threshold
 
     def t(self) -> np.ndarray:
         """Return simulation time vector"""

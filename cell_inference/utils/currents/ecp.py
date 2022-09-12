@@ -42,7 +42,8 @@ class EcpMod(object):
     and calculating extracellular potential ECP
     """
 
-    def __init__(self, cell: Union[StylizedCell, EcpCell], electrode_positions: Union[List[List], np.ndarray],
+    def __init__(self, cell: Union[StylizedCell, EcpCell],
+                 electrode_positions: Union[List[List], np.ndarray] = [[0., 0., 0.]],
                  move_cell: Optional[Union[List,Tuple]] = None,
                  scale: float = 1.0, min_distance: Optional[float] = None) -> None:
         """
@@ -51,10 +52,7 @@ class EcpMod(object):
         move_cell, scale, min_distance: see method 'calc_transfer_resistance'
         """
         self.cell = cell
-        self.elec_coords = np.asarray(electrode_positions)
-        if self.elec_coords.ndim != 2 or self.elec_coords.shape[1] != 3:
-            raise ValueError("electrode_positions must be an n-by-3 2-D array")
-        self.nelec = self.elec_coords.shape[0]
+        self.set_electrode_positions(electrode_positions)
         self.move_cell = move_cell
         self.scale = scale
         self.min_distance = min_distance
@@ -76,6 +74,12 @@ class EcpMod(object):
             self.im_rec = Recorder(self.cell.segments, 'i_membrane_')
 
     # PUBLIC METHODS
+    def set_electrode_positions(self, electrode_positions: Union[List[List], np.ndarray]) -> None:
+        self.elec_coords = np.asarray(electrode_positions)
+        if self.elec_coords.ndim != 2 or self.elec_coords.shape[1] != 3:
+            raise ValueError("'electrode_positions' must be an n-by-3 2-D array")
+        self.nelec = self.elec_coords.shape[0]
+    
     def calc_transfer_resistance(self, move_cell: Optional[Union[List,Tuple]] = None,
                                  scale: float = 1.0, min_distance: Optional[float] = None,
                                  move_elec: Optional[bool] = False, sigma: float = 0.3,) -> None:
@@ -166,10 +170,13 @@ def move_position(translate: Union[List[float],Tuple[float],np.ndarray],
                   old_position: Optional[Union[List[float], np.ndarray]] = None,
                   move_frame: bool = False) -> np.ndarray:
     """
-    Rotate and translate an object with old_position and calculate its new coordinates. Rotate(alpha,h,phi): first
-    rotate alpha about y-axis (spin), then rotate arccos(h) about x-axis (elevation), then rotate phi about y axis
-    (azimuth). Finally translate the object by translate(x,y,z). If move_frame is True, use the object as reference
-    frame and move the old reference frame, calculate new coordinates of the old_position.
+    Rotate and translate an object with old_position and calculate its new coordinates.
+    Rotate(alpha, h, phi): first rotate alpha about the y-axis (spin),
+    then rotate arccos(h) about the x-axis (elevation),
+    then rotate phi about the y-axis (azimuth).
+    Finally translate the object by translate(x, y, z).
+    If move_frame is True, use the object as reference frame and move the
+    old reference frame, calculate new coordinates of the old_position.
     """
     translate = np.asarray(translate)
     if old_position is None:

@@ -6,9 +6,10 @@ from typing import Union, Optional, List, Tuple
 
 from cell_inference.utils.currents.ecp import move_position
 from cell_inference.cells.simulation import Simulation
+from cell_inference.cells.stylizedcell import StylizedCell
 
 
-def plot_morphology(sim: Optional[Simulation] = None, cellid: Optional[int] = 0,
+def plot_morphology(sim: Optional[Simulation] = None, cellid: Optional[int] = 0, cell: Optional[StylizedCell] = None,
                     seg_coords: Optional[dict] = None, sec_nseg: Optional[List] = None,
                     type_id: Optional[List] = None, electrodes: Optional[np.ndarray] = None,
                     axes: Union[List[int], Tuple[int]] = [2, 0, 1], clr: Optional[List[str]] = None,
@@ -19,16 +20,17 @@ def plot_morphology(sim: Optional[Simulation] = None, cellid: Optional[int] = 0,
 
     sim: simulation object
     cellid: cell id in the simulation object. Default: 0
-    seg_coords: if not using sim, a dictionary that includes dl, pc, r
-    sec_nseg: if not using sim, list of number of segments in each section
-    type_id:  if not using sim, list of the swc type id of each section/segment
+    cell: stylized cell object. Ignore sim and cellid if specified
+    seg_coords: if not using sim or cell, a dictionary that includes dl, pc, r
+    sec_nseg: if not using sim or cell, list of number of segments in each section
+    type_id:  if not using sim or cell, list of the swc type id of each section/segment
     electrodes: electrode positions. Default: None, not shown.
     axes: sequence of axes to display in 3d plot axes.
         Default: [2,0,1] show z,x,y in 3d plot x,y,z axes, so y is upward.
     clr: list of colors for each type of section
     Return Figure object, Axes object
     """
-    if sim is None:
+    if sim is None and cell is None:
         if seg_coords is None or sec_nseg is None or type_id is None:
             raise ValueError("If not using 'Simulation', input arguments 'seg_coords', 'sec_nseg', 'type_id' are required.")
         if clr is None:
@@ -47,9 +49,12 @@ def plot_morphology(sim: Optional[Simulation] = None, cellid: Optional[int] = 0,
     else:
         if clr is None:
             clr = ('g', 'b', 'pink', 'purple', 'r', 'c')
-        if move_cell is None:
-            move_cell = sim.loc_param[cellid, 0]
-        cell = sim.cells[cellid]
+        if cell is None:
+            if move_cell is None:
+                move_cell = sim.loc_param[cellid, 0]
+            cell = sim.cells[cellid]
+        elif move_cell is None:
+            move_cell = [0., 0., 0., 0., 1., 0.]
         seg_coords = cell.seg_coords
         sec_id_in_seg = cell.sec_id_in_seg
         sec_nseg = []

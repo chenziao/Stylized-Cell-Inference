@@ -7,7 +7,6 @@ import warnings
 
 # Project Imports
 from cell_inference.cells.stylizedcell import StylizedCell
-from cell_inference.utils.currents.recorder import Recorder
 
 h.load_file('stdrun.hoc')
 
@@ -39,8 +38,6 @@ class ActiveCell(StylizedCell):
         # self.default_biophys = np.array([0.0000338, 0.0000467, 0.0000589, 2.04, 0.0213, 0.693, 0.000261])
         
         super().__init__(geometry, **kwargs)
-        self.v_rec = self.__record_soma_v()
-        
 #         self.set_channels()
 
     # PRIVATE METHODS
@@ -57,9 +54,6 @@ class ActiveCell(StylizedCell):
                 if self.biophys[i] >= 0:
                     biophys[i] = self.biophys[i]
         self.biophys = biophys
-
-    def __record_soma_v(self) -> Recorder:
-        return Recorder(self.soma(.5), 'v')
 
     # PUBLIC METHODS
     def set_channels(self) -> None:
@@ -100,10 +94,3 @@ class ActiveCell(StylizedCell):
                     warnings.warn("Error: {} not found in {}".format(entry[1], sec))
 
         h.v_init = self._vrest
-
-    def v(self) -> Optional[Union[str, np.ndarray]]:
-        """Return recorded soma membrane voltage in numpy array"""
-        if hasattr(self, 'v_rec'):
-            return self.v_rec.as_numpy()
-        else:
-            raise NotImplemented("Soma Membrane Voltage is Not Being Recorded")

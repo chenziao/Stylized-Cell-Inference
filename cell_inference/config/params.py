@@ -1,8 +1,5 @@
-# Dependencies
 import numpy as np
 import h5py
-
-# Project Imports
 import cell_inference.config.paths as paths
 
 ACTIVE_CELL = False
@@ -20,7 +17,7 @@ ELECTRODE_POSITION = np.column_stack((elec_pos, np.zeros(elec_pos.shape[0])))
 ELECTRODE_GRID = (np.array(hf.get('grid/x')), np.array(hf.get('grid/y')), np.zeros(1))
 
 # GET GROUND TRUTH FROM ACTIVE MODEL PARAMS ARE DENOTED WITH THE PREFIX GT
-# x,     y,  z,    alpha,   h,  phi  # y,   d,  theta,   alpha, h,  phi
+# x, y, z, alpha, h, phi
 LOCATION_PARAMETERS = [0., 0., 50., np.pi / 4, 1., 0.]
 GMAX = 0.005
 

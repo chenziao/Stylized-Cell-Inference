@@ -7,7 +7,6 @@ import warnings
 
 # Project Imports
 from cell_inference.cells.stylizedcell import StylizedCell
-from cell_inference.utils.currents.recorder import Recorder
 
 h.load_file('stdrun.hoc')
 
@@ -16,24 +15,24 @@ class ActiveFullCell(StylizedCell):
     """Define single cell model using parent class Stylized_Cell"""
 
     def __init__(self, geometry: Optional[pd.DataFrame] = None, full_biophys: dict = None,
-                 biophys_comm = Optional[dict], biophys: Optional[np.ndarray] = None, **kwargs) -> None:
+                 biophys_comm: Optional[dict] = None, biophys: Optional[np.ndarray] = None,
+                 v_init: Optional[float] = None, **kwargs) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
         full_biophys: dictionary that includes full biophysical parameters (in Allen's celltype database model format)
         biophys_comm: dictionary that specifies common biophysical parameters for all sections
         biophys: vector of biophysical parameters corresponding to "biophys_entries". Use -1 for default value.
-        dL: maximum segment length
-        vrest: reversal potential for leak channels
+        v_init: inital potential of all sections. Use value in "full_biophys" if not specified.
         """
         self.grp_ids = []
         self.full_biophys = full_biophys
         self.biophys = biophys
-        self.biophys_comm = biophys_comm
+        self.biophys_comm = {} if biophys_comm is None else biophys_comm
+        self.v_init = v_init
         self.morphological_properties()
 
         super().__init__(geometry, **kwargs)
-        self.v_rec = self.__record_soma_v()
 
     # PRIVATE METHODS
     def __create_biophys_entries(self) -> np.ndarray:
@@ -49,9 +48,6 @@ class ActiveFullCell(StylizedCell):
                 if self.biophys[i] >= 0:
                     biophys[i] = self.biophys[i]
         self.biophys = biophys
-
-    def __record_soma_v(self) -> Recorder:
-        return Recorder(self.soma(.5), 'v')
 
     # PUBLIC METHODS
     def morphological_properties(self):
@@ -82,7 +78,7 @@ class ActiveFullCell(StylizedCell):
             print(set(self.geometry.index.tolist()))
         fb = self.full_biophys
         # common parameters
-        self._vrest = fb['conditions'][0]['v_init']
+        if self.v_init is None: self.v_init = fb['conditions'][0]['v_init']
         h.celsius = fb['conditions'][0]['celsius']
         for sec in self.all:
             sec.Ra = fb['passive'][0]['ra']
@@ -108,7 +104,7 @@ class ActiveFullCell(StylizedCell):
                 sec = self.get_sec_by_id(isec)
                 for en in enames:
                     setattr(sec, en, erev[en])
-        # fix capacitance
+        # modified common parameters
         for key, value in self.biophys_comm.items():
             for sec in self.all:
                 setattr(sec, key, value)
@@ -123,14 +119,8 @@ class ActiveFullCell(StylizedCell):
                 except AttributeError:
                     warnings.warn("Error: {} not found in {}".format(entry[1], sec))
 
-        h.v_init = self._vrest
+        h.v_init = self.v_init
 
-    def v(self) -> Optional[Union[str, np.ndarray]]:
-        """Return recorded soma membrane voltage in numpy array"""
-        if hasattr(self, 'v_rec'):
-            return self.v_rec.as_numpy()
-        else:
-            raise NotImplemented("Soma Membrane Voltage is Not Being Recorded")
 
 class ActiveObliqueCell(ActiveFullCell):
     """Define single cell model using parent class ActiveFullCell"""
@@ -149,6 +139,7 @@ class ActiveObliqueCell(ActiveFullCell):
         ]
         self.default_biophys = np.array([100, 100, 100])
 
+
 class ReducedOrderL5Cell(ActiveFullCell):
     """Define single cell model using parent class ActiveFullCell"""
 
@@ -158,17 +149,19 @@ class ReducedOrderL5Cell(ActiveFullCell):
     def morphological_properties(self):
         """Define properties related to morphology"""
         # map from biophysic section name to secion id in geometry, used with "full_biophys"
-        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,8,9,10], 'axon': [11], 'pas_dend': [12]}
+        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [11], 'pas_dend': [12]}
         # select section id's for each group, used with "biophys"
         self.grp_sec_type_ids = [ # select section id's for each group
                                  [0], # soma
                                  [1,2,3], # basal group: prox,mid,dist;
-                                 [4], # prox trunk; 5: oblique
-                                 [6,8,9,10], # mid,distal trunk (nexus); tuft: prox,mid,dist
+                                 [4], # prox trunk; 5: oblique (removed)
+                                 [6], # mid trunk
+                                 [7], # distal trunk (nexus)
+                                 [8,9,10], # tuft: prox,mid,dist
                                  [11], # axon
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
-            (1, 'Ra'), (2, 'Ra'), (3, 'Ra'), (4, 'Ra'), (5, 'Ra')
+            (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas'), (4, 'gCa_HVAbar_Ca_HVA'), (4, 'gCa_LVAstbar_Ca_LVAst')
         ]
-        self.default_biophys = np.array([100, 100, 100, 100, 100])
+        self.default_biophys = np.array([100, 100, 100, 100, 0.0000489, 0.000555, 0.0187])

@@ -5,7 +5,6 @@ import numpy as np
 
 # Project Imports
 from cell_inference.cells.stylizedcell import StylizedCell
-from cell_inference.utils.currents.recorder import Recorder
 
 h.load_file('stdrun.hoc')
 
@@ -21,12 +20,7 @@ class PassiveCell(StylizedCell):
         vrest: reversal potential of leak channel for all segments
         """
         super().__init__(geometry, **kwargs)
-        self.v_rec = self.__record_soma_v()
         self.set_channels()
-
-    # PRIVATE METHODS
-    def __record_soma_v(self) -> Recorder:
-        return Recorder(self.soma(.5), 'v')
 
     def set_channels(self) -> None:
         """Define biophysical properties, insert channels"""
@@ -44,8 +38,3 @@ class PassiveCell(StylizedCell):
         for sec in self.all[1:]:
             sec.g_pas = gl_dend
         h.v_init = self._vrest
-
-    def v(self) -> np.ndarray:
-        """Return recorded soma membrane voltage in numpy array"""
-        if hasattr(self, 'v_rec'):
-            return self.v_rec.as_numpy()

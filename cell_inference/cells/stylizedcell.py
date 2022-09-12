@@ -8,7 +8,7 @@ from enum import Enum
 
 from cell_inference.utils.currents.currentinjection import CurrentInjection
 from cell_inference.utils.currents.synapse import Synapse
-
+from cell_inference.utils.currents.recorder import Recorder
 
 h.load_file('stdrun.hoc')
 
@@ -22,20 +22,22 @@ class CellTypes(Enum):
 class StylizedCell(ABC):
     def __init__(self, geometry: pd.DataFrame = None,
                  dl: float = 30., vrest: float = -70.0, nbranch: int = 4,
-                 record_spike: bool = False) -> None:
+                 record_soma_v: bool = True, spike_threshold: Optional[float] = None) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
         dL: maximum segment length
         vrest: reversal potential of leak channel for all segments
         nbranch: number of branches of each non-axial section
-        record_spike: whether or not to record spikes
+        record_soma_v: whether or not to record soma membrane voltage
+        spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
         """
         self._h = h
         self._dL = dl
         self._vrest = vrest
         self._nbranch = max(nbranch, 2)
-        self._record_spike = record_spike
+        self._record_soma_v = record_soma_v
+        self.spike_threshold = spike_threshold
         self._nsec = 0
         self._nseg = 0
         self.soma = None
@@ -47,7 +49,7 @@ class StylizedCell(ABC):
         self.synapse = []  # synapse objects
         self.spikes = None
         self.geometry = None
-        self.set_geometry(geometry)
+        self.__set_geometry(geometry)
         self.__setup_all()
         self.seg_coords = self.__calc_seg_coords()
 
@@ -65,11 +67,21 @@ class StylizedCell(ABC):
         self.synapse.append(Synapse(self, stim, sec_index, **kwargs))
 
     #  PRIVATE METHODS
+    def __set_geometry(self, geometry: Optional[pd.DataFrame] = None) -> None:
+        if geometry is None:
+            self.geometry = None
+        else:
+            if not isinstance(geometry, pd.DataFrame):
+                raise TypeError("geometry must be a pandas dataframe")
+            if geometry.iloc[0]['type'] != 1:
+                raise ValueError("first row of geometry must be soma")
+            self.geometry = geometry.copy()
+
     def __setup_all(self) -> None:
         self.__create_morphology()
         self.set_channels()
-        if self._record_spike:
-            self.set_spike_recorder()
+        self.v_rec = self.__record_soma_v() if self._record_soma_v else None
+        self.__set_spike_recorder()
 
     def __calc_seg_coords(self) -> Dict:
         """Calculate segment coordinates for ECP calculation"""
@@ -156,19 +168,22 @@ class StylizedCell(ABC):
                 self.segments.append(seg)
         self._nseg = nseg
 
-    #  PUBLIC METHODS
-    def set_spike_recorder(self, threshold: Optional[float] = 0) -> None:
-        if threshold is None:
+    def __record_soma_v(self) -> Recorder:
+        return Recorder(self.soma(.5), 'v')
+
+    def __set_spike_recorder(self, threshold: Optional = None) -> None:
+        if threshold is not None:
+            self.spike_threshold = threshold
+        if self.spike_threshold is None:
             self.spikes = None
-            self._record_spike = False
         else:
             vec = h.Vector()
             nc = h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma)
-            nc.threshold = threshold
+            nc.threshold = self.spike_threshold
             nc.record(vec)
             self.spikes = vec
-            self._record_spike = True
 
+    #  PUBLIC METHODS
     def get_sec_by_id(self, index) -> Optional[Union[List[h.Section], h.Section]]:
         """Get section(s) objects by index(indices) in the section list"""
         if not hasattr(index, '__len__'):
@@ -193,12 +208,9 @@ class StylizedCell(ABC):
             sec.g_pas = gl
             sec.e_pas = self._vrest
 
-    def set_geometry(self, geometry: Optional[pd.DataFrame] = None) -> None:
-        if geometry is None:
-            self.geometry = None
+    def v(self) -> Optional[Union[str, np.ndarray]]:
+        """Return recorded soma membrane voltage in numpy array"""
+        if self.v_rec is None:
+            raise NotImplementedError("Soma membrane voltage has not been recorded")
         else:
-            if not isinstance(geometry, pd.DataFrame):
-                raise TypeError("geometry must be a pandas dataframe")
-            if geometry.iloc[0]['type'] != 1:
-                raise ValueError("first row of geometry must be soma")
-            self.geometry = geometry.copy()
+            return self.v_rec.as_numpy()
