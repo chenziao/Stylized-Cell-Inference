@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scipy.interpolate import griddata
+from scipy.spatial import qhull
 from scipy import signal
 from typing import Tuple, Optional, Union
 
@@ -70,13 +70,36 @@ def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
     grid = np.column_stack((xx.ravel(), yy.ravel()))
     t = lfp.shape[0]
     grid_lfp = np.empty((t, grid.shape[0]))
+    vertices, weights = interp_weights(coord[:, :2], grid)
     for i in range(t):
-        grid_lfp[i, :] = griddata(coord[:, :2], lfp[i, :], grid)
+        grid_lfp[i, :] = interpolate(lfp[i, :], vertices, weights)
     if y_window_size is None:
         output = (grid_lfp, grid)
     else:
         output = (grid_lfp, grid, center_y)
     return output
+
+
+def interp_weights(points, xi):
+    """Calculate the indices of the vertices of the enclosing simplex and the weights for the interpolation"""
+    points = np.asarray(points)
+    d = points.shape[1]
+    tri = qhull.Delaunay(points)
+    simplex = tri.find_simplex(xi)
+    vertices = np.take(tri.simplices, simplex, axis=0)
+    temp = np.take(tri.transform, simplex, axis=0)
+    delta = xi - temp[:, d]
+    bary = np.einsum('njk,nk->nj', temp[:, :d, :], delta)
+    weights = np.hstack((bary, 1 - bary.sum(axis=1, keepdims=True)))
+    return vertices, weights
+
+
+def interpolate(values, vertices, weights, fill_value=None):
+    """Calculate interpolation values"""
+    vi = np.einsum('nj,nj->n', np.take(values, vertices), weights)
+    if fill_value is not None:
+        vi[np.any(weights < 0, axis=1)] = fill_value
+    return vi
 
 
 def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
