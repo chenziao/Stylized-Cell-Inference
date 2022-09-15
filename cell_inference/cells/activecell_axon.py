@@ -45,7 +45,7 @@ class ActiveFullCell(StylizedCell):
         biophys = self.default_biophys
         if self.biophys is not None:
             for i in range(len(self.biophys)):
-                if self.biophys[i] >= 0:
+                if not np.isnan(self.biophys[i]):
                     biophys[i] = self.biophys[i]
         self.biophys = biophys
 
@@ -162,6 +162,6 @@ class ReducedOrderL5Cell(ActiveFullCell):
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
-            (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas'), (4, 'gCa_HVAbar_Ca_HVA'), (4, 'gCa_LVAstbar_Ca_LVAst')
+            (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas'), (4, 'gCa_HVAbar_Ca_HVA'), (4, 'gCa_LVAstbar_Ca_LVAst')
         ]
-        self.default_biophys = np.array([100, 100, 100, 100, 0.0000489, 0.000555, 0.0187])
+        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 100, 100, 0.0000489, 0.000555, 0.0187])

@@ -5,7 +5,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredDirectionArrows
 def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes = ['x', 'y'],
                                   distance_type='distance', n_dist=10, distance_range=None,
                                   select_seg=None, max_per_dist=None, varname='Variable',
-                                  space=3, normalized_space=True, sort_by_dist=False,
+                                  space=1., normalized_space=True, sort_by_dist=False,
                                   figsize=(15,12), fontsize=15, colormap='viridis', scalebar_size=50):
     """
     seg_coords: dictionary of segment coordinates including pc, dl, r
@@ -20,7 +20,7 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
     max_per_dist: maximum number of segments of the same distance point to show
     varname: name of variable being shown
     space: space between traces of the variable
-    normalized_space: whether to use normalized space. If true, space in unit of standard deviation of max magnitude
+    normalized_space: whether to use normalized space. If true, space in unit of root mean square of max magnitude
     sort_by_dist: whether to order traces based on distance. If false, use neat layout.
     figsize: figure size
     fontsize: font size
@@ -71,7 +71,7 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
     if select_seg is not None:
         ss = np.full(nseg, False)
         ss[select_seg] = True # selected segment index in boolean array
-    dist[dist[:,1]==0,1] += 1e-6 # include segment with distance 0 on the right endpoint
+    dist[dist[:,1]==0,1] += 1e-2 # include segment with distance 0 on the right endpoint
     for p in d_pts:
         idx =  (dist[:,0]<=p) & (dist[:,1]>p)
         if select_seg is not None:
@@ -142,7 +142,7 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
     # Space between traces
     if normalized_space:
         Xmax = np.amax(np.abs(X), axis=1) # maximum magnitude in each trace
-        Xh = space * np.std(Xmax[Xmax < space * np.std(Xmax)]) # remove outlier
+        Xh = space * np.mean(Xmax[Xmax < space * np.mean(Xmax**2)**.5]**2)**.5 # remove outlier
     else:
         Xh = space
     xpos = Xh * np.arange(nshow) + Xh / 2 # height of each trace

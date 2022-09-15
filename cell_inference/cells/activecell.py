@@ -51,7 +51,7 @@ class ActiveCell(StylizedCell):
         biophys = self.default_biophys
         if self.biophys is not None:
             for i in range(len(self.biophys)):
-                if self.biophys[i] >= 0:
+                if not np.isnan(self.biophys[i]):
                     biophys[i] = self.biophys[i]
         self.biophys = biophys
 

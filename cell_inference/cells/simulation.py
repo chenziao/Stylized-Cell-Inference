@@ -254,13 +254,12 @@ class Simulation(object):
         geo_param: numpy array describing entries used
         
         Note:
-        Set negative value (e.g. -1) to use default value.
-        If default value is negative, setting nonnegative value only changes the magnitude of the negative value.
+        Set NaN value to use default value.
         """
         geom = geometry.copy()
         for i, x in enumerate(geo_param):
-            if x >= 0:
-                geom.loc[self.geo_entries[i]] = x if geom.loc[self.geo_entries[i]] >= 0 else -x
+            if not np.isnan(x):
+                geom.loc[self.geo_entries[i]] = x
         return geom
 
     def t(self) -> np.ndarray:

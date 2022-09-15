@@ -44,7 +44,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
             clim = (electrodes[ind[0], 1], electrodes[ind[-1], 1])
             sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=plt.Normalize())
             sm.set_clim(*clim)
-            cbar = fig.colorbar(sm, location='right', ax=ax, ticks=np.linspace(clim[0], clim[1], nbins), pad=0.)
+            cbar = fig.colorbar(sm, ax=ax, ticks=np.linspace(clim[0], clim[1], nbins), pad=0.)
             cbar.ax.tick_params(length=tick_length, labelsize=ticksize)
             cbar.set_label('dist_y (\u03bcm)', fontsize=fontsize, labelpad=labelpad)
             if type(vlim) is str:
