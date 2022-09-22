@@ -30,7 +30,7 @@ BANDFILTER_TYPE = 'hp'  # highpass
 FILTER_SAMPLING_RATE = 1000. / DT  # 40 kHz
 
 WINDOW_SIZE = 176 # time window for lfp
-Y_WINDOW_SIZE = 960. # y window size for lfp
+Y_WINDOW_SIZE = 2000. # y window size for lfp
 PK_TR_IDX_IN_WINDOW = 24 # index in window to align first peak/trough of lfp
 START_IDX = 320 # for passive model
 SOMA_INJECT_SCALING_FACTOR = 1085.  # 2.55

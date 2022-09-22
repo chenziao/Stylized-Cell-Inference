@@ -15,7 +15,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
 
     Parameters
     t: time points (ms). 1D array
-    lfp: LFP traces (uV). If is 2D array, each column is a channel.
+    lfp: LFP traces (mV). If is 2D array, each column is a channel.
     electrodes: Electrode array coordinates. If specified, show waterfall plot following y coordinates.
     vlim: value limit for waterfall plot
     fontsize: size of font for display
@@ -49,6 +49,8 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
             cbar.set_label('dist_y (\u03bcm)', fontsize=fontsize, labelpad=labelpad)
             if type(vlim) is str:
                 if vlim == 'max':
+                    vlim = np.amax(np.abs(lfp)) / 2 * np.array([-1, 1])
+                elif vlim == 'minmax':
                     vlim = np.array([np.amin(lfp), np.amax(lfp)]) / 2
                 else:
                     vlim = 1 * np.std(lfp) * np.array([-1, 1])
@@ -60,7 +62,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
         plt.plot(t, lfp)
     ax.set_xlim(t[[0, -1]])
     plt.xlabel('ms', fontsize=fontsize)
-    plt.ylabel('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    plt.ylabel('LFP (mV)', fontsize=fontsize, labelpad=labelpad)
     plt.locator_params(axis='both', nbins=nbins)
     plt.tick_params(length=tick_length, labelsize=ticksize)
 
@@ -74,14 +76,16 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
 def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray, 
                      vlim: str = 'auto', cbbox: Optional[List[float]] = None, cmap: str = 'viridis',
                      fontsize: int = 40, labelpad: int = -12, ticksize: int = 30, tick_length: int = 15,
-                     nbins: int = 3, savefig: Optional[str] = None, axes: Axes = None) -> Tuple[Figure, Axes]:
+                     nbins: int = 3, colorbar_label: str = None,
+                     savefig: Optional[str] = None, axes: Axes = None) -> Tuple[Figure, Axes]:
     """
     Plot LFP heatmap.
 
     t: time points (ms). 1D array
     elec_d: electrode distance (um). 1D array
-    lfp: LFP traces (uV). If is 2D array, each column is a channel.
-    vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
+    lfp: LFP traces (mV). If is 2D array, each column is a channel.
+    vlim: value limit for color map. 'auto': using +/- 3-sigma of lfp for bounds as default.
+          'max': use [-1, 1]*max(|lfp|). 'minmax': use [min(lfp), max(lfp)].
     cbbox: dimensions of colorbar
     cmap: A Colormap instance or registered colormap name. The colormap maps the C values to color.
     fontsize: size of font for display
@@ -95,9 +99,11 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray,
     if cbbox is None:
         cbbox = [.91, 0.118, .03, 0.76]
     lfp = np.asarray(lfp).T
-    elec_d = np.asarray(elec_d) / 1000
+    elec_d = np.asarray(elec_d) / 1000  # convert um to mm
     if type(vlim) is str:
         if vlim == 'max':
+            vlim = np.amax(np.abs(lfp)) * np.array([-1, 1])
+        elif vlim == 'minmax':
             vlim = [np.amin(lfp), np.amax(lfp)]
         else:
             vlim = 3 * np.std(lfp) * np.array([-1, 1])
@@ -111,7 +117,8 @@ def plot_lfp_heatmap(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarray,
     cbaxes = fig.add_axes(cbbox) if axes is None else None
     cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
     cbar.ax.tick_params(length=tick_length, labelsize=ticksize)
-    cbar.set_label('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    if colorbar_label is None: colorbar_label = 'LFP (mV)'
+    cbar.set_label(colorbar_label, fontsize=fontsize, labelpad=labelpad)
     ax.set_xticks(np.linspace(t[0], t[-1], nbins))
     ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
     ax.tick_params(length=tick_length, labelsize=ticksize)
@@ -135,7 +142,7 @@ def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarra
 
     t: time points (ms). 1D array
     elec_d: electrode distance (um). 1D array
-    lfp: LFP traces (uV). If is 2D array, each column is a channel.
+    lfp: LFP traces (mV). If is 2D array, each column is a channel.
     savefig: if specified as string, save figure with the string as file name.
     vlim: value limit for color map, using +/- 3-sigma of lfp for bounds as default. Use 'max' for maximum bound range.
     fontsize: size of font for display
@@ -146,7 +153,7 @@ def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarra
     cmap: A Colormap instance or registered colormap name. The colormap maps the C values to color.
     """
     lfp = np.asarray(lfp).T * 7720
-    elec_d = np.asarray(elec_d) / 1000
+    elec_d = np.asarray(elec_d) / 1000  # convert um to mm
     if type(vlim) is str:
         if vlim == 'max':
             vlim = [np.min(lfp), np.max(lfp)]
@@ -161,7 +168,7 @@ def plot_multiple_lfp_heatmaps(t: np.ndarray, elec_d: np.ndarray, lfp: np.ndarra
     pcm = ax.pcolormesh(t, elec_d, lfp, cmap=cmap, vmin=vlim[0], vmax=vlim[1], shading='auto')
     cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes, format='%.2f')
     cbar.ax.tick_params(labelsize=ticksize)
-    cbar.set_label('LFP (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    cbar.set_label('LFP (mV)', fontsize=fontsize, labelpad=labelpad)
     # print(t[-1])
     ax.set_xticks(np.linspace(t[0], t[-1], nbins))
     ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
@@ -197,7 +204,7 @@ def plot_intracellular_spike_heatmap(t: np.ndarray, elec_d: np.ndarray, intracel
     if cbbox is None:
         cbbox = [.91, 0.118, .03, 0.76]
     intracellular_spikes = np.asarray(intracellular_spikes).T
-    elec_d = np.asarray(elec_d) / 1000
+    elec_d = np.asarray(elec_d) / 1000  # convert um to mm
     if type(vlim) is str:
         if vlim == 'max':
             vlim = [np.min(intracellular_spikes), np.max(intracellular_spikes)]
@@ -208,7 +215,7 @@ def plot_intracellular_spike_heatmap(t: np.ndarray, elec_d: np.ndarray, intracel
     cbaxes = fig.add_axes(cbbox)
     cbar = fig.colorbar(pcm, ax=ax, ticks=np.linspace(vlim[0], vlim[1], nbins), cax=cbaxes)
     cbar.ax.tick_params(labelsize=ticksize)
-    cbar.set_label('Intracellular Spikes (\u03bcV)', fontsize=fontsize, labelpad=labelpad)
+    cbar.set_label('Intracellular Spikes (mV)', fontsize=fontsize, labelpad=labelpad)
     ax.set_xticks(np.linspace(t[0], t[-1], nbins))
     ax.set_yticks(np.linspace(elec_d[0], elec_d[-1], nbins))
     ax.tick_params(labelsize=ticksize)

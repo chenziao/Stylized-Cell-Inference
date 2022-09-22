@@ -1,7 +1,8 @@
 import numpy as np
 import torch
-from scipy.spatial import qhull
 from scipy import signal
+from scipy.spatial import qhull
+from scipy.ndimage import gaussian_filter
 from sklearn.linear_model import HuberRegressor
 from typing import Tuple, List, Optional, Union
 
@@ -111,7 +112,7 @@ def get_lfp_y_window(g_lfp: np.ndarray, coord: np.ndarray,
         grid_shape = GRID_SHAPE
     else:
         grid_shape = tuple(v.size for v in grid_v)
-    if g_lfp.shape[1] != grid_shape[0]*grid_shape[1]:
+    if g_lfp.shape[1] != grid_shape[0] * grid_shape[1]:
         raise ValueError("LFP array is not consistent with grid shape.")
     _, y_window_idx, center_y = get_y_window(lfp=g_lfp, coord=coord, y_window_size=y_window_size, grid_v=grid_v)
     t = g_lfp.shape[0]
@@ -137,10 +138,10 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
     """
     g_lfp = np.asarray(g_lfp) * 1000  # convert from mV to uV
     if grid_shape is None:
-        grid_shape = (GRID_SHAPE[0], int(g_lfp.shape[1]/GRID_SHAPE[0]))
+        grid_shape = (GRID_SHAPE[0], int(g_lfp.shape[1] / GRID_SHAPE[0]))
     else:
         grid_shape = grid_shape[:2]
-    if g_lfp.shape[1] != grid_shape[0]*grid_shape[1]:
+    if g_lfp.shape[1] != grid_shape[0] * grid_shape[1]:
         raise ValueError("LFP array is not consistent with grid shape.")
 
     avg = np.mean(g_lfp, axis=0)  # average voltage of each channel
@@ -322,7 +323,7 @@ filt_b, filt_a = signal.butter(params.BUTTERWORTH_ORDER,
 
 def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, dt: float = params.DT,
                 pad_spike_window: bool = False, align_at: int = params.PK_TR_IDX_IN_WINDOW,
-                y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None,
+                y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None, gauss_filt: bool = False,
                 calc_summ_stats: bool = True, additional_stats: int = 1, err_msg: bool = False) -> Tuple:
     """
     Process LFP: filter, find spike window, interpolate in grid, window along y-axis, shift in y, summary statistics.
@@ -369,6 +370,11 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
         except ValueError as e:
             if err_msg: print(e)
             bad = 2
+        else:
+            if gauss_filt:
+                sigma = (2, 1, .8)
+                grid_shape = (g_lfp.shape[0], GRID_SHAPE[0], int(g_lfp.shape[1] / GRID_SHAPE[0]))
+                g_lfp = gaussian_filter(g_lfp.reshape(grid_shape), sigma, truncate=3, mode='nearest').reshape((grid_shape[0], -1))
 
     if bad==1:
         output = (bad, filtered_lfp, t, coord, None, None, None)
