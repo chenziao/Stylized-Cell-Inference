@@ -3,7 +3,7 @@ import torch
 from scipy import signal
 from scipy.spatial import qhull
 from scipy.ndimage import gaussian_filter
-from sklearn.linear_model import HuberRegressor
+from scipy.optimize import curve_fit
 from typing import Tuple, List, Optional, Union
 
 # Project Imports
@@ -31,7 +31,7 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray,
     y_size = grid_y.size
     # relative index of window in y grid
     dy = abs(grid_y[-1] - grid_y[0]) / (y_size - 1)
-    ny = max(int(np.floor(y_window_size / 2 / dy) * 2) + 1, 3)
+    ny = max(int(np.floor(y_window_size / 2 / dy) * 2) + 1, 5)
     rel_idx = np.arange(-(ny - 1) / 2,(ny + 1) / 2, dtype=int)
     # find maximum amplitude location
     max_idx = np.argmax(np.amax(np.abs(lfp), axis=0))
@@ -174,13 +174,15 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         idx_list.extend(half_height_width_wrt_y(g_lfp[t2, :], grid_shape))
         t1_stats = statscalc(g_lfp[t1, :], grid_shape, include_min=True)
         idx_list.extend((t1_stats[3], t1_stats[6]))
-        ss += [np.array(idx_list)]
+        ss.append(idx_list)
 
     if additional_stats >= 2:
         """Calculate the decay of trough and peak along y direction"""
-        lambda_troughs = get_decay(get_max_val_y(troughs, grid_shape))
-        lambda_peaks = get_decay(get_max_val_y(peaks, grid_shape))
-        ss += [np.array(lambda_troughs + lambda_peaks)]
+        lambda_troughs, pts_troughs = get_decay(get_max_val_y(troughs, grid_shape))
+        lambda_peaks, pts_peaks = get_decay(get_max_val_y(peaks, grid_shape))
+        ss.append(lambda_troughs + lambda_peaks)
+        if additional_stats >= 3:
+            ss += pts_troughs + pts_peaks
 
     return np.concatenate(ss)
 
@@ -243,34 +245,57 @@ def half_height_width_wrt_y(lfp: np.ndarray, grid_shape: Tuple[int]) -> Tuple[in
     fy_wrt_x0_wrt_time = np.sign(height) * lfp.reshape(grid_shape)[x0_idx_wrt_time, :]
     return searchheights(fy_wrt_x0_wrt_time, half_height, y0_idx_wrt_time)
 
-def get_max_val_y(x: np.ndarray, grid_shape: Tuple[int]) -> np.ndarray:
-    """Get maximum values along x for each y"""
-    x = x.reshape(grid_shape)  # variable for each channel in 2D array
-    y = np.take_along_axis(x, np.expand_dims(np.argmax(x, axis=0), axis=0), axis=0).ravel()
-    return y
+def get_max_val_y(m: np.ndarray, grid_shape: Tuple[int]) -> np.ndarray:
+    """Get maximum values of input m along x for each y"""
+    m = m.reshape(grid_shape)  # variable for each channel in 2D array
+    my = np.take_along_axis(m, np.expand_dims(np.argmax(m, axis=0), axis=0), axis=0).ravel()
+    return my
 
-HbReg = HuberRegressor(epsilon=4., alpha=0)  # robust against outlier (epsilon in unit of natural log of magnitude)
-def get_decay(y: np.ndarray) -> List[float]:
+def line(y, y1, w1, y2, w2):
+    """Two-point form of a line"""
+    return w1 + (w2 - w1) / (y2 - y1) * (y - y1)
+
+# First line segment (fixing one point at origin)
+def line1(y, y1, w1):
+    return line(y, 0., 0., y1, w1)
+
+def two_line_segments(y, w1, w2, y1, y2=100.):
+    # Second line segment (fixing y2)
+    def line2(y, y1, w1):
+        return line(y, y2, w2, y1, w1)
+    return np.piecewise(y, [y <= y1], [line1, line2], y1, w1)
+
+def get_decay(my, bound=7.0):
     """
-    Length constant of decay along -/+ y from maximum value (unit: grid spacing along y)
-    measured by linear regression and slope, respectively.
-    Lambda - by fitting log of magnitude vs. grid index
-    Slope - by slope between the maximum value point and the point on the edge
+    Fit two-segment lines to capture the decay of magnitude along -/+ y from maximum value.
+    bound: minimum value clip for log relative magnitude (bound by exp(-bound) of maximum magnitude).
+    Return length constant of decay (unit: grid spacing along y) measured by lambda and slope, respectively.
+    Lambda - by inverse slope (grid number / log magnitude) of the first line segment. 
+    Slope - by slope between the maximum value point and the point on the edge (y2 = half of y window size).
+    Return the point coordinates representation of the fit two-segment lines (w1, w2, y2).
     """
-    max_idx = np.argmax(y)
+    PTS = []
     Lambda = []
     Slope = []
-    # calculate for left and right sides respectively
-    for y_one_side in (y[:max_idx + 1], y[max_idx:]):
-        indices = np.nonzero(y_one_side > 0)[0]
-        log_y = np.log(y_one_side[indices])
-        try:
-            c = HbReg.fit(indices.reshape(-1, 1), log_y).coef_[0]
-        except: # in case there is convergence error
-            c, _ = np.polyfit(indices, log_y, deg=1)
-        Lambda.append(1 / abs(c))
-        Slope.append( abs((indices[-1] - indices[0]) / (log_y[-1] - log_y[0])) ) # slope y-range/log(ratio)
-    return Lambda + Slope
+    y2 = np.floor(my.size / 2)
+    fn = lambda y, w1, w2, y1: two_line_segments(y, w1, w2, y1, y2=y2)
+    max_idx = np.argmax(my)
+    bounds = ((.1, .1, 1.), (bound, bound, y2 - 1.))
+    for my_one_side in (my[max_idx::-1], my[max_idx:]):
+        indices = np.nonzero(my_one_side > 0)[0]
+        log_my = np.fmin(np.log(my_one_side[0]) - np.log(my_one_side[indices]), bound)  # e^-7 < 1/1000
+        pts, _ = curve_fit(fn, indices.astype(float), log_my, p0=np.mean(np.array(bounds), axis=0), bounds=bounds,
+                           method='dogbox', loss='huber', f_scale=bound / 2)
+        PTS.append(pts)
+        Lambda.append(pts[2] / pts[0])
+        Slope.append(y2 / pts[1])
+    return Lambda + Slope, PTS
+
+def get_fit(my, PTS):
+    max_idx = np.argmax(my)
+    fn = lambda y, pts: np.log(my[max_idx]) - two_line_segments(y, *pts, y2=np.floor(my.size / 2))
+    w = (fn(np.arange(max_idx, 0, -1, dtype=float), PTS[0]), fn(np.arange(0, my.size - max_idx, dtype=float), PTS[1]))
+    return np.concatenate(w)
 
 
 def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np.ndarray:
@@ -296,6 +321,8 @@ def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np
         n += 9
     if additional_stats >= 2:
         n += 8
+    if additional_stats >= 3:
+        n += 12
     indices = np.array(indices)
     if boolean:
         indices_bool = np.full(n, False)
