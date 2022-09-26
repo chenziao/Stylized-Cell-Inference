@@ -12,11 +12,13 @@ from cell_inference.utils.spike_window import get_spike_window
 
 GRID = params.ELECTRODE_GRID
 GRID_SHAPE = tuple(v.size for v in GRID)
+DY = abs(GRID[1][-1] - GRID[1][0]) / (GRID[1].size - 1)
+NY = max(int(np.floor(params.Y_WINDOW_SIZE / 2 / DY) * 2) + 1, 5)
+REL_IDX = np.arange(-(NY - 1) / 2,(NY + 1) / 2, dtype=int)
 
 # Process 2D LFP array
-def get_y_window(lfp: np.ndarray, coord: np.ndarray,
-                 y_window_size: float = params.Y_WINDOW_SIZE,
-                 grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]] = None
+def get_y_window(lfp: np.ndarray, coord: np.ndarray, y_window_size: float = params.Y_WINDOW_SIZE,
+                 grid_v: Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]] = GRID
                  ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Get a window along y-axis centered at the maximum amplitude location.
@@ -30,9 +32,12 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray,
     grid_y = grid_v[1]
     y_size = grid_y.size
     # relative index of window in y grid
-    dy = abs(grid_y[-1] - grid_y[0]) / (y_size - 1)
-    ny = max(int(np.floor(y_window_size / 2 / dy) * 2) + 1, 5)
-    rel_idx = np.arange(-(ny - 1) / 2,(ny + 1) / 2, dtype=int)
+    if y_window_size is params.Y_WINDOW_SIZE and grid_v is GRID:
+        rel_idx = REL_IDX
+    else:
+        dy = DY if grid_v is GRID else abs(grid_y[-1] - grid_y[0]) / (y_size - 1)
+        ny = max(int(np.floor(y_window_size / 2 / dy) * 2) + 1, 5)
+        rel_idx = np.arange(-(ny - 1) / 2,(ny + 1) / 2, dtype=int)
     # find maximum amplitude location
     max_idx = np.argmax(np.amax(np.abs(lfp), axis=0))
     center_y = coord[max_idx, 1]
@@ -40,12 +45,10 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray,
     if center_y_idx + rel_idx[0] < 0 or center_y_idx + rel_idx[-1] >= y_size:
         raise ValueError("The window falls outside the given electrode grid range.")
     y_window_idx = center_y_idx + rel_idx
-    grid_y = grid_y[y_window_idx]
-    return grid_y, y_window_idx, center_y
+    return grid_y[y_window_idx], y_window_idx, center_y
 
-def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
-                   y_window_size: Optional[float] = None,
-                   grid_v: Optional[Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None
+def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray, y_window_size: Optional[float] = None,
+                   grid_v: Optional[Union[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = GRID
                    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """
     Build a grid to match the Neuropixel Probe used to collect
@@ -58,8 +61,6 @@ def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray,
             Return y coordinates of window center in the last output if specified, otherwise None
     Return Gridded LFP array with shape (time x channels), Grid coordinates (channels x 2), y window center
     """
-    if grid_v is None:
-        grid_v = GRID
     if y_window_size is None:
         grid_y = grid_v[1]
         center_y = None
@@ -178,20 +179,16 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
 
     if additional_stats >= 2:
         """Calculate the decay of trough and peak along y direction"""
-        lambda_troughs, pts_troughs = get_decay(get_max_val_y(troughs, grid_shape))
-        lambda_peaks, pts_peaks = get_decay(get_max_val_y(peaks, grid_shape))
+        lambda_troughs, pts_troughs, tr_max_idx = get_decay(get_max_val_y(troughs, grid_shape))
+        lambda_peaks, pts_peaks, pk_max_idx = get_decay(get_max_val_y(peaks, grid_shape))
         ss.append(lambda_troughs + lambda_peaks)
         if additional_stats >= 3:
+            tr_avg_mag = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape)
+            pk_avg_mag = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape)
             ss += pts_troughs + pts_peaks
+            ss.append(tr_avg_mag + pk_avg_mag)
 
     return np.concatenate(ss)
-
-def get_tr_pk(g_lfp: np.ndarray) -> Tuple:
-    t_t = np.argmin(g_lfp, axis=0)  # trough time
-    t_p = np.argmax(g_lfp, axis=0)  # peak time
-    troughs = -np.take_along_axis(g_lfp, np.expand_dims(t_t, axis=0), axis=0)  # trough magnitude
-    peaks = np.take_along_axis(g_lfp, np.expand_dims(t_p, axis=0), axis=0)  # peak magnitude
-    return t_t, t_p, troughs, peaks
 
 def statscalc(stats: np.ndarray, grid_shape: Tuple[int], include_min: bool = True) -> np.ndarray:
     """
@@ -245,6 +242,13 @@ def half_height_width_wrt_y(lfp: np.ndarray, grid_shape: Tuple[int]) -> Tuple[in
     fy_wrt_x0_wrt_time = np.sign(height) * lfp.reshape(grid_shape)[x0_idx_wrt_time, :]
     return searchheights(fy_wrt_x0_wrt_time, half_height, y0_idx_wrt_time)
 
+def get_tr_pk(g_lfp: np.ndarray) -> Tuple:
+    t_t = np.argmin(g_lfp, axis=0)  # trough time
+    t_p = np.argmax(g_lfp, axis=0)  # peak time
+    troughs = -np.take_along_axis(g_lfp, np.expand_dims(t_t, axis=0), axis=0)  # trough magnitude
+    peaks = np.take_along_axis(g_lfp, np.expand_dims(t_p, axis=0), axis=0)  # peak magnitude
+    return t_t, t_p, troughs, peaks
+
 def get_max_val_y(m: np.ndarray, grid_shape: Tuple[int]) -> np.ndarray:
     """Get maximum values of input m along x for each y"""
     m = m.reshape(grid_shape)  # variable for each channel in 2D array
@@ -289,7 +293,7 @@ def get_decay(my, bound=7.0):
         PTS.append(pts)
         Lambda.append(pts[2] / pts[0])
         Slope.append(y2 / pts[1])
-    return Lambda + Slope, PTS
+    return Lambda + Slope, PTS, max_idx
 
 def get_fit(my, PTS):
     max_idx = np.argmax(my)
@@ -297,6 +301,30 @@ def get_fit(my, PTS):
     w = (fn(np.arange(max_idx, 0, -1, dtype=float), PTS[0]), fn(np.arange(0, my.size - max_idx, dtype=float), PTS[1]))
     return np.concatenate(w)
 
+VOLUME_RANGE = ((-19, 21), (0, 1), (0, 15))  # t, x, y
+VOLUME_RANGE = np.tile(np.array(VOLUME_RANGE).T, (2, 1, 1))
+VOLUME_RANGE[1, :, 2] = -VOLUME_RANGE[1, ::-1, 2]  # flip y for reversed direction
+def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape):
+    """
+    Average lfp magnitude relative to the break point in its neighbor volume
+    lfp: lfp array
+    t_m, m: returned by 'get_tr_pk'
+    PTS, max_idx: returned by 'get_decay'
+    """
+    shape_3d = (lfp.shape[0],) + grid_shape
+    lfp = lfp.reshape((-1,) + grid_shape)
+    m = m.reshape(grid_shape)
+    t_m = t_m.reshape(grid_shape)
+    avg_mag = []
+    for i in range(2):
+        y1 = int(PTS[i][2])
+        y = max_idx + (y1 if i else -y1)
+        x = np.argmax(m[:, y])
+        t = t_m[x, y]
+        box_range = np.clip(np.array((t, x, y)) + VOLUME_RANGE[i], 0, shape_3d).T
+        box = tuple(slice(idx[0], idx[1]) for idx in box_range)
+        avg_mag.append(np.mean(lfp[box]) / lfp[t, x, y])
+    return avg_mag
 
 def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np.ndarray:
     """
@@ -322,7 +350,7 @@ def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np
     if additional_stats >= 2:
         n += 8
     if additional_stats >= 3:
-        n += 12
+        n += 16
     indices = np.array(indices)
     if boolean:
         indices_bool = np.full(n, False)
