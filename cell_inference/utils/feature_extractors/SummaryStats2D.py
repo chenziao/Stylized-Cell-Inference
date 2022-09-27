@@ -183,8 +183,9 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         lambda_peaks, pts_peaks, pk_max_idx = get_decay(get_max_val_y(peaks, grid_shape))
         ss.append(lambda_troughs + lambda_peaks)
         if additional_stats >= 3:
-            tr_avg_mag = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape)
-            pk_avg_mag = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape)
+            max_mag = max(ss[4][4], ss[5][4])  # Global maximum
+            tr_avg_mag = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape, max_mag=max_mag)
+            pk_avg_mag = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape, max_mag=max_mag)
             ss += pts_troughs + pts_peaks
             ss.append(tr_avg_mag + pk_avg_mag)
 
@@ -214,7 +215,7 @@ def statscalc(stats: np.ndarray, grid_shape: Tuple[int], include_min: bool = Tru
                                          single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val])
     else:
         single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
-                                         single_lfp_max_idx_y, single_lfp_max_val])  # My,max_val])
+                                         single_lfp_max_idx_y, single_lfp_max_val])
     return single_lfp_all_stats
 
 def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
@@ -301,12 +302,12 @@ def get_fit(my, PTS):
     w = (fn(np.arange(max_idx, 0, -1, dtype=float), PTS[0]), fn(np.arange(0, my.size - max_idx, dtype=float), PTS[1]))
     return np.concatenate(w)
 
-VOLUME_RANGE = ((-19, 21), (0, 1), (0, 15))  # t, x, y
+VOLUME_RANGE = ((-9, 31), (0, 1), (0, 15))  # t, x, y
 VOLUME_RANGE = np.tile(np.array(VOLUME_RANGE).T, (2, 1, 1))
-VOLUME_RANGE[1, :, 2] = -VOLUME_RANGE[1, ::-1, 2]  # flip y for reversed direction
-def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape):
+VOLUME_RANGE[0, :, 2] = 1 - VOLUME_RANGE[0, ::-1, 2]  # flip y for reversed direction
+def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape, max_mag=None):
     """
-    Average lfp magnitude relative to the break point in its neighbor volume
+    Return average lfp magnitude in the neighbor volume near the break point relative to the global maximum.
     lfp: lfp array
     t_m, m: returned by 'get_tr_pk'
     PTS, max_idx: returned by 'get_decay'
@@ -315,6 +316,8 @@ def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape):
     lfp = lfp.reshape((-1,) + grid_shape)
     m = m.reshape(grid_shape)
     t_m = t_m.reshape(grid_shape)
+    if max_mag is None:
+        max_mag = np.amax(np.abs(lfp))
     avg_mag = []
     for i in range(2):
         y1 = int(PTS[i][2])
@@ -323,7 +326,7 @@ def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape):
         t = t_m[x, y]
         box_range = np.clip(np.array((t, x, y)) + VOLUME_RANGE[i], 0, shape_3d).T
         box = tuple(slice(idx[0], idx[1]) for idx in box_range)
-        avg_mag.append(np.mean(lfp[box]) / lfp[t, x, y])
+        avg_mag.append(np.mean(lfp[box]) / max_mag)
     return avg_mag
 
 def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np.ndarray:
