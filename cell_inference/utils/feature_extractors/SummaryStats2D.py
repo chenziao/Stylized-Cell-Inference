@@ -287,11 +287,10 @@ def get_decay(my, bound=7.0):
     y2 = np.floor(my.size / 2)
     fn = lambda y, w1, w2, y1: two_line_segments(y, w1, w2, y1, y2=y2)
     max_idx = np.argmax(my)
-    bounds = ((.1, .1, 1.), (bound, bound, y2 - 1.))
     for my_one_side in (my[max_idx::-1], my[max_idx:]):
-        indices = np.nonzero(my_one_side > 0)[0]
-        log_my = np.fmin(np.log(my_one_side[0]) - np.log(my_one_side[indices]), bound)  # e^-7 < 1/1000
-        pts, _ = curve_fit(fn, indices.astype(float), log_my, p0=np.mean(np.array(bounds), axis=0), bounds=bounds,
+        bounds = ((.1, .1, 1.), (bound, bound, min(my_one_side.size - 1, y2) - 1.))
+        log_my = np.log(my_one_side[0]) - np.log(np.fmax(my_one_side, my_one_side[0] * np.exp(-bound)))  # e^-7 < 1/1000
+        pts, _ = curve_fit(fn, np.arange(my_one_side.size, dtype=float), log_my, p0=np.mean(np.array(bounds), axis=0), bounds=bounds,
                            method='dogbox', loss='huber', f_scale=bound / 2)
         PTS.append(pts)
         Lambda.append(pts[2] / pts[0])
