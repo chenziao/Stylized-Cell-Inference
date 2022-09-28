@@ -42,9 +42,10 @@ def get_y_window(lfp: np.ndarray, coord: np.ndarray, y_window_size: float = para
     max_idx = np.argmax(np.amax(np.abs(lfp), axis=0))
     center_y = coord[max_idx, 1]
     center_y_idx = np.argmin(np.abs(grid_y - center_y))
-    if center_y_idx + rel_idx[0] < 0 or center_y_idx + rel_idx[-1] >= y_size:
-        raise ValueError("The window falls outside the given electrode grid range.")
     y_window_idx = center_y_idx + rel_idx
+    if y_window_idx[0] < 0 or y_window_idx[-1] >= y_size:
+        raise ValueError("The window (%d, %d) falls outside the given electrode grid range."
+                         % tuple(y_window_idx[[0, -1]]))
     return grid_y[y_window_idx], y_window_idx, center_y
 
 def build_lfp_grid(lfp: np.ndarray, coord: np.ndarray, y_window_size: Optional[float] = None,
@@ -132,7 +133,8 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         - Standard Deviation Voltage of Each Channel
         - Troughs of Each Channel
         - Peaks of Each Channel
-        - Width of Waveform from half height (if additional_stats True)
+        - Width of Waveform from half height (if additional_stats >= 1)
+        - Other statistics if additional_stats > 1
         g_lfp: gridded LFP array with shape (time x channels)
         grid_shape: grid shape of g_lfp.
             If not specified, use x size in params.ELECTRODE_GRID and infer y size automatically.
@@ -210,12 +212,12 @@ def statscalc(stats: np.ndarray, grid_shape: Tuple[int], include_min: bool = Tru
         single_lfp_min_idx = np.argmin(stats)
         single_lfp_min_val = stats[single_lfp_min_idx]
         single_lfp_min_idx_x, single_lfp_min_idx_y = np.unravel_index(single_lfp_min_idx, grid_shape)
-        single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
-                                         single_lfp_max_idx_y, single_lfp_max_val,
-                                         single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val])
+        single_lfp_all_stats = np.array([ mean, std,
+            single_lfp_max_idx_x, single_lfp_max_idx_y, single_lfp_max_val,
+            single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val ])
     else:
-        single_lfp_all_stats = np.array([mean, std, single_lfp_max_idx_x,
-                                         single_lfp_max_idx_y, single_lfp_max_val])
+        single_lfp_all_stats = np.array([ mean, std,
+            single_lfp_max_idx_x, single_lfp_max_idx_y, single_lfp_max_val ])
     return single_lfp_all_stats
 
 def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
@@ -393,7 +395,9 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
     align_at: keyword argument "align_at" for the function "get_spike_window"
     y_window_size: The width of the window along y-axis (micron)
     ycoord: the y-coordinate of the soma. Specify to calculate the y-shift
+    gauss_filt: whether or not to use 3D Gaussian filter
     calc_summ_stats: whether or not to calculate summary statistics
+    additional_stats: series number of additional summary statistics
     err_msg: whether or not to print error message
     
     Return: bad case id, LFP array, time array, electrode coordinates,
@@ -403,7 +407,6 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
     while bad < 0:
         try:
             filtered_lfp = signal.lfilter(filt_b, filt_a, lfp, axis=0) # filter along time axis
-            # filtered_lfp /= np.max(np.abs(filtered_lfp))
             start, end = get_spike_window(filtered_lfp, win_size=params.WINDOW_SIZE, align_at=align_at)
         except ValueError as e:
             if err_msg: print(e)

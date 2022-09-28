@@ -38,8 +38,8 @@ def get_spike_window(lfp: np.ndarray,
     align_pt = first_pk_tr(lfp)
     start = align_pt - align_at
     if start < 0:
-        raise ValueError("Start of the window exceeds the data time frame")
+        raise ValueError("Start of the window %d exceeds the data time frame" % (start))
     end = start + win_size
     if end > lfp.shape[0]:
-        raise ValueError("End of the window exceeds the data time frame")
+        raise ValueError("End of the window %d exceeds the data time frame" % (end))
     return start, end

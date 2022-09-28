@@ -18,10 +18,10 @@ class Simulation(object):
                  geo_param: Union[np.ndarray, List[int], List[float]] = [],
                  biophys: Union[np.ndarray, List[int], List[float]] = [],
                  full_biophys: Optional[dict] = None, biophys_comm: Optional[dict] = {},
-                 record_soma_v: bool = True, spike_threshold: Optional[float] = None,
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
-                 soma_injection: Optional[np.ndarray] = None,
-                 scale: Optional[float] = 1.0, min_distance: Optional[float] = 10.0) -> None:
+                 soma_injection: Optional[np.ndarray] = None, scale: Optional[float] = 1.0,
+                 interpret_params: bool = False, min_distance: Optional[float] = 10.0,
+                 record_soma_v: bool = True, spike_threshold: Optional[float] = None) -> None:
         """
         Initialize simulation object
         cell_type: CellTypes enum value to indicate type of cell simulation
@@ -33,30 +33,22 @@ class Simulation(object):
         biophys: biophysical parameters, ncell-by-k array, if not specified, use default properties
         full_biophys: dictionary that includes full biophysical parameters (in Allen's celltype database model format)
         biophys_comm: dictionary that specifies common biophysical parameters for all sections
-        record_soma_v: whether or not to record soma membrane voltage
-        spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
-        gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells'
+        gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells
+        stim_param: stimulus paramters for synaptic input
         soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
-        min_distance: minimum distance allowed between segment and electrode. Set to None if not using.
+        interpret_params: whether or not to interpret input parameters by calling the function 'interpret_params'
+        min_distance: minimum distance allowed between segment and electrode, set to None if not using
+        record_soma_v: whether or not to record soma membrane voltage
+        spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
         """
         self.cell_type = cell_type
         # Common properties
         self.ncell = ncell  # number of cells in this simulation
         self.cells = []  # list of cell object
+        self.lfp = []  # list of EcpMod object
         self.geometry = geometry.copy() if geometry is not None else None
         self.electrodes = np.array(electrodes) if electrodes is not None else None
-        self.lfp = []  # list of EcpMod object
-        self.geo_entries = [
-            (0, 'R'),  # soma radius
-            (3, 'L'),  # trunk length
-            (3, 'R'),  # trunk radius
-            ([1, 2], 'R'),  # basal dendrites radius
-            (4, 'R'),  # tuft radius
-            ([1, 2, 4], 'L')  # all dendrites length
-        ]
-        self.set_loc_param(loc_param)
-        self.set_geo_param(geo_param)
         self.set_scale(scale)
         self.min_distance = min_distance
         self.record_soma_v = record_soma_v
@@ -69,10 +61,16 @@ class Simulation(object):
         self.gmax = gmax
         self.stim_param = stim_param
         self.soma_injection = soma_injection
+        
+        # Set up
+        self.set_loc_param(loc_param)
+        self.set_geo_param(geo_param)
+        if interpret_params:
+            self.interpret_params()
         self.__cell_type_settings()
         self.__load_cell_module()
         
-        # Create
+        # Create cells
         self.__create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector(round(h.tstop / h.dt) + 1).record(h._ref_t)  # record time
 
@@ -98,34 +96,44 @@ class Simulation(object):
                     raise ValueError("'full_biophys' is required for an Active Cell")
                 for genome in self.full_biophys['genome']:
                     if genome['value'] != "": genome['value'] = float(genome['value'])
-                if self.cell_type == CellTypes.ACTIVE_FULL:
-                    # self.geo_entries.append((5, 'R'))
-                    self.geo_entries = [
-                        (0, 'R'),  # soma radius
-                        (4, 'L'),  # trunk length
-                        (3, 'R'),  # trunk radius
-                        ([1, 2], 'R'),  # basal radius
-                        ([4, 5], 'R'),  # tuft radius
-                        ([1, 2, 5], 'L'),  # all dendrites length
-                        (6, 'R'),  # axon radius
-                        (7, 'R'),  # oblique radius
-                        (7, 'L')  # oblique length
-                    ]
-                if self.cell_type == CellTypes.REDUCED_ORDER:
-                    self.geo_entries = [
-                        (6, 'L'),  # mid trunk length
-                        (6, 'R'),  # mid trunk radius
-                        (4, 'L'),  # prox trunk length
-                        (4, 'R'),  # prox trunk radius
-                        (7, 'L'),  # dist trunk length
-                    ]
+        if self.cell_type == CellTypes.ACTIVE_FULL:
+            self.geo_entries = [
+                (0, 'R'),  # soma radius
+                (4, 'L'),  # trunk length
+                (3, 'R'),  # trunk radius
+                ([1, 2], 'R'),  # basal radius
+                ([4, 5], 'R'),  # tuft radius
+                ([1, 2, 5], 'L'),  # all dendrites length
+                (6, 'R'),  # axon radius
+                (7, 'R'),  # oblique radius
+                (7, 'L')  # oblique length
+            ]
+        elif self.cell_type == CellTypes.REDUCED_ORDER:
+            self.geo_entries = [
+                (4, 'L'),  # prox trunk length
+                (6, 'L'),  # mid trunk length
+                (7, 'L'),  # dist trunk length
+                (4, 'R'),  # prox trunk radius
+                (6, 'R'),  # mid trunk radius
+                (7, 'R'),  # dist trunk radius
+            ]
+        else:
+            self.geo_entries = [
+                (0, 'R'),  # soma radius
+                (3, 'L'),  # trunk length
+                (3, 'R'),  # trunk radius
+                ([1, 2], 'R'),  # basal dendrites radius
+                (4, 'R'),  # tuft radius
+                ([1, 2, 4], 'L')  # all dendrites length
+            ]
     
     def __load_cell_module(self) -> None:
         """Load cell module and define arguments for initializing cell instance according to cell type"""
         def pass_geometry(CellClass):
             def create_cell(i,**kwargs):
-                cell = CellClass(geometry=self.set_geometry(self.geometry, self.geo_param[i, :]),
-                                 record_soma_v=self.record_soma_v, spike_threshold=self.spike_threshold, **kwargs)
+                cell = CellClass(geometry=self.set_geometry(self.geo_param[i, :]),
+                                 record_soma_v=self.record_soma_v,
+                                 spike_threshold=self.spike_threshold, **kwargs)
                 return cell
             return create_cell
         if self.cell_type == CellTypes.PASSIVE:
@@ -150,8 +158,6 @@ class Simulation(object):
     
     def __create_cells(self) -> None:
         """Create cell objects with properties set up"""
-        self.cells.clear()  # remove cell objects from previous run
-        self.lfp.clear()
         # Create cell with morphology and biophysical parameters
         for i in range(self.ncell):
             self.cells.append(self.CreateCell(i))
@@ -164,8 +170,8 @@ class Simulation(object):
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
             # Move cell location
             if self.electrodes is not None:
-                self.lfp.append(
-                    EcpMod(cell, self.electrodes, move_cell=self.loc_param[i,0], scale=self.scale[i], min_distance=self.min_distance))
+                self.lfp.append(EcpMod(cell, self.electrodes, move_cell=self.loc_param[i,0],
+                                       scale=self.scale[i], min_distance=self.min_distance))
 
     def __create_netstim(self, stim_param: Optional[dict] = {}) -> h.NetStim:
         """Setup synaptic input event"""
@@ -190,7 +196,7 @@ class Simulation(object):
         if param.ndim > ndim + 1:
             raise ValueError("%s has more dimensions size than expected" % param_name)
         # add dimensions before the trailing dimension
-        param = np.expand_dims(param,tuple(range(param.ndim-1,ndim)))
+        param = np.expand_dims(param, tuple(range(param.ndim - 1, ndim)))
         if param.shape[0] != self.ncell:
             if param.shape[0] == 1:
                 # repeat the same parameters for all cells
@@ -200,6 +206,20 @@ class Simulation(object):
         return param
 
     # PUBLIC METHODS
+    def interpret_params(self):
+        if self.cell_type == CellTypes.REDUCED_ORDER:
+            """
+            Parameters list:
+                0: total trunk length (um)
+                1: trunk radius scale
+            """
+            geo_param = np.full((self.ncell, 6), np.nan)
+            trunk_L = self.geometry.loc[[4, 6, 7], 'L'].values  # length of each trunk section
+            geo_param[:, :3] = trunk_L / np.sum(trunk_L) * self.geo_param[:, [0]]
+            trunk_R = self.geometry.loc[[4, 6, 7], 'R'].values  # radius of each trunk section
+            geo_param[:, 3:6] = trunk_R * self.geo_param[:, [1]]
+            self.geo_param = geo_param
+    
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
         """
         Setup location parameters.
@@ -247,18 +267,18 @@ class Simulation(object):
         """
         self.scale = self.__pack_parameters(scale, 0, "scale")
 
-    def set_geometry(self, geometry: pd.DataFrame, geo_param: np.ndarray) -> pd.DataFrame:
+    def set_geometry(self, geo_param: np.ndarray) -> pd.DataFrame:
         """
         Set property values from geo_param through each entry to geometry.
 
         Parameters
-        geometry: pandas dataframe describing the geometry
         geo_param: numpy array describing entries used
-        
+        geometry: pandas dataframe describing the geometry
+
         Note:
         Set NaN value to use default value.
         """
-        geom = geometry.copy()
+        geom = self.geometry.copy()
         for i, x in enumerate(geo_param):
             if not np.isnan(x):
                 geom.loc[self.geo_entries[i]] = x
@@ -274,7 +294,7 @@ class Simulation(object):
         Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
 
         Parameters
-        index: index of the cell to retrieve the LFP from
+        index: index of the cell to retrieve the LFP from, use 'all' to get from all cells
         multiple_position: get from multiple positions for each cell along second dimension of the LFP array
         """
         if multiple_position:
@@ -295,7 +315,7 @@ class Simulation(object):
         Return soma membrane potential of the cell by index (indices), (cells-by-)time
 
         Parameters
-        index: index of the cell to retrieve the soma Vm from
+        index: index of the cell to retrieve the soma Vm from, use 'all' to get from all cells
         """
         if index == 'all':
             index = range(self.ncell)
@@ -308,10 +328,10 @@ class Simulation(object):
 
     def get_spike_time(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
-        Return soma spike time of the cell by index (indices), ndarray (list of ndarray)
+        Return ndarray (or list of ndarray's) of soma spike time of the cell(s) by index (or indices)
 
         Parameters
-        index: index of the cell to retrieve the spikes from
+        index: index of the cell to retrieve the spikes from, use 'all' to get from all cells
         """
         if self.spike_threshold is None:
             raise ValueError("Spike recorder was not set up.")
@@ -321,7 +341,7 @@ class Simulation(object):
             spk = self.cells[index].spikes.as_numpy().copy()
         else:
             index = np.asarray(index).ravel()
-            spk = np.array([self.cells[i].spikes.as_numpy().copy() for i in index], dtype=object)
+            spk = [self.cells[i].spikes.as_numpy().copy() for i in index]
         return spk
 
     def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int, np.ndarray]:
@@ -329,7 +349,7 @@ class Simulation(object):
         Return soma spike number of the cell by index (indices), int (ndarray)
 
         Parameters
-        index: index of the cell to retrieve the spikes from
+        index: index of the cell to retrieve the spikes from, use 'all' to get from all cells
         """
         if self.spike_threshold is None:
             raise ValueError("Spike recorder was not set up.")
