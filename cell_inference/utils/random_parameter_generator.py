@@ -40,44 +40,113 @@ class Random_Parameter_Generator(object):
         return param_array
 
 
-def generate_parameters_from_config(config: dict):
+def generate_parameters_from_config(config: Dict):
+    """ Generate parameters from configuration dictionary """
     tr_p = config['Trial_Parameters']
-    tr_params = config['Simulation_Parameters']
-    if 'n_sigma' not in tr_params.keys() or tr_params['n_sigma'] is None:
+    sim_p = config['Simulation_Parameters']
+    if 'n_sigma' not in sim_p.keys() or sim_p['n_sigma'] is None:
         n_sigma = 3.0
     else:
-        n_sigma = tr_params['n_sigma']
+        n_sigma = sim_p['n_sigma']
     rpg = Random_Parameter_Generator(seed=tr_p['rand_seed'], n_sigma=n_sigma)
     
     # Location paramters
-    loc_param_gen = tr_params['loc_param_list'].copy()
+    loc_param_gen = sim_p['loc_param_list'].copy()
     polar_loc = 'd' in tr_p['randomized_list'] and 'theta' in tr_p['randomized_list']
     if polar_loc:
         loc_param_gen[loc_param_gen.index('x')] = 'd'
         loc_param_gen[loc_param_gen.index('z')] = 'theta'
 
-    loc_param_samples = rpg.generate_parameters(tr_p['number_samples'], loc_param_gen,
-                                                tr_p['randomized_list'], tr_params['loc_param_default'],
-                                                tr_params['loc_param_range'], tr_params['loc_param_dist'])
+    loc_param_samples = rpg.generate_parameters(
+        tr_p['number_samples'], loc_param_gen, tr_p['randomized_list'],
+        sim_p['loc_param_default'], sim_p['loc_param_range'], sim_p['loc_param_dist']
+    )
 
     if polar_loc:
         loc_param_samples['x'], loc_param_samples['z'] = pol2cart(loc_param_samples['d'], loc_param_samples['theta'])
 
-    loc_param = np.column_stack([loc_param_samples[key] for key in tr_params['loc_param_list']])
+    loc_param = np.column_stack([loc_param_samples[key] for key in sim_p['loc_param_list']])
 
     # reshape into ncell-by-nloc-by-nparam
     loc_param = loc_param.reshape(tr_p['number_cells'], tr_p['number_locs'], -1)
 
     # Geometery parameters
-    geo_param_samples = rpg.generate_parameters(tr_p['number_cells'], tr_params['geo_param_list'],
-                                                tr_p['randomized_list'], tr_params['geo_param_default'],
-                                                tr_params['geo_param_range'], tr_params['geo_param_dist'])
+    geo_param_samples = rpg.generate_parameters(
+        tr_p['number_cells'], sim_p['geo_param_list'], tr_p['randomized_list'],
+        sim_p['geo_param_default'], sim_p['geo_param_range'], sim_p['geo_param_dist']
+    )
 
-    geo_param = np.column_stack([geo_param_samples[key] for key in tr_params['geo_param_list']])
+    geo_param = np.column_stack([geo_param_samples[key] for key in sim_p['geo_param_list']])
 
     # repeat to match number_samples
     for key, value in geo_param_samples.items():
         geo_param_samples[key] = np.repeat(value, tr_p['number_locs'])
+    
+    # Gather parameters as labels
+    samples = {**geo_param_samples, **loc_param_samples}
+    labels = np.column_stack([ samples[key] for key in tr_p['inference_list'] ])
+    rand_param = np.column_stack([ samples[key] for key in tr_p['randomized_list'][:-len(tr_p['inference_list'])] ])
+    return labels, rand_param, loc_param, geo_param
+
+def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, number_locs: int = 1):
+    """ Generate parameters from configuration and prediction dictionary """
+    tr_p = config['Trial_Parameters']
+    sim_p = config['Simulation_Parameters']
+    if 'n_sigma' not in sim_p.keys() or sim_p['n_sigma'] is None:
+        n_sigma = 3.0
+    else:
+        n_sigma = sim_p['n_sigma']
+    rpg = Random_Parameter_Generator(seed=tr_p['rand_seed'], n_sigma=n_sigma)
+
+    # Clip predicted parameters
+    pred_param = {}
+    for key, p_range in {**sim_p['loc_param_range'], **sim_p['geo_param_range']}.items():
+        if key in pred_dict.keys():
+            pred_param[key] = np.clip(pred_dict[key], p_range[0], p_range[1])
+            number_cells = pred_param[key].size
+
+    # Location paramters
+    loc_param_gen = sim_p['loc_param_list'].copy()
+    if 'd' in tr_p['randomized_list'] and 'theta' in tr_p['randomized_list']:
+        loc_param_gen[loc_param_gen.index('x')] = 'd'
+        loc_param_gen[loc_param_gen.index('z')] = 'theta'
+
+    loc_param_samples = {}
+    for key, value in pred_param.items():
+        if key in loc_param_gen:
+            loc_param_samples[key] = np.repeat(value, number_locs)
+            loc_param_gen.remove(key)
+
+    loc_param_samples.update(rpg.generate_parameters(
+        number_cells * number_locs, loc_param_gen, tr_p['randomized_list'],
+        sim_p['loc_param_default'], sim_p['loc_param_range'], sim_p['loc_param_dist']
+    ))
+
+    if 'd' in loc_param_samples and 'theta' in loc_param_samples:
+        loc_param_samples['x'], loc_param_samples['z'] = pol2cart(loc_param_samples['d'], loc_param_samples['theta'])
+
+    loc_param = np.column_stack([loc_param_samples[key] for key in sim_p['loc_param_list']])
+
+    # reshape into ncell-by-nloc-by-nparam
+    loc_param = loc_param.reshape(number_cells, number_locs, -1)
+
+    # Geometery parameters
+    geo_param_gen = sim_p['geo_param_list'].copy()
+    geo_param_samples = {}
+    for key, value in pred_param.items():
+        if key in geo_param_gen:
+            geo_param_samples[key] = value
+            geo_param_gen.remove(key)
+    geo_param_samples.update(rpg.generate_parameters(
+        number_cells, geo_param_gen, tr_p['randomized_list'],
+        sim_p['geo_param_default'], sim_p['geo_param_range'], sim_p['geo_param_dist']
+    ))
+
+    geo_param = np.column_stack([geo_param_samples[key] for key in sim_p['geo_param_list']])
+
+    # repeat to match number_samples
+    for key, value in geo_param_samples.items():
+        geo_param_samples[key] = np.repeat(value, number_locs)
     
     # Gather parameters as labels
     samples = {**geo_param_samples, **loc_param_samples}
