@@ -1,15 +1,18 @@
 import numpy as np
-from typing import Optional, Tuple, Union
+from math import sqrt
+from typing import Optional, Union, List, Tuple
 
-
-def corrcoef(x: Union[float, int, np.ndarray], y: Union[float, int, np.ndarray]) -> np.ndarray:
+def corrcoef(x: Union[List, np.ndarray], y: Union[List, np.ndarray]) -> np.ndarray:
     """
     function for calculating correlation coefficient
     """
-    return (np.mean(x * y) - np.mean(x) * np.mean(y)) / (np.std(x) * np.std(y))
+    x = np.asarray(x).ravel()
+    y = np.asarray(y).ravel()
+    x -= np.mean(x)
+    y -= np.mean(y)
+    return np.sum(x * y) / sqrt(np.sum(x * x) * np.sum(y * y))
 
-
-def max_corrcoef(x: Union[float, int, np.ndarray], y: Union[float, int, np.ndarray],
+def max_corrcoef(x: Union[List, np.ndarray], y: Union[List, np.ndarray],
                  window_size: Optional[int] = None) -> Tuple:
     """
     Calculate correlation coefficient between input x and y inside sliding time window (time should be the first
@@ -32,7 +35,7 @@ def max_corrcoef(x: Union[float, int, np.ndarray], y: Union[float, int, np.ndarr
     maxind = np.unravel_index(maxind, (nx, ny))
     max_corr = corr[maxind]
     if window_size is None:
-        output = (max_corr, maxind[1])
+        output = (max_corr, maxind[1], None)
     else:
         output = (max_corr, maxind[0], maxind[1])
     return output
