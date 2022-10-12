@@ -135,7 +135,7 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         - Peaks of Each Channel
         - Width of Waveform from half height (if additional_stats >= 1)
         - Other statistics if additional_stats > 1
-        g_lfp: gridded LFP array with shape (time x channels)
+        g_lfp: gridded LFP array with shape (time x channels) (mV)
         grid_shape: grid shape of g_lfp.
             If not specified, use x size in params.ELECTRODE_GRID and infer y size automatically.
     """
