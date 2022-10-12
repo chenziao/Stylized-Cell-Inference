@@ -37,10 +37,10 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
             training = phase == 'train'
             model.train(training)
             running_loss = 0.0
-            with torch.no_grad() if training else nullcontext():
+            with nullcontext() if training else torch.no_grad():
                 for i, (x, y) in enumerate(data_loaders[phase]):
                     output = model(x.to(device))
-                    loss = loss_func(torch.squeeze(output), torch.squeeze(y.to(device)))
+                    loss = loss_func(output, y.to(device))
                     # backprop
                     if training:
                         optimizer.zero_grad()
