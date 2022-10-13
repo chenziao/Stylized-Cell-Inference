@@ -62,11 +62,11 @@ def train_regression(model: nn.Module, training_loader: DataLoader,
         val_loss_list.append(val_loss)
 
     date_time = datetime.now().strftime("%H_%M_%S__%m_%d_%Y")
-    model_file = paths.MODELS_ROOT + date_time + ".pt"
-    history_file = paths.LOSSES_ROOT + date_time + ".csv"
-    torch.save(model, model_file)
+    model_file = date_time + ".pt"
+    history_file = date_time + ".csv"
+    torch.save(model, os.path.join(paths.MODELS_ROOT, model_file))
     history = pd.DataFrame({"Epochs": epochs_list, "Training_Loss": train_loss_list, "Validation_Loss": val_loss_list})
-    history.to_csv(history_file, index=False)
+    history.to_csv(os.path.join(paths.LOSSES_ROOT, history_file), index=False)
     return history, [model_file, history_file]
 
 

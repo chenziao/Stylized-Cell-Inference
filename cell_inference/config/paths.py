@@ -2,7 +2,7 @@ import os
 import platform
 
 ROOT_DIR = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
-RESOURCES_ROOT = os.path.join(ROOT_DIR, 'resources/')
+RESOURCES_ROOT = os.path.join(ROOT_DIR, 'resources')
 
 LIBRARY = 'nrnmech.dll' if platform.system() == 'Windows' else 'x86_64/.libs/libnrnmech.so'
 COMPILED_LIBRARY = os.path.join(RESOURCES_ROOT, 'compiled', 'mechanisms', LIBRARY)
@@ -15,18 +15,16 @@ GEO_REDUCED_ORDER = os.path.join(RESOURCES_ROOT, 'geom_parameters_reduced_order_
 ELECTRODES = os.path.join(RESOURCES_ROOT, 'Electrode2D.h5')
 GMAX_MAPPING = os.path.join(RESOURCES_ROOT, 'gmax_mapping.h5')
 
+RESULTS_ROOT = os.path.join(RESOURCES_ROOT, 'results')
+MODELS_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_models')
+LOSSES_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_losses')
+
 SIMULATED_DATA_FILE = os.path.join(RESOURCES_ROOT, 'active_groundtruth.h5')
 MORPHOLOGY_DATA_FILE = os.path.join(RESOURCES_ROOT, 'detailed_groundtruth.h5')  # Allen Morphology Cell Data
 INVIVO_DATA_FILE = os.path.join(RESOURCES_ROOT, 'cell360LFP.h5')
 INVIVO2D_DATA_FILE = os.path.join(RESOURCES_ROOT, 'cell360LFP2D.h5')
 
-
-RESULTS_ROOT = os.path.join(RESOURCES_ROOT, 'results')
-
-MODELS_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_models/')
-
-LOSSES_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_losses/')
-
+"""
 PASSIVE_INFERENCE_SAVE_TRACES = os.path.join(RESULTS_ROOT,
                                              'result_pdfs/PassiveCellResultsCNN_Traces.pdf')
 PASSIVE_INFERENCE_SAVE_HEATMAPS = os.path.join(RESULTS_ROOT,
@@ -42,9 +40,7 @@ PASSIVE_INFERENCE_RESULTS_X0_MATLAB_DATA = os.path.join(RESULTS_ROOT,
                                                         'result_data/PassiveCellResultsCNN_x0.mat')
 
 POSTERIOR_SAVE = os.path.join(ROOT_DIR, 'results/Posteriors/')
-
 INFERENCER_SAVE = os.path.join(ROOT_DIR, 'results/Inferencers/')
-
 IMAGE_SAVE = os.path.join(ROOT_DIR, 'resources/results/ResultJPGs/')
 
 ACTIVE_INFERENCE_SAVE_TRACES = os.path.join(RESULTS_ROOT,
@@ -60,3 +56,4 @@ ACTIVE_INFERENCE_RESULTS_MATLAB_DATA = os.path.join(RESULTS_ROOT,
                                                     'result_data/ActiveCellResultsCNN_MATData.mat')
 ACTIVE_INFERENCE_RESULTS_X0_MATLAB_DATA = os.path.join(RESULTS_ROOT,
                                                        'result_data/ActiveCellResultsCNN_x0.mat')
+"""
