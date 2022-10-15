@@ -44,11 +44,13 @@ def plot_all_cells(df: pd.DataFrame, s: float = 10, w: float = 2,
         r_t = w / df['r_t'].mean() * df['r_t'].values
     else:
         r_t = np.full(len(df), w)
-    if 'l_t' not in df.columns:
-        df['l_t'] = 300.
+    if 'l_t' in df.columns:
+        l_t = df[['l_t']].values
+    else:
+        l_t = np.full((len(df), 1), 300.)
 
     p0 = df[['x', 'y', 'z']].values
-    p1 = p0 + hphi2unitsphere(df[['h', 'phi']].values) * df[['l_t']].values
+    p1 = p0 + hphi2unitsphere(df[['h', 'phi']].values) * l_t
 
     sm = plt.cm.ScalarMappable(cmap=cm.viridis, norm=plt.Normalize())
     sm.set_array(r_t)

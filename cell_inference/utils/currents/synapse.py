@@ -10,11 +10,12 @@ if TYPE_CHECKING:
 
 class Synapse(PointCurrent):
     def __init__(self, cell: StylizedCell, stim: h.NetStim, sec_index: int,
-                 gmax: float = 0.01, loc: float = 0.5, record: bool = True) -> None:
+                  syn_type: str = 'Exp2Syn', gmax: float = 0.01, loc: float = 0.5,
+                  record: bool = True) -> None:
         super().__init__(cell, sec_index, loc)
         self.stim = stim
         self.gmax = gmax
-        self.__synapse_type('Exp2Syn')
+        self.__synapse_type(syn_type)
         self.setup(record)
 
     # PRIVATE METHODS
@@ -29,6 +30,7 @@ class Synapse(PointCurrent):
             self.gmax_var = '_nc_weight'
         else:
             raise ValueError("Synpase type not defined.")
+        self.syn_type = syn_type
         self.pp_obj = getattr(h, syn_type)(self.get_section()(self.loc))
 
     def __setup_synapse(self) -> h.NetCon:

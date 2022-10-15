@@ -9,5 +9,5 @@ id,name,type,pid,axial,L,R,ang
 8,proxtuft,4,7,FALSE,50.,0.3877,1.047
 9,midtuft,4,8,FALSE,100.,0.30256,1.047
 10,disttuft,4,9,FALSE,100.,0.25999,1.047
-11,axon,3,0,TRUE,60.,2.,-1.570796327
+11,axon,2,0,TRUE,60.,2.,-1.570796327
 12,passivebasal,3,0,FALSE,45.,0.8,0.
