@@ -17,6 +17,7 @@ class CellTypes(Enum):
     ACTIVE = 2
     ACTIVE_FULL = 3
     REDUCED_ORDER = 4
+    REDUCED_ORDER_PASSIVE = 5
 
 
 class StylizedCell(ABC):

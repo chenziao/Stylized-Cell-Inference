@@ -91,7 +91,7 @@ class Simulation(object):
             else:
                 self.set_gmax(self.gmax)
                 self.__create_netstim(self.stim_param)
-            if self.cell_type == CellTypes.ACTIVE_FULL or self.cell_type == CellTypes.REDUCED_ORDER:
+            if not self.cell_type == CellTypes.ACTIVE:
                 if self.full_biophys is None:
                     raise ValueError("'full_biophys' is required for an Active Cell")
                 for genome in self.full_biophys['genome']:
@@ -108,7 +108,7 @@ class Simulation(object):
                 (7, 'R'),  # oblique radius
                 (7, 'L')  # oblique length
             ]
-        elif self.cell_type == CellTypes.REDUCED_ORDER:
+        elif self.cell_type == CellTypes.REDUCED_ORDER or self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
             self.geo_entries = [
                 (4, 'L'),  # prox trunk length
                 (6, 'L'),  # mid trunk length
@@ -139,20 +139,22 @@ class Simulation(object):
         if self.cell_type == CellTypes.PASSIVE:
             from cell_inference.cells.passivecell import PassiveCell
             self.CreateCell = pass_geometry(PassiveCell)
-        if self.cell_type == CellTypes.ACTIVE:
+        elif self.cell_type == CellTypes.ACTIVE:
             from cell_inference.cells.activecell import ActiveCell
             create_cell = pass_geometry(ActiveCell)
             self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :])
-        if self.cell_type == CellTypes.ACTIVE_FULL:
-            # from cell_inference.cells.activecell_axon import ActiveFullCell
-            # create_cell = pass_geometry(ActiveFullCell)
-            from cell_inference.cells.activecell_axon import ActiveObliqueCell
-            create_cell = pass_geometry(ActiveObliqueCell)
-            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
-                full_biophys=self.full_biophys, biophys_comm=self.biophys_comm)
-        if self.cell_type == CellTypes.REDUCED_ORDER:
-            from cell_inference.cells.activecell_axon import ReducedOrderL5Cell
-            create_cell = pass_geometry(ReducedOrderL5Cell)
+        else:
+            if self.cell_type == CellTypes.REDUCED_ORDER:
+                from cell_inference.cells.activecell_axon import ReducedOrderL5Cell
+                create_cell = pass_geometry(ReducedOrderL5Cell)
+            elif self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
+                from cell_inference.cells.activecell_axon import ReducedOrderL5CellPassive
+                create_cell = pass_geometry(ReducedOrderL5CellPassive)
+            else: # CellTypes.ACTIVE_FULL
+                # from cell_inference.cells.activecell_axon import ActiveFullCell
+                # create_cell = pass_geometry(ActiveFullCell)
+                from cell_inference.cells.activecell_axon import ActiveObliqueCell
+                create_cell = pass_geometry(ActiveObliqueCell)
             self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
                 full_biophys=self.full_biophys, biophys_comm=self.biophys_comm)
     
@@ -207,7 +209,7 @@ class Simulation(object):
 
     # PUBLIC METHODS
     def interpret_params(self):
-        if self.cell_type == CellTypes.REDUCED_ORDER:
+        if self.cell_type == CellTypes.REDUCED_ORDER or self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
             """
             Parameters list:
                 0: total trunk length (um)

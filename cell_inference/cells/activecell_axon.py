@@ -141,7 +141,7 @@ class ActiveObliqueCell(ActiveFullCell):
 
 
 class ReducedOrderL5Cell(ActiveFullCell):
-    """Define single cell model using parent class ActiveFullCell"""
+    """Reduced order cell with active dendrites"""
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -165,3 +165,29 @@ class ReducedOrderL5Cell(ActiveFullCell):
             (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas'), (4, 'gCa_HVAbar_Ca_HVA'), (4, 'gCa_LVAstbar_Ca_LVAst')
         ]
         self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 100, 100, 0.0000489, 0.000555, 0.0187])
+
+class ReducedOrderL5CellPassive(ActiveFullCell):
+    """Reduced order cell with passive dendrites"""
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+    def morphological_properties(self):
+        """Define properties related to morphology"""
+        # map from biophysic section name to secion id in geometry, used with "full_biophys"
+        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [11], 'pas_dend': [12]}
+        # select section id's for each group, used with "biophys"
+        self.grp_sec_type_ids = [ # select section id's for each group
+                                 [0], # soma
+                                 [1,2,3], # basal group: prox,mid,dist;
+                                 [4], # prox trunk; 5: oblique (removed)
+                                 [6], # mid trunk
+                                 [7], # distal trunk (nexus)
+                                 [8,9,10], # tuft: prox,mid,dist
+                                 [11], # axon
+                                 [12] # passive basal
+                                ]
+        self.biophys_entries = [
+            (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas')
+        ]
+        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 100, 100, 0.0000489])
