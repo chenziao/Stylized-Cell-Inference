@@ -46,7 +46,7 @@ def measure_segment_distance(soma, section_list, sec_type, freq=0, extracellular
 
     # distance at endpoints of each segment
     seg_prop['distance'] = np.expand_dims(seg_dist, 1) + np.expand_dims(seg_length, 1) / 2 * np.array([[-1, 1]])
-    seg_prop['elec_dist'] = np.sort(-np.log(np.column_stack([elec_dist0, elec_dist])), axis=1)
+    seg_prop['elec_dist'] = np.sort(np.log(elec_dist0[0]) - np.log(np.column_stack([elec_dist0, elec_dist])), axis=1)
 
     # change sign of basal and axon types
     idx = np.nonzero((seg_prop['swc_type']==2) | (seg_prop['swc_type']==3))[0]

@@ -89,7 +89,7 @@ def plot_morphology(sim: Optional[Simulation] = None, cellid: Optional[int] = 0,
         i1 = i0 + sec_nseg[i] - 1
         if sec_name[itype] == 'soma':
             p05 = (pc[i0] + pc[i1]) / 2
-            ax.scatter(*[p05[j] for j in axes], c=clr[itype], s=30, label=label)
+            ax.scatter(*[p05[j] for j in axes], c=clr[itype], s=20, label=label)
         else:
             p0 = pc[i0] - dl[i0] / 2
             p1 = pc[i1] + dl[i1] / 2
@@ -101,7 +101,7 @@ def plot_morphology(sim: Optional[Simulation] = None, cellid: Optional[int] = 0,
     box = np.vstack([ctr - r, ctr + r])
     if electrodes is not None:
         idx = np.logical_and(np.all(electrodes >= box[0, :], axis=1), np.all(electrodes <= box[1, :], axis=1))
-        ax.scatter(*[(electrodes[idx, j], electrodes[idx, j]) for j in axes], color='orange', s=10, label='electrodes')
+        ax.scatter(*[(electrodes[idx, j], electrodes[idx, j]) for j in axes], color='orange', s=5, label='electrodes')
     box = box[:, axes]
     ax.auto_scale_xyz(*box.T)
     ax.view_init(elev, azim)
