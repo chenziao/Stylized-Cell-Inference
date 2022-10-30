@@ -19,8 +19,10 @@ class Simulation(object):
                  biophys: Union[np.ndarray, List[int], List[float]] = [],
                  full_biophys: Optional[dict] = None, biophys_comm: Optional[dict] = {},
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
+                 syn_sec: Union[int, List[int]] = 0, syn_loc: Union[float, List[float]] = 0.5,
                  soma_injection: Optional[np.ndarray] = None, scale: Optional[float] = 1.0,
-                 interpret_params: bool = False, min_distance: Optional[float] = 10.0,
+                 min_distance: Optional[float] = 10.0, interpret_params: bool = False,
+                 geo_entries: Optional[List[Tuple]] = None, cell_kwargs: Optional[dict] = {},
                  record_soma_v: bool = True, spike_threshold: Optional[float] = None) -> None:
         """
         Initialize simulation object
@@ -35,12 +37,17 @@ class Simulation(object):
         biophys_comm: dictionary that specifies common biophysical parameters for all sections
         gmax: maximum conductance of synapse, ncell-vector, if this is a single value it is a constant for all cells
         stim_param: stimulus paramters for synaptic input
+        syn_sec: index(indices) of section(s) that receive synapse input
+        syn_loc: synapse location(s) on the section(s), if this is a list, it must have the same size as 'syn_sec'
         soma_injection: scaling factor for passive cell soma_injections
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
-        interpret_params: whether or not to interpret input parameters by calling the function 'interpret_params'
         min_distance: minimum distance allowed between segment and electrode, set to None if not using
+        interpret_params: whether or not to interpret input parameters by calling the function 'interpret_params'
+        geo_entries: overwrite 'geo_entries' if specified
+        cell_kwargs: dictionary of extra common keyword arguments for cell object
         record_soma_v: whether or not to record soma membrane voltage
         spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
+
         """
         self.cell_type = cell_type
         # Common properties
@@ -53,6 +60,7 @@ class Simulation(object):
         self.min_distance = min_distance
         self.record_soma_v = record_soma_v
         self.spike_threshold = spike_threshold
+        self.cell_kwargs = cell_kwargs
         
         # Cell type specific properties
         self.biophys = biophys
@@ -60,11 +68,14 @@ class Simulation(object):
         self.biophys_comm = biophys_comm
         self.gmax = gmax
         self.stim_param = stim_param
+        self.syn_sec = syn_sec if hasattr(syn_sec, '__len__') else [syn_sec]
+        self.syn_loc = syn_loc if hasattr(syn_loc, '__len__') else [syn_loc] * len(self.syn_sec)
         self.soma_injection = soma_injection
         
         # Set up
         self.set_loc_param(loc_param)
         self.set_geo_param(geo_param)
+        self.geo_entries = geo_entries
         if interpret_params:
             self.interpret_params()
         self.__cell_type_settings()
@@ -96,44 +107,45 @@ class Simulation(object):
                     raise ValueError("'full_biophys' is required for an Active Cell")
                 for genome in self.full_biophys['genome']:
                     if genome['value'] != "": genome['value'] = float(genome['value'])
-        if self.cell_type == CellTypes.ACTIVE_FULL:
-            self.geo_entries = [
-                (0, 'R'),  # soma radius
-                (4, 'L'),  # trunk length
-                (3, 'R'),  # trunk radius
-                ([1, 2], 'R'),  # basal radius
-                ([4, 5], 'R'),  # tuft radius
-                ([1, 2, 5], 'L'),  # all dendrites length
-                (6, 'R'),  # axon radius
-                (7, 'R'),  # oblique radius
-                (7, 'L')  # oblique length
-            ]
-        elif self.cell_type == CellTypes.REDUCED_ORDER or self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
-            self.geo_entries = [
-                (4, 'L'),  # prox trunk length
-                (6, 'L'),  # mid trunk length
-                (7, 'L'),  # dist trunk length
-                (4, 'R'),  # prox trunk radius
-                (6, 'R'),  # mid trunk radius
-                (7, 'R'),  # dist trunk radius
-            ]
-        else:
-            self.geo_entries = [
-                (0, 'R'),  # soma radius
-                (3, 'L'),  # trunk length
-                (3, 'R'),  # trunk radius
-                ([1, 2], 'R'),  # basal dendrites radius
-                (4, 'R'),  # tuft radius
-                ([1, 2, 4], 'L')  # all dendrites length
-            ]
+        if self.geo_entries is None:
+            if self.cell_type == CellTypes.ACTIVE_FULL:
+                self.geo_entries = [
+                    (0, 'R'),  # soma radius
+                    (4, 'L'),  # trunk length
+                    (3, 'R'),  # trunk radius
+                    ([1, 2], 'R'),  # basal radius
+                    ([4, 5], 'R'),  # tuft radius
+                    ([1, 2, 5], 'L'),  # all dendrites length
+                    (6, 'R'),  # axon radius
+                    (7, 'R'),  # oblique radius
+                    (7, 'L')  # oblique length
+                ]
+            elif self.cell_type == CellTypes.REDUCED_ORDER or self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
+                self.geo_entries = [
+                    (4, 'L'),  # prox trunk length
+                    (6, 'L'),  # mid trunk length
+                    (7, 'L'),  # dist trunk length
+                    (4, 'R'),  # prox trunk radius
+                    (6, 'R'),  # mid trunk radius
+                    (7, 'R'),  # dist trunk radius
+                ]
+            else:
+                self.geo_entries = [
+                    (0, 'R'),  # soma radius
+                    (3, 'L'),  # trunk length
+                    (3, 'R'),  # trunk radius
+                    ([1, 2], 'R'),  # basal dendrites radius
+                    (4, 'R'),  # tuft radius
+                    ([1, 2, 4], 'L')  # all dendrites length
+                ]
     
     def __load_cell_module(self) -> None:
         """Load cell module and define arguments for initializing cell instance according to cell type"""
         def pass_geometry(CellClass):
             def create_cell(i,**kwargs):
                 cell = CellClass(geometry=self.set_geometry(self.geo_param[i, :]),
-                                 record_soma_v=self.record_soma_v,
-                                 spike_threshold=self.spike_threshold, **kwargs)
+                                 record_soma_v=self.record_soma_v, spike_threshold=self.spike_threshold,
+                                 **self.cell_kwargs, **kwargs)
                 return cell
             return create_cell
         if self.cell_type == CellTypes.PASSIVE:
@@ -167,7 +179,11 @@ class Simulation(object):
         for i, cell in enumerate(self.cells):
             if self.cell_type != CellTypes.PASSIVE:
                 if self.gmax is not None:
-                    cell.add_synapse(self.stim, sec_index=0, gmax=self.gmax[i])
+                    for sec_id, loc in zip(self.syn_sec, self.syn_loc):
+                        secs = cell.sec_id_lookup[sec_id]
+                        gmax = self.gmax[i] / len(secs)
+                        for isec in secs:
+                            cell.add_synapse(self.stim, sec_index=isec, loc=loc, gmax=gmax)
             else:
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
             # Move cell location

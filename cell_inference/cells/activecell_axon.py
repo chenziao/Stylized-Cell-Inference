@@ -30,7 +30,6 @@ class ActiveFullCell(StylizedCell):
         self.biophys = biophys
         self.biophys_comm = {} if biophys_comm is None else biophys_comm
         self.v_init = v_init
-        self.morphological_properties()
 
         super().__init__(geometry, **kwargs)
 
@@ -153,18 +152,19 @@ class ReducedOrderL5Cell(ActiveFullCell):
         # select section id's for each group, used with "biophys"
         self.grp_sec_type_ids = [ # select section id's for each group
                                  [0], # soma
-                                 [1,2,3], # basal group: prox,mid,dist;
+                                 [1,2,3], # basal group: prox, mid, dist
                                  [4], # prox trunk; 5: oblique (removed)
                                  [6], # mid trunk
                                  [7], # distal trunk (nexus)
-                                 [8,9,10], # tuft: prox,mid,dist
+                                 [8], # tuft: prox
+                                 [9,10], # tuft: mid, dist
                                  [11], # axon
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
-            (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas'), (4, 'gCa_HVAbar_Ca_HVA'), (4, 'gCa_LVAstbar_Ca_LVAst')
+            ([5, 6], 'e_pas'), ([5, 6], 'g_pas'), (1, 'Ra'), (2, 'Ra'), (3, 'g_pas'), ([4, 5], 'gCa_HVAbar_Ca_HVA'), ([4, 5], 'gCa_LVAstbar_Ca_LVAst')
         ]
-        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 100, 100, 0.0000489, 0.000555, 0.0187])
+        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 0.0000489, 0.000555, 0.0187])
 
 class ReducedOrderL5CellPassive(ActiveFullCell):
     """Reduced order cell with passive dendrites"""
@@ -188,6 +188,6 @@ class ReducedOrderL5CellPassive(ActiveFullCell):
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
-            (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (5, 'Ra'), (6, 'Ra'), (3, 'g_pas')
+            (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (3, 'g_pas')
         ]
-        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 100, 100, 0.0000489])
+        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 0.0000489])

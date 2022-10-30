@@ -227,7 +227,7 @@
     {
       "section": "dend", 
       "name": "gNaTa_tbar_NaTa_t", 
-      "value": "0.0213", 
+      "value": "0.213", 
       "mechanism": "NaTa_t"
     }, 
     {
@@ -263,7 +263,7 @@
     {
       "section": "apic", 
       "name": "gNaTa_tbar_NaTa_t", 
-      "value": "0.0", 
+      "value": "0.002", 
       "mechanism": "NaTa_t"
     }, 
     {

@@ -3,7 +3,7 @@ from neuron import h
 import math
 import numpy as np
 import pandas as pd
-from typing import List, Optional, Sequence, Dict, Union, TypeVar
+from typing import Optional, Union, List
 from enum import Enum
 
 from cell_inference.utils.currents.currentinjection import CurrentInjection
@@ -23,7 +23,8 @@ class CellTypes(Enum):
 class StylizedCell(ABC):
     def __init__(self, geometry: pd.DataFrame = None,
                  dl: float = 30., vrest: float = -70.0, nbranch: int = 4,
-                 record_soma_v: bool = True, spike_threshold: Optional[float] = None) -> None:
+                 record_soma_v: bool = True, spike_threshold: Optional[float] = None,
+                 attr_kwargs: dict = {}) -> None:
         """
         Initialize cell model
         geometry: pandas dataframe of cell morphology properties
@@ -32,6 +33,7 @@ class StylizedCell(ABC):
         nbranch: number of branches of each non-axial section
         record_soma_v: whether or not to record soma membrane voltage
         spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
+        attr_kwargs: dictionary of class attribute - value pairs
         """
         self._h = h
         self._dL = dl
@@ -50,27 +52,16 @@ class StylizedCell(ABC):
         self.synapse = []  # synapse objects
         self.spikes = None
         self.geometry = None
+        self.morphological_properties()
+        for key, value in attr_kwargs.items():
+            setattr(self, key, value)
         self.__set_geometry(geometry)
         self.__setup_all()
-        self.seg_coords = self.__calc_seg_coords()
-
-    @abstractmethod
-    def set_channels(self) -> str:
-        """Abstract method for setting biophysical properties, inserting channels"""
-        raise NotImplementedError("Biophysical Channel Properties must be set!")
-
-    def add_injection(self, sec_index, **kwargs) -> None:
-        """Add current injection to a section by its index"""
-        self.injection.append(CurrentInjection(self, sec_index, **kwargs))
-
-    def add_synapse(self, stim: h.NetStim, sec_index: int, **kwargs) -> None:
-        """Add synapse to a section by its index"""
-        self.synapse.append(Synapse(self, stim, sec_index, **kwargs))
 
     #  PRIVATE METHODS
     def __set_geometry(self, geometry: Optional[pd.DataFrame] = None) -> None:
         if geometry is None:
-            self.geometry = None
+            raise ValueError("geometry not specified.")
         else:
             if not isinstance(geometry, pd.DataFrame):
                 raise TypeError("geometry must be a pandas dataframe")
@@ -80,11 +71,12 @@ class StylizedCell(ABC):
 
     def __setup_all(self) -> None:
         self.__create_morphology()
+        self.__calc_seg_coords()
         self.set_channels()
         self.v_rec = self.__record_soma_v() if self._record_soma_v else None
         self.__set_spike_recorder()
 
-    def __calc_seg_coords(self) -> Dict:
+    def __calc_seg_coords(self) -> dict:
         """Calculate segment coordinates for ECP calculation"""
         p0 = np.empty((self._nseg, 3))
         p1 = np.empty((self._nseg, 3))
@@ -100,12 +92,10 @@ class StylizedCell(ABC):
             p1[iseg:iseg + nseg, :] = pts[2::2, :]
             p05[iseg:iseg + nseg, :] = pts[1:-1:2, :]
             r[iseg:iseg + nseg] = sec.diam / 2
-        return {'dl': p1 - p0, 'pc': p05, 'r': r}
+        self.seg_coords = {'dl': p1 - p0, 'pc': p05, 'r': r}
 
     def __create_morphology(self) -> None:
         """Create cell morphology"""
-        if self.geometry is None:
-            raise ValueError("Warning: geometry is not loaded.")
         self._nsec = 0
         rot = 2 * math.pi / self._nbranch
         for sec_id, sec in self.geometry.iterrows():
@@ -185,6 +175,15 @@ class StylizedCell(ABC):
             self.spikes = vec
 
     #  PUBLIC METHODS
+    @abstractmethod
+    def set_channels(self) -> str:
+        """Abstract method for setting biophysical properties, inserting channels"""
+        pass
+
+    def morphological_properties(self):
+        """Define properties related to morphology"""
+        pass
+
     def get_sec_by_id(self, index) -> Optional[Union[List[h.Section], h.Section]]:
         """Get section(s) objects by index(indices) in the section list"""
         if not hasattr(index, '__len__'):
@@ -208,6 +207,14 @@ class StylizedCell(ABC):
             sec.insert('pas')
             sec.g_pas = gl
             sec.e_pas = self._vrest
+
+    def add_injection(self, sec_index, **kwargs) -> None:
+        """Add current injection to a section by its index"""
+        self.injection.append(CurrentInjection(self, sec_index, **kwargs))
+
+    def add_synapse(self, stim: h.NetStim, sec_index: int, **kwargs) -> None:
+        """Add synapse to a section by its index"""
+        self.synapse.append(Synapse(self, stim, sec_index, **kwargs))
 
     def v(self) -> Optional[Union[str, np.ndarray]]:
         """Return recorded soma membrane voltage in numpy array"""
