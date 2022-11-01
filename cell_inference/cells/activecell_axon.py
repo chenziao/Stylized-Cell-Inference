@@ -90,7 +90,7 @@ class ActiveFullCell(StylizedCell):
             mech = genome['mechanism']
             insert = mech != ""
             varname = genome['name']
-            set_value = varname != ""
+            set_value = varname != "" and genome['value'] != ""
             for isec in bio_sec_ids[genome['section']]:
                 sec = self.get_sec_by_id(isec)
                 if insert:
@@ -148,23 +148,34 @@ class ReducedOrderL5Cell(ActiveFullCell):
     def morphological_properties(self):
         """Define properties related to morphology"""
         # map from biophysic section name to secion id in geometry, used with "full_biophys"
-        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [11], 'pas_dend': [12]}
+        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [], 'pas_dend': [12]}
         # select section id's for each group, used with "biophys"
         self.grp_sec_type_ids = [ # select section id's for each group
                                  [0], # soma
-                                 [1,2,3], # basal group: prox, mid, dist
+                                 [1, 2, 3], # basal group: prox, mid, dist
                                  [4], # prox trunk; 5: oblique (removed)
                                  [6], # mid trunk
                                  [7], # distal trunk (nexus)
                                  [8], # tuft: prox
-                                 [9,10], # tuft: mid, dist
-                                 [11], # axon
+                                 [9, 10], # tuft: mid, dist
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
-            ([5, 6], 'e_pas'), ([5, 6], 'g_pas'), (1, 'Ra'), (2, 'Ra'), (3, 'g_pas'), ([4, 5], 'gCa_HVAbar_Ca_HVA'), ([4, 5], 'gCa_LVAstbar_Ca_LVAst')
+            ([5, 6], 'e_pas'), ([5, 6], 'g_pas'),
+            (0, 'gNaTa_tbar_NaTa_t'), (1, 'gNaTa_tbar_NaTa_t'),
+            (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
+            (1, 'Ra'), (2, 'Ra'), (3, 'g_pas'),
+            ([4, 5], 'gCa_HVAbar_Ca_HVA'), ([4, 5], 'gCa_LVAstbar_Ca_LVAst'),
+            (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih')
         ]
-        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 0.0000489, 0.000555, 0.0187])
+        self.default_biophys = np.array([
+            -72.0, 0.0000589,
+            2.04, 0.0639,
+            0.693, 0.000261,
+            100, 100, 0.0000489,
+            0.000555, 0.0187,
+            0.00181, 0.00571, 0.00783, 0.01166 
+        ])
 
 class ReducedOrderL5CellPassive(ActiveFullCell):
     """Reduced order cell with passive dendrites"""
