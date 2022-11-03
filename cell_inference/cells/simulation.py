@@ -179,11 +179,11 @@ class Simulation(object):
         for i, cell in enumerate(self.cells):
             if self.cell_type != CellTypes.PASSIVE:
                 if self.gmax is not None:
-                    for sec_id, loc in zip(self.syn_sec, self.syn_loc):
+                    for j, sec_id in enumerate(self.syn_sec):
                         secs = cell.sec_id_lookup[sec_id]
-                        gmax = self.gmax[i] / len(secs)
+                        gmax = self.gmax[i, j] / len(secs)
                         for isec in secs:
-                            cell.add_synapse(self.stim, sec_index=isec, loc=loc, gmax=gmax)
+                            cell.add_synapse(self.stim, sec_index=isec, loc=self.syn_loc[j], gmax=gmax)
             else:
                 cell.add_injection(sec_index=0, pulse=False, current=self.soma_injection, record=True)
             # Move cell location
@@ -229,14 +229,22 @@ class Simulation(object):
             """
             Parameters list:
                 0: total trunk length (um)
-                1: trunk radius scale
+                1: proportion of proximal trunk length
+                2: trunk radius scale
+                3: proportion of distal trunk radius
             """
             geo_param = np.full((self.ncell, 6), np.nan)
+            L = self.geo_param[:, [0]]  # total length
+            p1 = self.geo_param[:, [1]]  # proportion of prox
             trunk_L = self.geometry.loc[[4, 6, 7], 'L'].values  # length of each trunk section
-            geo_param[:, :3] = trunk_L / np.sum(trunk_L) * self.geo_param[:, [0]]
-            trunk_R = self.geometry.loc[[4, 6, 7], 'R'].values  # radius of each trunk section
-            geo_param[:, 3:6] = trunk_R * self.geo_param[:, [1]]
+            p23 = trunk_L[1:3] / (trunk_L[1] + trunk_L[2])  # fix ratio between mid and dist
+            geo_param[:, [0]] = p1 * L
+            geo_param[:, 1:3] = (1 - p1) * L * p23
+            R = self.geo_param[:, [2]]  # radius scale of prox
+            pR = self.geo_param[:, [3]]  # ratio of dist/prox radius
+            geo_param[:, 3:6] = self.geometry.loc[4, 'R'] * R * pR ** np.array([0. , 0.5, 1.])
             self.geo_param = geo_param
+            
     
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
         """
@@ -267,14 +275,30 @@ class Simulation(object):
 
     def set_gmax(self, gmax: float) -> None:
         """
-        Setup maximum conductance of synapse
+        Setup maximum conductance of synapses
 
         Parameters
-        gmax: cell gmax value
+        gmax: gmax value, ncell-by-k, k number of synapse locations.
+        Or single value, or ncell-vector to use common value for different synapses.
         """
-        self.gmax = self.__pack_parameters(gmax, 0, "gmax")
-        for i, cell in enumerate(self.cells): # not executed during initializing
-            cell.synapse[0].set_gmax(self.gmax[i])
+        gmax = np.asarray(gmax)
+        if gmax.ndim < 2:
+            gmax = np.broadcast_to(gmax.reshape((-1, 1)), (gmax.size, len(self.syn_sec)))
+        elif gmax.shape[1] != len(self.syn_sec):
+            if gmax.shape[1] == 1:
+                gmax = np.broadcast_to(gmax, (gmax.shape[0], len(self.syn_sec)))
+            else:
+                raise ValueError("Length of 'syn_sec' and the second dimension of 'gmax' must be the same.")
+        self.gmax = self.__pack_parameters(gmax, 1, "gmax")
+        # below is not executed during initialization
+        for i, cell in enumerate(self.cells):
+            k = 0
+            for j, sec_id in enumerate(self.syn_sec):
+                secs = cell.sec_id_lookup[sec_id]
+                g = self.gmax[i, j] / len(secs)
+                for _ in secs:
+                    cell.synapse[k].set_gmax(g)
+                    k += 1
 
     def set_scale(self, scale: float) -> None:
         """

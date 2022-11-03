@@ -172,7 +172,7 @@ class ReducedOrderL5Cell(ActiveFullCell):
             -72.0, 0.0000589,
             2.04, 0.0639,
             0.693, 0.000261,
-            100, 100, 0.0000489,
+            100, 100, 0.0000525,
             0.000555, 0.0187,
             0.00181, 0.00571, 0.00783, 0.01166 
         ])
@@ -186,16 +186,15 @@ class ReducedOrderL5CellPassive(ActiveFullCell):
     def morphological_properties(self):
         """Define properties related to morphology"""
         # map from biophysic section name to secion id in geometry, used with "full_biophys"
-        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [11], 'pas_dend': [12]}
+        self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [], 'pas_dend': [12]}
         # select section id's for each group, used with "biophys"
         self.grp_sec_type_ids = [ # select section id's for each group
                                  [0], # soma
-                                 [1,2,3], # basal group: prox,mid,dist;
+                                 [1, 2, 3], # basal group: prox,mid,dist;
                                  [4], # prox trunk; 5: oblique (removed)
                                  [6], # mid trunk
                                  [7], # distal trunk (nexus)
-                                 [8,9,10], # tuft: prox,mid,dist
-                                 [11], # axon
+                                 [8, 9, 10], # tuft: prox,mid,dist
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
