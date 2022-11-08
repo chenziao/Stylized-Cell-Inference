@@ -164,16 +164,16 @@ class ReducedOrderL5Cell(ActiveFullCell):
             ([5, 6], 'e_pas'), ([5, 6], 'g_pas'),
             (0, 'gNaTa_tbar_NaTa_t'), (1, 'gNaTa_tbar_NaTa_t'),
             (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
-            (1, 'Ra'), (2, 'Ra'), (3, 'g_pas'),
-            ([4, 5], 'gCa_HVAbar_Ca_HVA'), ([4, 5], 'gCa_LVAstbar_Ca_LVAst'),
+            (1, 'Ra'), (2, 'Ra'),
+            (3, 'g_pas'), ([4, 5], 'gCa_HVAbar_Ca_HVA'), ([4, 5], 'gCa_LVAstbar_Ca_LVAst'),
             (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih')
         ]
         self.default_biophys = np.array([
             -72.0, 0.0000589,
             2.04, 0.0639,
             0.693, 0.000261,
-            100, 100, 0.0000525,
-            0.000555, 0.0187,
+            100., 100.,
+            0.0000525, 0.000555, 0.0187,
             0.00181, 0.00571, 0.00783, 0.01166 
         ])
 
@@ -194,10 +194,11 @@ class ReducedOrderL5CellPassive(ActiveFullCell):
                                  [4], # prox trunk; 5: oblique (removed)
                                  [6], # mid trunk
                                  [7], # distal trunk (nexus)
-                                 [8, 9, 10], # tuft: prox,mid,dist
+                                 [8], # tuft: prox
+                                 [9, 10], # tuft: mid, dist
                                  [12] # passive basal
                                 ]
         self.biophys_entries = [
-            (5, 'e_pas'), (5, 'g_pas'), (1, 'Ra'), (2, 'Ra'), (3, 'g_pas')
+            ([5, 6], 'e_pas'), ([5, 6], 'g_pas'), (1, 'Ra'), (2, 'Ra'), (3, 'g_pas')
         ]
-        self.default_biophys = np.array([-72.0, 0.0000589, 100, 100, 0.0000489])
+        self.default_biophys = np.array([-72.0, 0.0000589, 100., 100., 0.0000525])

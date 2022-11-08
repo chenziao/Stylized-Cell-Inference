@@ -40,8 +40,12 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
             for i in range(lfp.shape[1]):
                 plt.plot(t, lfp[:, i])
         else:
-            ind = np.lexsort(electrodes[:, [1, 0, 2][:electrodes.shape[1]]].T)[:lfp.shape[1]]
-            clim = (electrodes[ind[0], 1], electrodes[ind[-1], 1])
+            if electrodes.ndim == 1:
+                ind = np.argsort(electrodes)
+            else:
+                ind = np.lexsort(electrodes[:, [1, 0, 2][:electrodes.shape[1]]].T)[:lfp.shape[1]]
+                electrodes = electrodes[:, 1]
+            clim = (electrodes[ind[0]], electrodes[ind[-1]])
             sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=plt.Normalize())
             sm.set_clim(*clim)
             cbar = fig.colorbar(sm, ax=ax, ticks=np.linspace(clim[0], clim[1], nbins), pad=0.)
@@ -56,7 +60,7 @@ def plot_lfp_traces(t: np.ndarray, lfp: np.ndarray, electrodes: Optional[np.ndar
                     vlim = 1 * np.std(lfp) * np.array([-1, 1])
             xpos = (vlim[1] - vlim[0]) * np.arange(ind.size) - vlim[0]
             for j, i in enumerate(ind):
-                plt.plot(t, xpos[j] + lfp[:, i], color=sm.to_rgba(electrodes[i, 1]))
+                plt.plot(t, xpos[j] + lfp[:, i], color=sm.to_rgba(electrodes[i]))
             ax.set_ylim([0, xpos[-1] + vlim[1]])
     else:
         plt.plot(t, lfp)

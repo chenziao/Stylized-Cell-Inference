@@ -180,12 +180,6 @@
     }, 
     {
       "section": "soma", 
-      "name": "", 
-      "value": "", 
-      "mechanism": "Im"
-    }, 
-    {
-      "section": "soma", 
       "name": "gIhbar_Ih", 
       "value": "0.0002", 
       "mechanism": "Ih"

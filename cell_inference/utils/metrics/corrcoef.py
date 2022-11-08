@@ -2,10 +2,14 @@ import numpy as np
 from math import sqrt
 from typing import Optional, Union, List, Tuple
 
+def cossim(x: Union[List, np.ndarray], y: Union[List, np.ndarray]) -> np.ndarray:
+    """Function for calculating cosine similarity"""
+    x = np.asarray(x).ravel()
+    y = np.asarray(y).ravel()
+    return np.sum(x * y) / sqrt(np.sum(x * x) * np.sum(y * y))
+
 def corrcoef(x: Union[List, np.ndarray], y: Union[List, np.ndarray]) -> np.ndarray:
-    """
-    function for calculating correlation coefficient
-    """
+    """Function for calculating correlation coefficient (centered cosine similarity)"""
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
     x -= np.mean(x)

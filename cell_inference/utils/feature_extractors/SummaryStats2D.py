@@ -279,7 +279,7 @@ def get_decay(my, bound=7.0):
     Return length constant of decay (unit: grid spacing along y) measured by lambda and slope, respectively.
     Lambda - by inverse slope (grid number / log magnitude) of the first line segment. 
     Slope - by slope between the maximum value point and the point on the edge (y2 = half of y window size).
-    Return the point coordinates representation of the fit two-segment lines (w1, w2, y2).
+    Return the point coordinates representation of the fit two-segment lines (w1, w2, y1).
     """
     PTS = []
     Lambda = []
