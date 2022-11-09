@@ -111,12 +111,13 @@ def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, num
         loc_param_gen[loc_param_gen.index('x')] = 'd'
         loc_param_gen[loc_param_gen.index('z')] = 'theta'
 
+    # predicted
     loc_param_samples = {}
     for key, value in pred_param.items():
         if key in loc_param_gen:
             loc_param_samples[key] = np.repeat(value, number_locs)
             loc_param_gen.remove(key)
-
+    # randomized
     loc_param_samples.update(rpg.generate_parameters(
         number_cells * number_locs, loc_param_gen, tr_p['randomized_list'],
         sim_p['loc_param_default'], sim_p['loc_param_range'], sim_p['loc_param_dist']
@@ -150,6 +151,7 @@ def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, num
     
     # Gather parameters as labels
     samples = {**geo_param_samples, **loc_param_samples}
-    labels = np.column_stack([ samples[key] for key in tr_p['inference_list'] ])
+    labels = np.column_stack([ samples[key] for key in tr_p['inference_list'] ])[::number_locs, :]
     rand_param = np.column_stack([ samples[key] for key in tr_p['randomized_list'][:-len(tr_p['inference_list'])] ])
+    rand_param = rand_param.reshape(number_cells, number_locs, -1)
     return labels, rand_param, loc_param, geo_param

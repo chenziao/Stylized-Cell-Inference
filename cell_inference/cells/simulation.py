@@ -21,7 +21,7 @@ class Simulation(object):
                  gmax: Optional[float] = None, stim_param: Optional[dict] = {},
                  syn_sec: Union[int, List[int]] = 0, syn_loc: Union[float, List[float]] = 0.5,
                  soma_injection: Optional[np.ndarray] = None, scale: Optional[float] = 1.0,
-                 min_distance: Optional[float] = 10.0, interpret_params: bool = False,
+                 min_distance: Optional[float] = 10.0, interpret_params: bool = False, interpret_type: int = 0,
                  geo_entries: Optional[List[Tuple]] = None, cell_kwargs: Optional[dict] = {},
                  record_soma_v: bool = True, spike_threshold: Optional[float] = None) -> None:
         """
@@ -43,6 +43,7 @@ class Simulation(object):
         scale: scaling factors of lfp magnitude, ncell-vector, if is single value, is constant for all cells
         min_distance: minimum distance allowed between segment and electrode, set to None if not using
         interpret_params: whether or not to interpret input parameters by calling the function 'interpret_params'
+        interpret_type: interpret type ID
         geo_entries: overwrite 'geo_entries' if specified
         cell_kwargs: dictionary of extra common keyword arguments for cell object
         record_soma_v: whether or not to record soma membrane voltage
@@ -77,6 +78,7 @@ class Simulation(object):
         self.set_geo_param(geo_param)
         self.geo_entries = geo_entries
         if interpret_params:
+            self.interpret_type = interpret_type
             self.interpret_params()
         self.__cell_type_settings()
         self.__load_cell_module()
@@ -240,11 +242,15 @@ class Simulation(object):
             p23 = trunk_L[1:3] / (trunk_L[1] + trunk_L[2])  # fix ratio between mid and dist
             geo_param[:, [0]] = p1 * L
             geo_param[:, 1:3] = (1 - p1) * L * p23
-            R = self.geo_param[:, [2]]  # radius scale of prox
+            if self.interpret_type == 1:
+                R_L = 0.8  # slope of radius v.s. length scale
+                R = 1 + R_L * (L / np.sum(trunk_L) - 1)
+                R *= self.geo_param[:, [2]]  # radius scale of prox
+            else:
+                R = self.geo_param[:, [2]]  # radius scale of prox
             pR = self.geo_param[:, [3]]  # ratio of dist/prox radius
-            geo_param[:, 3:6] = self.geometry.loc[4, 'R'] * R * pR ** np.array([0. , 0.5, 1.])
+            geo_param[:, 3:6] = self.geometry.loc[4, 'R'] * R * pR ** np.array([0., 0.5, 1.])
             self.geo_param = geo_param
-            
     
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
         """
