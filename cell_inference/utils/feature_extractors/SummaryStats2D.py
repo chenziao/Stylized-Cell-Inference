@@ -298,10 +298,13 @@ def get_decay(my, bound=7.0):
     return Lambda + Slope, PTS, max_idx
 
 def get_fit(my, PTS):
+    """Get fit lines and breakpoints index and magnitude (log scale)"""
     max_idx = np.argmax(my)
-    fn = lambda y, pts: np.log(my[max_idx]) - two_line_segments(y, *pts, y2=np.floor(my.size / 2))
+    log_max = np.log(my[max_idx])
+    fn = lambda y, pts: log_max - two_line_segments(y, *pts, y2=np.floor(my.size / 2))
     w = (fn(np.arange(max_idx, 0, -1, dtype=float), PTS[0]), fn(np.arange(0, my.size - max_idx, dtype=float), PTS[1]))
-    return np.concatenate(w)
+    break_point = np.array([[max_idx], [log_max]]) - np.array([[PTS[0][2], -PTS[1][2]], [PTS[0][0], PTS[1][0]]])
+    return np.concatenate(w), break_point
 
 VOLUME_RANGE = ((-9, 31), (0, 1), (0, 15))  # t, x, y
 VOLUME_RANGE = np.tile(np.array(VOLUME_RANGE).T, (2, 1, 1))
