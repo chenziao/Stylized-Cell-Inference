@@ -77,10 +77,10 @@ class Simulation(object):
         self.set_loc_param(loc_param)
         self.set_geo_param(geo_param)
         self.geo_entries = geo_entries
+        self.__cell_type_settings()
         if interpret_params:
             self.interpret_type = interpret_type
             self.interpret_params()
-        self.__cell_type_settings()
         self.__load_cell_module()
         
         # Create cells
@@ -251,6 +251,11 @@ class Simulation(object):
             pR = self.geo_param[:, [3]]  # ratio of dist/prox radius
             geo_param[:, 3:6] = self.geometry.loc[4, 'R'] * R * pR ** np.array([0., 0.5, 1.])
             self.geo_param = geo_param
+            if self.interpret_type == 2:
+                x0 = 560  # um. cutoff length for L2_3 and L5
+                r = 70  # um. slope inverse
+                Ca_activation = lambda x: 1 / (1 + np.exp(-(x - x0) / r))
+                self.biophys[:, [9, 10]] *= Ca_activation(geo_param[:, [0]])
     
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
         """
