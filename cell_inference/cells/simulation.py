@@ -255,6 +255,7 @@ class Simulation(object):
                 x0 = 560  # um. cutoff length for L2_3 and L5
                 r = 70  # um. slope inverse
                 Ca_activation = lambda x: 1 / (1 + np.exp(-(x - x0) / r))
+                self.biophys = self.biophys.copy()
                 self.biophys[:, [9, 10]] *= Ca_activation(geo_param[:, [0]])
     
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
