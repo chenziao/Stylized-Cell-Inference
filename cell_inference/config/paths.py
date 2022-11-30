@@ -18,6 +18,7 @@ GMAX_MAPPING = os.path.join(RESOURCES_ROOT, 'gmax_mapping.h5')
 RESULTS_ROOT = os.path.join(RESOURCES_ROOT, 'results')
 MODELS_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_models')
 LOSSES_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_losses')
+FIGURE_ROOT = os.path.join(RESULTS_ROOT, 'figures')
 
 SIMULATED_DATA_FILE = os.path.join(RESOURCES_ROOT, 'active_groundtruth.h5')
 MORPHOLOGY_DATA_FILE = os.path.join(RESOURCES_ROOT, 'detailed_groundtruth.h5')  # Allen Morphology Cell Data
