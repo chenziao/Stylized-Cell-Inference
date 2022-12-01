@@ -40,7 +40,9 @@ class ActiveFullCell(StylizedCell):
         Each entry is a pair of group id and parameter reference string.
         Define default values and set parameters in "biophys".
         """
-        self.grp_ids = [[isec for i in ids for isec in self.sec_id_lookup[i]] for ids in self.grp_sec_type_ids]
+        self.grp_ids = {}
+        for grp_id, ids in self.grp_sec_type_ids.items():
+            self.grp_ids[grp_id] = [isec for i in ids for isec in self.sec_id_lookup[i]]
         biophys = self.default_biophys
         if self.biophys is not None:
             for i in range(len(self.biophys)):
@@ -54,7 +56,7 @@ class ActiveFullCell(StylizedCell):
         # map from biophysic section name to secion id in geometry, used with "full_biophys"
         self.section_map = {'soma': [0], 'dend': [1, 2], 'apic': [3, 4], 'axon': [5]}
         # select section id's for each group, used with "biophys"
-        self.grp_sec_type_ids = [[0], [1, 2], [3, 4], [5]]
+        self.grp_sec_type_ids = {0: [0], 1: [1, 2], 2: [3, 4], 3: [5]}
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'), (3, 'g_pas')
         ]
@@ -132,7 +134,7 @@ class ActiveObliqueCell(ActiveFullCell):
         # map from biophysic section name to secion id in geometry
         self.section_map = {'soma': [0], 'dend': [1, 2], 'apic': [3, 4, 5, 7], 'axon': [6]}
         # select section id's for each group
-        self.grp_sec_type_ids = [[0], [1, 2], [3, 7], [4, 5], [6]] # soma, basal, trunk, tuft, axon
+        self.grp_sec_type_ids = {0: [0], 1: [1, 2], 2: [3, 7], 3: [4, 5], 4: [6]} # soma, basal, trunk, tuft, axon
         self.biophys_entries = [
             (1, 'Ra'), (2, 'Ra'), (3, 'Ra')
         ]
@@ -150,22 +152,22 @@ class ReducedOrderL5Cell(ActiveFullCell):
         # map from biophysic section name to secion id in geometry, used with "full_biophys"
         self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [], 'pas_dend': [12]}
         # select section id's for each group, used with "biophys"
-        self.grp_sec_type_ids = [ # select section id's for each group
-                                 [0], # soma
-                                 [1, 2, 3], # basal group: prox, mid, dist
-                                 [4], # prox trunk; 5: oblique (removed)
-                                 [6], # mid trunk
-                                 [7], # distal trunk (nexus)
-                                 [8], # tuft: prox
-                                 [9, 10], # tuft: mid, dist
-                                 [12] # passive basal
-                                ]
+        self.grp_sec_type_ids = { # select section id's for each group
+                                 0: [0], # soma
+                                 1: [1, 2, 3], # basal group: prox, mid, dist
+                                 2: [4], # prox trunk; 5: oblique (removed)
+                                 3: [6], # mid trunk
+                                 4: [7], # distal trunk (nexus)
+                                 5: [8], # tuft: prox
+                                 6: [9, 10], # tuft: mid, dist
+                                 7: [12] # passive basal
+                                }
         self.biophys_entries = [
             ([5, 6], 'e_pas'), ([5, 6], 'g_pas'),
             (0, 'gNaTa_tbar_NaTa_t'), (1, 'gNaTa_tbar_NaTa_t'),
             (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
             (1, 'Ra'), (2, 'Ra'),
-            (3, 'g_pas'), ([4, 5], 'gCa_HVAbar_Ca_HVA'), ([4, 5], 'gCa_LVAstbar_Ca_LVAst'),
+            (3, 'g_pas'), (5, 'gCa_HVAbar_Ca_HVA'), (5, 'gCa_LVAstbar_Ca_LVAst'),
             (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih')
         ]
         self.default_biophys = np.array([
@@ -188,16 +190,16 @@ class ReducedOrderL5CellPassive(ActiveFullCell):
         # map from biophysic section name to secion id in geometry, used with "full_biophys"
         self.section_map = {'soma': [0], 'dend': [1,2,3,4], 'apic': [6,7,8,9,10], 'axon': [], 'pas_dend': [12]}
         # select section id's for each group, used with "biophys"
-        self.grp_sec_type_ids = [ # select section id's for each group
-                                 [0], # soma
-                                 [1, 2, 3], # basal group: prox,mid,dist;
-                                 [4], # prox trunk; 5: oblique (removed)
-                                 [6], # mid trunk
-                                 [7], # distal trunk (nexus)
-                                 [8], # tuft: prox
-                                 [9, 10], # tuft: mid, dist
-                                 [12] # passive basal
-                                ]
+        self.grp_sec_type_ids = { # select section id's for each group
+                                 0: [0], # soma
+                                 1: [1, 2, 3], # basal group: prox,mid,dist;
+                                 2: [4], # prox trunk; 5: oblique (removed)
+                                 3: [6], # mid trunk
+                                 4: [7], # distal trunk (nexus)
+                                 5: [8], # tuft: prox
+                                 6: [9, 10], # tuft: mid, dist
+                                 7: [12] # passive basal
+                                }
         self.biophys_entries = [
             ([5, 6], 'e_pas'), ([5, 6], 'g_pas'), (1, 'Ra'), (2, 'Ra'), (3, 'g_pas')
         ]

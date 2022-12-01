@@ -25,7 +25,7 @@ class ActiveCell(StylizedCell):
         """
         self.grp_ids = []
         self.biophys = biophys
-        self.grp_sec_type_ids = [[0], [1, 2], [3, 4]]  # select section id's for each group
+        self.grp_sec_type_ids = {0: [0], 1: [1, 2], 2: [3, 4]}  # select section id's for each group
         self.biophys_entries = [
             (0, 'g_pas'), (1, 'g_pas'), (2, 'g_pas'),  # g_pas of soma, basal, apical
             (0, 'gbar_NaV'), (1, 'gbar_NaV'), (2, 'gbar_NaV'),
@@ -47,7 +47,9 @@ class ActiveCell(StylizedCell):
         Each entry is a pair of group id and parameter reference string.
         Define default values and set parameters in "biophys".
         """
-        self.grp_ids = [[isec for i in ids for isec in self.sec_id_lookup[i]] for ids in self.grp_sec_type_ids]
+        self.grp_ids = {}
+        for grp_id, ids in self.grp_sec_type_ids.items():
+            self.grp_ids[grp_id] = [isec for i in ids for isec in self.sec_id_lookup[i]]
         biophys = self.default_biophys
         if self.biophys is not None:
             for i in range(len(self.biophys)):

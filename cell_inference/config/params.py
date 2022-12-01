@@ -5,7 +5,7 @@ import cell_inference.config.paths as paths
 ACTIVE_CELL = False
 
 # GENERAL PARAMETERS USED ACROSS RUNS
-TSTOP = 16.  # ms
+TSTOP = 18.  # ms
 DT = 0.025  # ms. Change with h.steps_per_ms = 1/h.dt
 STIM_PARAM = {'start': 2.}
 SPIKE_THRESHOLD = -30.
