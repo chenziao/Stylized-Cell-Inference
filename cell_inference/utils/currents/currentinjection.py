@@ -9,7 +9,6 @@ from cell_inference.utils.currents.pointcurrent import PointCurrent
 if TYPE_CHECKING:
     from cell_inference.cells.stylizedcell import StylizedCell
 
-
 class CurrentInjection(PointCurrent):
     """A module for current injection"""
 
@@ -36,7 +35,7 @@ class CurrentInjection(PointCurrent):
             self.setup_current(current, dt)
         self.setup(record)
 
-    def setup(self, record: bool = None) -> None:
+    def setup(self, record: bool = False) -> None:
         if record:
             self.setup_recorder()
 

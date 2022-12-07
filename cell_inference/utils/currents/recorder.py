@@ -12,21 +12,19 @@ class Recorder(object):
         obj_list: list of (or a single) target objects
         var_name: string of variable to be recorded
         """
-        if not isinstance(obj_list, (list, tuple, np.ndarray)):
-            obj_list = [obj_list]
-            self.single = True
-        else:
-            self.single = False
+        self.single = not isinstance(obj_list, (list, tuple, np.ndarray))
         self.obj_list = obj_list
         self.var_name = var_name
-        self.vectors = []
+        self.vectors = None
         self.setup_recorder()
 
     def setup_recorder(self) -> None:
         size = [round(h.tstop / h.dt) + 1] if hasattr(h, 'tstop') else []
         attr_name = '_ref_' + self.var_name
-        for obj in self.obj_list:
-            self.vectors.append(h.Vector(*size).record(getattr(obj, attr_name)))
+        if self.single:
+            self.vectors = h.Vector(*size).record(getattr(self.obj_list, attr_name))
+        else:
+            self.vectors = [h.Vector(*size).record(getattr(obj, attr_name)) for obj in self.obj_list]
 
     def as_numpy(self) -> np.ndarray:
         """
@@ -34,7 +32,7 @@ class Recorder(object):
         Return a 1d-array if a single object is being recorded
         """
         if self.single:
-            x = self.vectors[0].as_numpy().copy()
+            x = self.vectors.as_numpy().copy()
         else:
             x = np.array([v.as_numpy().copy() for v in self.vectors])
         return x

@@ -23,7 +23,7 @@ class Simulation(object):
                  soma_injection: Optional[np.ndarray] = None, scale: Optional[float] = 1.0,
                  min_distance: Optional[float] = 10.0, interpret_params: bool = False, interpret_type: int = 0,
                  geo_entries: Optional[List[Tuple]] = None, cell_kwargs: Optional[dict] = {},
-                 record_soma_v: bool = True, spike_threshold: Optional[float] = None) -> None:
+                 record_soma_v: bool = True, spike_threshold: Optional[float] = None):
         """
         Initialize simulation object
         cell_type: CellTypes enum value to indicate type of cell simulation
@@ -77,102 +77,23 @@ class Simulation(object):
         self.set_loc_param(loc_param)
         self.set_geo_param(geo_param)
         self.geo_entries = geo_entries
-        self.__cell_type_settings()
+        self.cell_type_settings()
         if interpret_params:
             self.interpret_type = interpret_type
             self.interpret_params()
-        self.__load_cell_module()
+        self.load_cell_module()
         
         # Create cells
         self.__create_cells()  # create cell objects with properties set up
         self.t_vec = h.Vector(round(h.tstop / h.dt) + 1).record(h._ref_t)  # record time
 
     @staticmethod
-    def run_neuron_sim() -> None:
+    def run_neuron_sim():
         """Run simulation"""
         h.run()
 
     # PRIVATE METHODS
-    def __cell_type_settings(self) -> None:
-        if self.cell_type == CellTypes.PASSIVE:
-            if self.soma_injection is None:
-                raise ValueError("'soma_injection' is required for a Passive Cell")
-        else:
-            self.set_biophys(self.biophys)
-            if self.gmax is None:
-                print("Warning: Not using synaptic input. 'gmax' is required for synaptic input in an Active Cell.")
-            else:
-                self.set_gmax(self.gmax)
-                self.__create_netstim(self.stim_param)
-            if not self.cell_type == CellTypes.ACTIVE:
-                if self.full_biophys is None:
-                    raise ValueError("'full_biophys' is required for an Active Cell")
-                for genome in self.full_biophys['genome']:
-                    if genome['value'] != "": genome['value'] = float(genome['value'])
-        if self.geo_entries is None:
-            if self.cell_type == CellTypes.ACTIVE_FULL:
-                self.geo_entries = [
-                    (0, 'R'),  # soma radius
-                    (4, 'L'),  # trunk length
-                    (3, 'R'),  # trunk radius
-                    ([1, 2], 'R'),  # basal radius
-                    ([4, 5], 'R'),  # tuft radius
-                    ([1, 2, 5], 'L'),  # all dendrites length
-                    (6, 'R'),  # axon radius
-                    (7, 'R'),  # oblique radius
-                    (7, 'L')  # oblique length
-                ]
-            elif self.cell_type == CellTypes.REDUCED_ORDER or self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
-                self.geo_entries = [
-                    (4, 'L'),  # prox trunk length
-                    (6, 'L'),  # mid trunk length
-                    (7, 'L'),  # dist trunk length
-                    (4, 'R'),  # prox trunk radius
-                    (6, 'R'),  # mid trunk radius
-                    (7, 'R'),  # dist trunk radius
-                ]
-            else:
-                self.geo_entries = [
-                    (0, 'R'),  # soma radius
-                    (3, 'L'),  # trunk length
-                    (3, 'R'),  # trunk radius
-                    ([1, 2], 'R'),  # basal dendrites radius
-                    (4, 'R'),  # tuft radius
-                    ([1, 2, 4], 'L')  # all dendrites length
-                ]
-    
-    def __load_cell_module(self) -> None:
-        """Load cell module and define arguments for initializing cell instance according to cell type"""
-        def pass_geometry(CellClass):
-            def create_cell(i,**kwargs):
-                cell = CellClass(geometry=self.set_geometry(self.geo_param[i, :]),
-                                 record_soma_v=self.record_soma_v, spike_threshold=self.spike_threshold,
-                                 **self.cell_kwargs, **kwargs)
-                return cell
-            return create_cell
-        if self.cell_type == CellTypes.PASSIVE:
-            from cell_inference.cells.passivecell import PassiveCell
-            self.CreateCell = pass_geometry(PassiveCell)
-        elif self.cell_type == CellTypes.ACTIVE:
-            from cell_inference.cells.activecell import ActiveCell
-            create_cell = pass_geometry(ActiveCell)
-            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :])
-        else:
-            if self.cell_type == CellTypes.REDUCED_ORDER:
-                from cell_inference.cells.activecell_axon import ReducedOrderL5Cell
-                create_cell = pass_geometry(ReducedOrderL5Cell)
-            elif self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
-                from cell_inference.cells.activecell_axon import ReducedOrderL5CellPassive
-                create_cell = pass_geometry(ReducedOrderL5CellPassive)
-            else: # CellTypes.ACTIVE_FULL
-                # from cell_inference.cells.activecell_axon import ActiveFullCell
-                # create_cell = pass_geometry(ActiveFullCell)
-                from cell_inference.cells.activecell_axon import ActiveObliqueCell
-                create_cell = pass_geometry(ActiveObliqueCell)
-            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
-                full_biophys=self.full_biophys, biophys_comm=self.biophys_comm)
-    
-    def __create_cells(self) -> None:
+    def __create_cells(self):
         """Create cell objects with properties set up"""
         # Create cell with morphology and biophysical parameters
         for i in range(self.ncell):
@@ -226,8 +147,56 @@ class Simulation(object):
         return param
 
     # PUBLIC METHODS
+    def cell_type_settings(self):
+        if self.cell_type == CellTypes.PASSIVE:
+            if self.soma_injection is None:
+                raise ValueError("'soma_injection' is required for a Passive Cell")
+        else:
+            self.set_biophys(self.biophys)
+            if self.gmax is None:
+                print("Warning: Not using synaptic input.")
+            else:
+                self.set_gmax(self.gmax)
+                self.__create_netstim(self.stim_param)
+            if not self.cell_type == CellTypes.ACTIVE:
+                if self.full_biophys is None:
+                    raise ValueError("'full_biophys' is required for an Active Cell")
+                for genome in self.full_biophys['genome']:
+                    if genome['value'] != "": genome['value'] = float(genome['value'])
+        if self.geo_entries is None:
+            if self.cell_type == CellTypes.ACTIVE_FULL:
+                self.geo_entries = [
+                    (0, 'R'),  # soma radius
+                    (4, 'L'),  # trunk length
+                    (3, 'R'),  # trunk radius
+                    ([1, 2], 'R'),  # basal radius
+                    ([4, 5], 'R'),  # tuft radius
+                    ([1, 2, 5], 'L'),  # all dendrites length
+                    (6, 'R'),  # axon radius
+                    (7, 'R'),  # oblique radius
+                    (7, 'L')  # oblique length
+                ]
+            elif self.cell_type == CellTypes.REDUCED_ORDER:
+                self.geo_entries = [
+                    (4, 'L'),  # prox trunk length
+                    (6, 'L'),  # mid trunk length
+                    (7, 'L'),  # dist trunk length
+                    (4, 'R'),  # prox trunk radius
+                    (6, 'R'),  # mid trunk radius
+                    (7, 'R'),  # dist trunk radius
+                ]
+            else:
+                self.geo_entries = [
+                    (0, 'R'),  # soma radius
+                    (3, 'L'),  # trunk length
+                    (3, 'R'),  # trunk radius
+                    ([1, 2], 'R'),  # basal dendrites radius
+                    (4, 'R'),  # tuft radius
+                    ([1, 2, 4], 'L')  # all dendrites length
+                ]
+
     def interpret_params(self):
-        if self.cell_type == CellTypes.REDUCED_ORDER or self.cell_type == CellTypes.REDUCED_ORDER_PASSIVE:
+        if self.cell_type == CellTypes.REDUCED_ORDER:
             """
             Parameters list:
                 0: total trunk length (um)
@@ -256,8 +225,32 @@ class Simulation(object):
                 r = 35.  # um. slope inverse
                 self.biophys = self.biophys.copy()
                 self.biophys[:, [9, 10]] *= 1 / (1 + np.exp(-(L - x0) / r))  # Ca_activation
-    
-    def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None) -> None:
+
+    def load_cell_module(self):
+        """Load cell module and define arguments for initializing cell instance according to cell type"""
+        def pass_geometry(CellClass):
+            def create_cell(i,**kwargs):
+                cell = CellClass(geometry=self.set_geometry(self.geo_param[i, :]),
+                                 record_soma_v=self.record_soma_v, spike_threshold=self.spike_threshold,
+                                 **self.cell_kwargs, **kwargs)
+                return cell
+            return create_cell
+        if self.cell_type == CellTypes.PASSIVE:
+            from cell_inference.cells.passivecell import PassiveCell
+            self.CreateCell = pass_geometry(PassiveCell)
+        elif self.cell_type == CellTypes.ACTIVE:
+            from cell_inference.cells.activecell import ActiveCell
+            create_cell = pass_geometry(ActiveCell)
+            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :])
+        else:
+            from cell_inference.cells.activecell_full import ActiveFullCell
+            create_cell = pass_geometry(ActiveFullCell)
+            self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
+                full_biophys=self.full_biophys, biophys_comm=self.biophys_comm,
+                biophys_type='ReducedOrderL5Stochastic')
+            # ActiveFull, ActiveOblique, ReducedOrderL5, ReducedOrderL5Passive, ReducedOrderL5Stochastic
+
+    def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None):
         """
         Setup location parameters.
 
@@ -266,7 +259,7 @@ class Simulation(object):
         """
         self.loc_param = self.__pack_parameters(loc_param, 2, "loc_param")
 
-    def set_geo_param(self, geo_param: Optional[Union[np.ndarray, List[float]]]) -> None:
+    def set_geo_param(self, geo_param: Optional[Union[np.ndarray, List[float]]]):
         """
         Setup geometry parameters.
 
@@ -275,7 +268,7 @@ class Simulation(object):
         """
         self.geo_param = self.__pack_parameters(geo_param, 1, "geo_param")
 
-    def set_biophys(self, biophys: Optional[Union[np.ndarray, List[float]]]) -> None:
+    def set_biophys(self, biophys: Optional[Union[np.ndarray, List[float]]]):
         """
         Setup geometry parameters.
 
@@ -284,7 +277,7 @@ class Simulation(object):
         """
         self.biophys = self.__pack_parameters(biophys, 1, "biophys")
 
-    def set_gmax(self, gmax: float) -> None:
+    def set_gmax(self, gmax: float):
         """
         Setup maximum conductance of synapses
 
@@ -311,7 +304,7 @@ class Simulation(object):
                     cell.synapse[k].set_gmax(g)
                     k += 1
 
-    def set_scale(self, scale: float) -> None:
+    def set_scale(self, scale: float):
         """
         setup scaling factors of lfp magnitude
 
@@ -397,7 +390,7 @@ class Simulation(object):
             spk = [self.cells[i].spikes.as_numpy().copy() for i in index]
         return spk
 
-    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Union[int, np.ndarray]:
+    def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Tuple[int, np.ndarray]:
         """
         Return soma spike number of the cell by index (indices), int (ndarray)
 

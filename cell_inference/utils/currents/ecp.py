@@ -142,8 +142,7 @@ class EcpMod(object):
                     'scale': self.scale,
                     'min_distance': self.min_distance,
                    }
-        for key, value in kwargs.items():
-            kwargs0[key] = value
+        kwargs0.update(kwargs)
         tr = self.calc_transfer_resistance(**kwargs0)
         im = self.calc_im()
         return tr @ im
@@ -154,8 +153,7 @@ class EcpMod(object):
                     'scale': self.scale,
                     'min_distance': self.min_distance,
                    }
-        for key, value in kwargs.items():
-            kwargs0[key] = value
+        kwargs0.update(kwargs)
         if move_cell is None:
             move_cell = [self.move_cell]
         im = self.calc_im()

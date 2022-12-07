@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class Synapse(PointCurrent):
     def __init__(self, cell: StylizedCell, stim: h.NetStim, sec_index: int,
                   syn_type: str = 'Exp2Syn', gmax: float = 0.01, loc: float = 0.5,
-                  record: bool = True) -> None:
+                  record: bool = False):
         super().__init__(cell, sec_index, loc)
         self.stim = stim
         self.gmax = gmax
@@ -33,7 +33,7 @@ class Synapse(PointCurrent):
         self.syn_type = syn_type
         self.pp_obj = getattr(h, syn_type)(self.get_section()(self.loc))
 
-    def __setup_synapse(self) -> h.NetCon:
+    def __setup_synapse(self):
         self.syn = self.pp_obj
         self.nc = h.NetCon(self.stim, self.syn, 1, 0, 1)
         for key, value in self.syn_params.items():
@@ -41,12 +41,12 @@ class Synapse(PointCurrent):
         self.set_gmax()
 
     # PUBLIC METHODS
-    def setup(self, record: bool = True) -> None:
+    def setup(self, record: bool = False):
         self.__setup_synapse()
         if record:
             self.setup_recorder()
     
-    def set_gmax(self, gmax: float = None) -> None:
+    def set_gmax(self, gmax: float = None):
         if gmax is not None:
             self.gmax = gmax
         if self.gmax_var == '_nc_weight':

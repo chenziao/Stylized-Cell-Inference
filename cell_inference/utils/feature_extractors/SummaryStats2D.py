@@ -186,8 +186,8 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         ss.append(lambda_troughs + lambda_peaks)
         if additional_stats >= 3:
             max_mag = max(ss[4][4], ss[5][4])  # Global maximum
-            tr_avg_mag = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape, max_mag=max_mag)
-            pk_avg_mag = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape, max_mag=max_mag)
+            tr_avg_mag, _ = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape, max_mag=max_mag)
+            pk_avg_mag, _ = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape, max_mag=max_mag)
             ss += pts_troughs + pts_peaks
             ss.append(tr_avg_mag + pk_avg_mag)
 
@@ -323,6 +323,7 @@ def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape, max_mag=None):
     if max_mag is None:
         max_mag = np.amax(np.abs(lfp))
     avg_mag = []
+    brkpnt_idx = []
     for i in range(2):
         y1 = int(PTS[i][2])
         y = max_idx + (y1 if i else -y1)
@@ -331,7 +332,8 @@ def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape, max_mag=None):
         box_range = np.clip(np.array((t, x, y)) + VOLUME_RANGE[i], 0, shape_3d).T
         box = tuple(slice(idx[0], idx[1]) for idx in box_range)
         avg_mag.append(np.mean(lfp[box]) / max_mag)
-    return avg_mag
+        brkpnt_idx.append((t, x, y))
+    return avg_mag, brkpnt_idx
 
 def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np.ndarray:
     """
