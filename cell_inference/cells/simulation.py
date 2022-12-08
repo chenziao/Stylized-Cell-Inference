@@ -8,6 +8,7 @@ import h5py
 # Project Imports
 from cell_inference.cells.stylizedcell import CellTypes
 from cell_inference.utils.currents.ecp import EcpMod
+from cell_inference.utils.currents.pointconductance import PointConductance
 from cell_inference.config import paths, params
 
 
@@ -207,11 +208,11 @@ class Simulation(object):
             geo_param = np.full((self.ncell, 6), np.nan)
             L = self.geo_param[:, [0]]  # total length
             p1 = self.geo_param[:, [1]]  # proportion of prox
-            trunk_L = self.geometry.loc[[4, 6, 7], 'L'].values  # length of each trunk section
+            trunk_L = self.geometry.loc[[4, 6, 7], 'L'].values  # standard length of each trunk section
             p23 = trunk_L[1:3] / (trunk_L[1] + trunk_L[2])  # fix ratio between mid and dist
             geo_param[:, [0]] = p1 * L
             geo_param[:, 1:3] = (1 - p1) * L * p23
-            if self.interpret_type == 1:
+            if self.interpret_type == 1: # radius dependent on length
                 R_L = 0.8  # slope of radius v.s. length scale
                 R = 1 + R_L * (L / np.sum(trunk_L) - 1)
                 R *= self.geo_param[:, [2]]  # radius scale of prox
@@ -220,11 +221,12 @@ class Simulation(object):
             pR = self.geo_param[:, [3]]  # ratio of dist/prox radius
             geo_param[:, 3:6] = self.geometry.loc[4, 'R'] * R * pR ** np.array([0., 0.5, 1.])
             self.geo_param = geo_param
-            if self.interpret_type == 2:
+            if self.interpret_type >= 2:
                 x0 = 560.  # um. cutoff length for L2_3 and L5
                 r = 35.  # um. slope inverse
                 self.biophys = self.biophys.copy()
-                self.biophys[:, [9, 10]] *= 1 / (1 + np.exp(-(L - x0) / r))  # Ca_activation
+                gCa_idx = [9, 10] if self.interpret_type == 2 else [8, 9]
+                self.biophys[:, gCa_idx] *= 1 / (1 + np.exp(-(L - x0) / r))  # Ca_activation
 
     def load_cell_module(self):
         """Load cell module and define arguments for initializing cell instance according to cell type"""
@@ -409,6 +411,44 @@ class Simulation(object):
             spk = self.get_spike_time(index)
             nspk = np.array([s.size for s in spk])
         return nspk, spk
+
+
+class Simulation_stochastic(Simulation):
+    def __init__(self, dens_params={}, cnst_params={}, L_unit=1., point_conductance_division={}, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.__point_conductance_setting(dens_params, cnst_params, L_unit, point_conductance_division)
+        self.set_point_conductance()
+        
+    def __point_conductance_setting(self, dens_params, cnst_params, L_unit, point_conductance_division):
+        self.point_conductance_division = {'perisomatic': [0,1,2,4,12], 'basal': [3], 'apical': [6,7,8,9,10]}
+        self.point_conductance_division.update(point_conductance_division)
+        self.division_sec_ids = {
+            div: [isec for i in ids for isec in self.cells[0].sec_id_lookup[i]] for div, ids in self.point_conductance_division.items()
+        }
+        self.dens_params = {
+            'perisomatic': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
+            'basal': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
+            'apical': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.}
+        }
+        self.cnst_params = {'tau_e': 3., 'tau_i': 15.}
+        for key, value in dens_params.items():
+            if key not in self.dens_params.keys():
+                self.dens_params[key] = {}
+            self.dens_params[key].update(value)
+        self.cnst_params.update(cnst_params)
+        self.L_unit = L_unit
+
+    def set_point_conductance(self):
+        temp_list = [None] * self.cells[0]._nsec
+        for cell in self.cells:
+            cell.point_conductance = temp_list.copy()
+            for div, sec_ids in self.division_sec_ids.items():
+                dens_params = self.dens_params[div]
+                for isec in sec_ids:
+                    cell.point_conductance[isec] = PointConductance(
+                        cell, sec_index=isec, L_unit=self.L_unit,
+                        dens_params=dens_params, cnst_params=self.cnst_params
+                    )
 
 
 """

@@ -190,7 +190,6 @@ BIOPHYSICAL_DIVISION = {
             7: [12] # passive basal
         },
         'biophys_entries': [
-            ([5, 6], 'e_pas'), ([5, 6], 'g_pas'),
             (0, 'gNaTa_tbar_NaTa_t'), ([1, 2], 'gNaTa_tbar_NaTa_t'), ([3, 4], 'gNaTa_tbar_NaTa_t'),
             (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
             (1, 'Ra'), (2, 'Ra'),
@@ -198,7 +197,6 @@ BIOPHYSICAL_DIVISION = {
             (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih')
         ],
         'default_biophys': np.array([
-            -72.0, 0.0000589,
             2.04, 0.0213, 0.0213,
             0.693, 0.000261,
             100., 100.,
