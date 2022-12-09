@@ -249,7 +249,7 @@ class Simulation(object):
             create_cell = pass_geometry(ActiveFullCell)
             self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
                 full_biophys=self.full_biophys, biophys_comm=self.biophys_comm,
-                biophys_type='ReducedOrderL5Stochastic')
+                biophys_type='ReducedOrderL5')
             # ActiveFull, ActiveOblique, ReducedOrderL5, ReducedOrderL5Passive, ReducedOrderL5Stochastic
 
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None):
