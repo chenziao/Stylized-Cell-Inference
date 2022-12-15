@@ -26,13 +26,15 @@ class Recorder(object):
         else:
             self.vectors = [h.Vector(*size).record(getattr(obj, attr_name)) for obj in self.obj_list]
 
-    def as_numpy(self) -> np.ndarray:
+    def as_numpy(self, copy: bool = True) -> np.ndarray:
         """
         Return a numpy 2d-array of recording, n objects-by-time
         Return a 1d-array if a single object is being recorded
         """
         if self.single:
-            x = self.vectors.as_numpy().copy()
+            x = self.vectors.as_numpy()
         else:
-            x = np.array([v.as_numpy().copy() for v in self.vectors])
+            x = np.array([v.as_numpy() for v in self.vectors])
+        if copy:
+            x = x.copy()
         return x

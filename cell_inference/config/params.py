@@ -5,7 +5,7 @@ import cell_inference.config.paths as paths
 ACTIVE_CELL = False
 
 # GENERAL PARAMETERS USED ACROSS RUNS
-TSTOP = 18.  # ms
+TSTOP = 20.  # ms
 DT = 0.025  # ms. Change with h.steps_per_ms = 1/h.dt
 STIM_PARAM = {'start': 2.}
 SPIKE_THRESHOLD = -30.
@@ -32,6 +32,7 @@ FILTER_SAMPLING_RATE = 1000. / DT  # 40 kHz
 WINDOW_SIZE = 144 # time window for lfp
 Y_WINDOW_SIZE = 1960. # y window size for lfp
 PK_TR_IDX_IN_WINDOW = 20 # index in window to align first peak/trough of lfp
+SPIKE_WINDOW = [-1.5, 4.] # spike time window for stochastic EAPs
 START_IDX = 320 # for passive model
 SOMA_INJECT_SCALING_FACTOR = 1085.  # 2.55
 

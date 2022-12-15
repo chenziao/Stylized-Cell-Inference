@@ -248,14 +248,14 @@ def half_height_width_wrt_y(lfp: np.ndarray, grid_shape: Tuple[int]) -> Tuple[in
 def get_tr_pk(g_lfp: np.ndarray) -> Tuple:
     t_t = np.argmin(g_lfp, axis=0)  # trough time
     t_p = np.argmax(g_lfp, axis=0)  # peak time
-    troughs = -np.take_along_axis(g_lfp, np.expand_dims(t_t, axis=0), axis=0)  # trough magnitude
-    peaks = np.take_along_axis(g_lfp, np.expand_dims(t_p, axis=0), axis=0)  # peak magnitude
+    troughs = -np.take_along_axis(g_lfp, t_t[np.newaxis], axis=0)  # trough magnitude
+    peaks = np.take_along_axis(g_lfp, t_p[np.newaxis], axis=0)  # peak magnitude
     return t_t, t_p, troughs, peaks
 
 def get_max_val_y(m: np.ndarray, grid_shape: Tuple[int]) -> np.ndarray:
     """Get maximum values of input m along x for each y"""
     m = m.reshape(grid_shape)  # variable for each channel in 2D array
-    my = np.take_along_axis(m, np.expand_dims(np.argmax(m, axis=0), axis=0), axis=0).ravel()
+    my = np.take_along_axis(m, np.argmax(m, axis=0)[np.newaxis], axis=0).ravel()
     return my
 
 def line(y, y1, w1, y2, w2):
@@ -387,12 +387,13 @@ filt_b, filt_a = signal.butter(params.BUTTERWORTH_ORDER,
 
 def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, dt: float = params.DT,
                 pad_spike_window: bool = False, align_at: int = params.PK_TR_IDX_IN_WINDOW,
-                y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None, gauss_filt: bool = False,
-                calc_summ_stats: bool = True, additional_stats: int = 1, err_msg: bool = False) -> Tuple:
+                y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None,
+                gauss_filt: bool = False, calc_summ_stats: bool = True, additional_stats: int = 1,
+                err_msg: bool = False, err_full = False) -> Tuple:
     """
     Process LFP: filter, find spike window, interpolate in grid, window along y-axis, shift in y, summary statistics.
     
-    lfp: LFP array with shape (time x channels)
+    lfp: LFP array with shape (time x channels) or (spikes x time x channels)
     coord: Coordinates of each channel (channels x 2 or 3)
     dt: time step for generating time array. Do not generate if set to None
     pad_spike_window: whether or not to pad when LFP duration is too short for time window
@@ -407,6 +408,45 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
     Return: bad case id, LFP array, time array, electrode coordinates,
             y coordinates of window center, y-shift, summary statistics
     """
+    lfp = np.asarray(lfp)
+    if lfp.ndim == 2:
+        bad, windowed_lfp = get_t_window(lfp, pad_spike_window, align_at, err_msg)
+    elif lfp.ndim == 3:
+        nspk = lfp.shape[0]
+        bad = np.empty(nspk)
+        windowed_lfp = [None] * nspk
+        for i in range(nspk):
+            bad[i], windowed_lfp[i] = get_t_window(lfp[i], pad_spike_window, align_at, err_msg)
+        if err_full: bad_full = bad
+        bad = 0 if np.all(bad == 0) else (-1 if pad_spike_window else 1)
+        windowed_lfp = np.mean(lfp if bad == 1 else windowed_lfp, axis=0) 
+    else:
+        raise ValueError('LPF array must be a 2D or 3D array.')
+
+    t = None if dt is None else dt * np.arange(windowed_lfp.shape[0])
+    if bad < 1:
+        try:
+            g_lfp, g_coords, y_c = build_lfp_grid(windowed_lfp, coord, y_window_size=y_window_size)
+        except ValueError as e:
+            if err_msg: print(e)
+            bad = 2
+        else:
+            if gauss_filt:
+                sigma = (2, 1, .8)
+                grid_shape = (g_lfp.shape[0], GRID_SHAPE[0], int(g_lfp.shape[1] / GRID_SHAPE[0]))
+                g_lfp = gaussian_filter(g_lfp.reshape(grid_shape), sigma, truncate=3, mode='nearest').reshape((grid_shape[0], -1))
+
+    if bad < 1:
+        yshift = None if ycoord is None or y_c is None else y_c - ycoord
+        summ_stats = calculate_stats(g_lfp, additional_stats=additional_stats) if calc_summ_stats else None
+        output = (bad, g_lfp, t, g_coords, y_c, yshift, summ_stats)
+    else:
+        output = (bad, windowed_lfp, t, coord, None, None, None)
+    if err_full:
+        output += (bad_full,)
+    return output
+
+def get_t_window(lfp, pad_spike_window=False, align_at=params.PK_TR_IDX_IN_WINDOW, err_msg=False):
     bad = -2
     while bad < 0:
         try:
@@ -420,33 +460,11 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
                 lfp = np.pad(lfp, (pad_size, (0, 0)), 'linear_ramp', end_values=((0,),))
             else:
                 bad = 1
-                t = None if dt is None else dt * np.arange(filtered_lfp.shape[0])
+                windowed_lfp = filtered_lfp
         else:
-            windowed_lfp = filtered_lfp[start:end,:]
-            t = None if dt is None else dt * np.arange(params.WINDOW_SIZE)
+            windowed_lfp = filtered_lfp[start:end, :]
             if bad == -1:
                 break
             else:
                 bad = 0
-
-    if bad != 1:
-        try:
-            g_lfp, g_coords, y_c = build_lfp_grid(windowed_lfp, coord, y_window_size=y_window_size)
-        except ValueError as e:
-            if err_msg: print(e)
-            bad = 2
-        else:
-            if gauss_filt:
-                sigma = (2, 1, .8)
-                grid_shape = (g_lfp.shape[0], GRID_SHAPE[0], int(g_lfp.shape[1] / GRID_SHAPE[0]))
-                g_lfp = gaussian_filter(g_lfp.reshape(grid_shape), sigma, truncate=3, mode='nearest').reshape((grid_shape[0], -1))
-
-    if bad==1:
-        output = (bad, filtered_lfp, t, coord, None, None, None)
-    elif bad==2:
-        output = (bad, windowed_lfp, t, coord, None, None, None)
-    else:
-        yshift = None if ycoord is None or y_c is None else y_c - ycoord
-        summ_stats = calculate_stats(g_lfp, additional_stats=additional_stats) if calc_summ_stats else None
-        output = (bad, g_lfp, t, g_coords, y_c, yshift, summ_stats)
-    return output
+    return bad, windowed_lfp

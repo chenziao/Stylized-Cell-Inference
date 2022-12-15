@@ -33,7 +33,7 @@ def get_spike_window(lfp: np.ndarray,
     lfp: input lfp with spike waveform (2D array, each column is a channel)
     win_size: window size (time samples)
     align_at: time index in the window to align with the first peak/trough in "lfp"
-    return (start,end), the time index of the window in "lfp"
+    return (start, end), the time index of the window in "lfp"
     """
     align_pt = first_pk_tr(lfp)
     start = align_pt - align_at

@@ -128,14 +128,15 @@ class EcpMod(object):
         tr *= scale / (4 * np.pi * sigma)
         return tr
 
-    def calc_im(self) -> np.ndarray:
+    def calc_im(self, index: Optional = None) -> np.ndarray:
         """Calculate transmembrane current after simulation. Unit: nA."""
-        im = self.im_rec.as_numpy()
+        index = slice(None) if index is None else index
+        im = self.im_rec.as_numpy(copy=False)[:, index].copy()
         for inj in self.cell.injection:
-            im[inj.get_segment_id(), :] -= inj.rec_vec.as_numpy()
+            im[inj.get_segment_id(), :] -= inj.rec_vec.as_numpy()[index]
         return im
 
-    def calc_ecp(self, **kwargs) -> np.ndarray:
+    def calc_ecp(self, index: Optional = None, **kwargs) -> np.ndarray:
         """Calculate ECP after simulation. Unit: mV."""
         kwargs0 = {
                     'move_cell': self.move_cell,
@@ -144,10 +145,10 @@ class EcpMod(object):
                    }
         kwargs0.update(kwargs)
         tr = self.calc_transfer_resistance(**kwargs0)
-        im = self.calc_im()
+        im = self.calc_im(index=index)
         return tr @ im
 
-    def calc_ecps(self, move_cell: Optional[List] = None, **kwargs) -> np.ndarray:
+    def calc_ecps(self, move_cell: Optional[List] = None, index: Optional = None, **kwargs) -> np.ndarray:
         """Calculate ECP with multiple positions after simulation. Unit: mV."""
         kwargs0 = {
                     'scale': self.scale,
@@ -156,7 +157,7 @@ class EcpMod(object):
         kwargs0.update(kwargs)
         if move_cell is None:
             move_cell = [self.move_cell]
-        im = self.calc_im()
+        im = self.calc_im(index=index)
         ecp = []
         for mc in move_cell:
             ecp.append(self.calc_transfer_resistance(move_cell=mc, **kwargs0) @ im)

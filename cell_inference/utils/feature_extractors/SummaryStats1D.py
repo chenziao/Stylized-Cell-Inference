@@ -12,8 +12,8 @@ def Stats(lfp):
     stdDev = np.std(lfp, axis=0)  # stDev of the voltage of each channel
     tT = np.argmin(lfp, axis=0)
     tP = np.argmax(lfp, axis=0)
-    Troughs = -np.take_along_axis(lfp, np.expand_dims(tT, axis=0), axis=0)
-    Peaks = np.take_along_axis(lfp, np.expand_dims(tP, axis=0), axis=0)
+    Troughs = -np.take_along_axis(lfp, tT[np.newaxis], axis=0)
+    Peaks = np.take_along_axis(lfp, tP[np.newaxis], axis=0)
     relT = tP - tT
 
     stats_list = [avg, relT, stdDev, Troughs, Peaks]

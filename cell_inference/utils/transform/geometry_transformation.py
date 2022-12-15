@@ -37,7 +37,7 @@ def trivarnorm2unitsphere(x):
     y = np.empty(x.shape)
     r = np.linalg.norm(x, axis=1)
     idx = r > 0
-    y[idx, :] = x[idx, :] / np.expand_dims(r[idx], axis=1)
+    y[idx, :] = x[idx, :] / r[idx, np.newaxis]
     y[~idx, :] = np.array([0., 1., 0.])
     y = y.reshape(shape)
     return y

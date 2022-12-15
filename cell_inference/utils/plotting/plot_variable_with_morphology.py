@@ -46,8 +46,8 @@ def plot_variable_with_morphology(seg_coords, seg_prop, variable, t=None, axes =
     r[soma_idx] = (r[soma_idx] + np.amax(r[~soma_idx])) / 2 # soma size for display
 
     # Segment coordinates
-    pc = seg_coords['pc'][:,axes] # center
-    p01 = np.expand_dims(pc, 2) + np.expand_dims(seg_coords['dl'][:,axes], 2) * (np.array([[[-1,1]]]) / 2) # endpoints
+    pc = seg_coords['pc'][:, axes] # center
+    p01 = pc[:, :, np.newaxis] + seg_coords['dl'][:, axes, np.newaxis] * (np.array([[[-1,1]]]) / 2) # endpoints
 
     # Calculate distances at which variable traces are displayed
     if distance_range is not None:

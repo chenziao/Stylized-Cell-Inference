@@ -185,18 +185,18 @@ class StylizedCell(ABC):
 
     def get_sec_by_id(self, index):
         """Get section(s) objects by index(indices) in the section list"""
-        if not hasattr(index, '__len__'):
-            sec = self.all[index]
-        else:
+        if hasattr(index, '__len__'):
             sec = [self.all[i] for i in index]
+        else:
+            sec = self.all[index]
         return sec
 
     def get_seg_by_id(self, index):
         """Get segment(s) objects by index(indices) in the segment list"""
-        if not hasattr(index, '__len__'):
-            seg = self.segments[index]
-        else:
+        if hasattr(index, '__len__'):
             seg = [self.segments[i] for i in index]
+        else:
+            seg = self.segments[index]
         return seg
 
     def set_all_passive(self, gl: float = 0.0003):

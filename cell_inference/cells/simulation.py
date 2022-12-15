@@ -13,8 +13,8 @@ from cell_inference.config import paths, params
 
 
 class Simulation(object):
-    def __init__(self, cell_type: CellTypes = CellTypes.ACTIVE, ncell: int = 1,
-                 geometry: pd.DataFrame = None, electrodes: Optional[np.ndarray] = None,
+    def __init__(self, cell_type: CellTypes = CellTypes.ACTIVE, biophys_type: str = 'ReducedOrderL5',
+                 ncell: int = 1, geometry: pd.DataFrame = None, electrodes: Optional[np.ndarray] = None,
                  loc_param: Union[np.ndarray, List[int], List[float]] = [0., 0., 0., 0., 1., 0.],
                  geo_param: Union[np.ndarray, List[int], List[float]] = [],
                  biophys: Union[np.ndarray, List[int], List[float]] = [],
@@ -24,10 +24,11 @@ class Simulation(object):
                  soma_injection: Optional[np.ndarray] = None, scale: Optional[float] = 1.0,
                  min_distance: Optional[float] = 10.0, interpret_params: bool = False, interpret_type: int = 0,
                  geo_entries: Optional[List[Tuple]] = None, cell_kwargs: Optional[dict] = {},
-                 record_soma_v: bool = True, spike_threshold: Optional[float] = None):
+                 record_soma_v: bool = True, spike_threshold: Optional[float] = None, **kwargs):
         """
         Initialize simulation object
         cell_type: CellTypes enum value to indicate type of cell simulation
+        biophys_type: name for BIOPHYSICAL_DIVISION defined in activecell_full models
         ncell: number of cells in the simulation, required if simulating for multiple cells
         geometry: pandas dataframe of cell morphology properties
         electrodes: array of electrode coordinates, n-by-3
@@ -65,6 +66,8 @@ class Simulation(object):
         self.cell_kwargs = cell_kwargs
         
         # Cell type specific properties
+        # ActiveFull, ActiveOblique, ReducedOrderL5, ReducedOrderL5Passive, ReducedOrderL5Stochastic
+        self.biophys_type = biophys_type
         self.biophys = biophys
         self.full_biophys = full_biophys
         self.biophys_comm = biophys_comm
@@ -249,8 +252,7 @@ class Simulation(object):
             create_cell = pass_geometry(ActiveFullCell)
             self.CreateCell = lambda i: create_cell(i, biophys=self.biophys[i, :],
                 full_biophys=self.full_biophys, biophys_comm=self.biophys_comm,
-                biophys_type='ReducedOrderL5')
-            # ActiveFull, ActiveOblique, ReducedOrderL5, ReducedOrderL5Passive, ReducedOrderL5Stochastic
+                biophys_type=self.biophys_type)
 
     def set_loc_param(self, loc_param: Optional[Union[np.ndarray, List[float]]] = None):
         """
@@ -336,8 +338,24 @@ class Simulation(object):
         """Return simulation time vector"""
         return self.t_vec.as_numpy().copy()
 
+    def v(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
+        """
+        Return soma membrane potential of the cell by index (indices), (cells-by-)time
+
+        Parameters
+        index: index of the cell to retrieve the soma Vm from, use 'all' to get from all cells
+        """
+        if isinstance(index, str) and index == 'all':
+            index = range(self.ncell)
+        if hasattr(index, '__len__'):
+            index = np.asarray(index).ravel()
+            v = np.stack([self.cells[i].v() for i in index], axis=0)
+        else:
+            v = self.cells[index].v()
+        return v.copy()
+
     def get_lfp(self, index: Union[np.ndarray, List[int], int, str] = 0,
-                multiple_position: bool = False) -> np.ndarray:
+                t_index: Optional = None, multiple_position: bool = False) -> np.ndarray:
         """
         Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
 
@@ -346,33 +364,17 @@ class Simulation(object):
         multiple_position: get from multiple positions for each cell along second dimension of the LFP array
         """
         if multiple_position:
-            calc_ecp = lambda i: self.lfp[i].calc_ecps(move_cell=self.loc_param[i])
+            calc_ecp = lambda i: self.lfp[i].calc_ecps(move_cell=self.loc_param[i], index=t_index)
         else:
-            calc_ecp = lambda i: self.lfp[i].calc_ecp()
-        if index == 'all':
+            calc_ecp = lambda i: self.lfp[i].calc_ecp(index=t_index)
+        if isinstance(index, str) and index == 'all':
             index = range(self.ncell)
-        if not hasattr(index, '__len__'):
-            lfp = calc_ecp(index)
-        else:
+        if hasattr(index, '__len__'):
             index = np.asarray(index).ravel()
             lfp = np.stack([calc_ecp(i) for i in index], axis=0)
-        return lfp
-
-    def v(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
-        """
-        Return soma membrane potential of the cell by index (indices), (cells-by-)time
-
-        Parameters
-        index: index of the cell to retrieve the soma Vm from, use 'all' to get from all cells
-        """
-        if index == 'all':
-            index = range(self.ncell)
-        if not hasattr(index, '__len__'):
-            v = self.cells[index].v()
         else:
-            index = np.asarray(index).ravel()
-            v = np.stack([self.cells[i].v() for i in index], axis=0)
-        return v.copy()
+            lfp = calc_ecp(index)
+        return lfp
 
     def get_spike_time(self, index: Union[np.ndarray, List[int], int, str] = 0) -> np.ndarray:
         """
@@ -383,13 +385,13 @@ class Simulation(object):
         """
         if self.spike_threshold is None:
             raise ValueError("Spike recorder was not set up.")
-        if type(index) is str and index == 'all':
+        if isinstance(index, str) and index == 'all':
             index = range(self.ncell)
-        if not hasattr(index, '__len__'):
-            spk = self.cells[index].spikes.as_numpy().copy()
-        else:
+        if hasattr(index, '__len__'):
             index = np.asarray(index).ravel()
             spk = [self.cells[i].spikes.as_numpy().copy() for i in index]
+        else:
+            spk = self.cells[index].spikes.as_numpy().copy()
         return spk
 
     def get_spike_number(self, index: Union[np.ndarray, List[int], int, str] = 0) -> Tuple[int, np.ndarray]:
@@ -401,24 +403,29 @@ class Simulation(object):
         """
         if self.spike_threshold is None:
             raise ValueError("Spike recorder was not set up.")
-        if index == 'all':
+        if isinstance(index, str) and index == 'all':
             index = range(self.ncell)
-        if not hasattr(index, '__len__'):
-            spk = self.get_spike_time(index)
-            nspk = spk.size
-        else:
+        if hasattr(index, '__len__'):
             index = np.asarray(index).ravel()
             spk = self.get_spike_time(index)
             nspk = np.array([s.size for s in spk])
+        else:
+            spk = self.get_spike_time(index)
+            nspk = spk.size
         return nspk, spk
 
 
 class Simulation_stochastic(Simulation):
-    def __init__(self, dens_params={}, cnst_params={}, L_unit=1., point_conductance_division={}, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, dens_params={}, cnst_params={}, L_unit=1., point_conductance_division={},
+                 biophys_type: str = 'ReducedOrderL5Stochastic', tstart: float = 0.,
+                 randseed: int = 0, **kwargs) -> None:
+        super().__init__(biophys_type=biophys_type, **kwargs)
         self.__point_conductance_setting(dens_params, cnst_params, L_unit, point_conductance_division)
-        self.set_point_conductance()
-        
+        self.__set_point_conductance()
+        self.__set_randseed(randseed)
+        self.tstart = int(np.ceil(tstart / h.dt))
+
+    # PRIVATE METHODS
     def __point_conductance_setting(self, dens_params, cnst_params, L_unit, point_conductance_division):
         self.point_conductance_division = {'perisomatic': [0,1,2,4,12], 'basal': [3], 'apical': [6,7,8,9,10]}
         self.point_conductance_division.update(point_conductance_division)
@@ -438,7 +445,7 @@ class Simulation_stochastic(Simulation):
         self.cnst_params.update(cnst_params)
         self.L_unit = L_unit
 
-    def set_point_conductance(self):
+    def __set_point_conductance(self):
         temp_list = [None] * self.cells[0]._nsec
         for cell in self.cells:
             cell.point_conductance = temp_list.copy()
@@ -449,6 +456,43 @@ class Simulation_stochastic(Simulation):
                         cell, sec_index=isec, L_unit=self.L_unit,
                         dens_params=dens_params, cnst_params=self.cnst_params
                     )
+
+    def __set_randseed(self, randseed):
+        self.randseed = randseed
+        h.use_mcell_ran4(1)
+        h.mcell_ran4_init(randseed)
+
+    # PUBLIC METHODS
+    def get_spk_windows(self, index: Union[np.ndarray, List[int], int, str] = 0, tstart: Optional[int] = None,
+                        spk_window: Union[np.ndarray, List, Tuple] = params.SPIKE_WINDOW):
+        spk_window = (np.asarray(spk_window) / h.dt).astype(int)
+        start_idx = (self.tstart if tstart is None else tstart) - spk_window[0]
+        end_idx = self.t_vec.size() - spk_window[1]
+        def get_windows(tspk):
+            tspk = np.round(tspk / h.dt).astype(int)
+            tspk = tspk[(tspk > start_idx) & (tspk < end_idx)]
+            return tspk[:, np.newaxis] + spk_window
+        if isinstance(index, str) and index == 'all':
+            index = range(self.ncell)
+        if hasattr(index, '__len__'):
+            spk_windows = [get_windows(tspk) for tspk in self.get_spike_time(index)]
+            nspk = np.array([s.shape[0] for s in spk_windows])
+        else:
+            spk_windows = get_windows(self.get_spike_time(index))
+            nspk = spk_windows.shape[0]
+        return spk_windows, nspk
+
+    def get_eaps_by_windows(self, index: int, spk_windows: np.ndarray, multiple_position: bool = False):
+        t_indices = np.concatenate([np.arange(*spk_win) for spk_win in spk_windows])
+        eaps = self.get_lfp(index=index, t_index=t_indices, multiple_position=multiple_position) # (locs x) channels x times
+        eaps = eaps.reshape(eaps.shape[:-1] + (spk_windows.shape[0], -1)) # (locs x) channels x spikes x time
+        eaps = np.moveaxis(eaps, -3, -1) # (locs x) spikes x time x channels
+        return eaps
+
+SIMULATION_CLASS = {
+    'Simulation': Simulation,
+    'Simulation_stochastic': Simulation_stochastic,
+}
 
 
 """

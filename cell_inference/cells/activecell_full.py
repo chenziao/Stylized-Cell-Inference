@@ -59,10 +59,10 @@ class ActiveFullCell(StylizedCell):
 
     def get_grp_ids(self, index) -> List:
         """Get section ids in groups(s) by index(indices) in the section group list"""
-        if not hasattr(index, '__len__'):
-            sec_ids = self.grp_ids[index]
-        else:
+        if hasattr(index, '__len__'):
             sec_ids = [isec for i in index for isec in self.grp_ids[i]]
+        else:
+            sec_ids = self.grp_ids[index]
         return sec_ids
 
     def set_channels(self):
