@@ -19,8 +19,10 @@ class PointConductance(DensePointCurrent):
         self.setup(record)
     
     def __setup_Gfluct(self):
+        self.has_nmda = 'g_n0' in self.dens_params.keys()
+        Gfluct = h.Gfluct2NMDA if self.has_nmda else h.Gfluct2
         for seg in self.get_section():
-            self.pp_obj.append(h.Gfluct2(seg))
+            self.pp_obj.append(Gfluct(seg))
         self.set_params()
 
     # PUBLIC METHODS
@@ -33,13 +35,18 @@ class PointConductance(DensePointCurrent):
         """kwargs: initialization keyword arguments """
         for key, value in kwargs.items():
             setattr(self, key, value) 
-        dens = self.segment_length() / self.L_unit
+        lens = self.segment_length() / self.L_unit
         params = self.dens_params.copy()
-        params['g_e0'] *= dens
-        params['g_i0'] *= dens
+        params['g_e0'] *= lens
+        params['g_i0'] *= lens
         params['std_e'] *= params['g_e0']
         params['std_i'] *= params['g_i0']
         params.update(self.cnst_params)
+        if self.has_nmda:
+            params['g_n0'] *= lens
+            params['std_n'] *= params['g_n0']
+        else:
+            params.pop('tau_n', None)
         for g in self.pp_obj:
             for key, value in params.items():
                 setattr(g, key, value)

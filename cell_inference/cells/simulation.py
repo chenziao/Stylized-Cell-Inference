@@ -417,9 +417,10 @@ class Simulation(object):
 
 class Simulation_stochastic(Simulation):
     def __init__(self, dens_params={}, cnst_params={}, L_unit=1., point_conductance_division={},
-                 biophys_type: str = 'ReducedOrderL5Stochastic', tstart: float = 0.,
-                 randseed: int = 0, **kwargs) -> None:
+                 has_nmda: bool = True, tstart: float = 0., randseed: int = 0,
+                 biophys_type: str = 'ReducedOrderL5Stochastic', **kwargs) -> None:
         super().__init__(biophys_type=biophys_type, **kwargs)
+        self.has_nmda = has_nmda
         self.__point_conductance_setting(dens_params, cnst_params, L_unit, point_conductance_division)
         self.__set_point_conductance()
         self.__set_randseed(randseed)
@@ -433,7 +434,7 @@ class Simulation_stochastic(Simulation):
             div: [isec for i in ids for isec in self.cells[0].sec_id_lookup[i]] for div, ids in self.point_conductance_division.items()
         }
         self.dens_params = {
-            'perisomatic': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
+            'perisomatic': {'g_e0': 0., 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
             'basal': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
             'apical': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.}
         }
@@ -444,6 +445,13 @@ class Simulation_stochastic(Simulation):
             self.dens_params[key].update(value)
         self.cnst_params.update(cnst_params)
         self.L_unit = L_unit
+        if self.has_nmda:
+            for param in self.dens_params.values():
+                g_e0 = param.get('g_e0', 0.)
+                if g_e0 > 0.:
+                    param['g_e0'] = g_e0
+                    param['g_n0'] = g_e0
+                    param['std_n'] = param['std_e']
 
     def __set_point_conductance(self):
         temp_list = [None] * self.cells[0]._nsec

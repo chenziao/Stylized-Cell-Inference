@@ -1,4 +1,4 @@
-TITLE Fluctuating conductances
+TITLE Fluctuating conductances NMDA
 
 COMMENT
 -----------------------------------------------------------------------------
@@ -89,9 +89,10 @@ ENDCOMMENT
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
-	POINT_PROCESS Gfluct2
+	POINT_PROCESS Gfluct2NMDA
 	RANGE g_e, g_i, E_e, E_i, g_e0, g_i0, g_e1, g_i1
 	RANGE std_e, std_i, tau_e, tau_i, D_e, D_i
+    RANGE g_n, g_n0, g_n1, std_n, tau_n, D_n
 	RANGE new_seed
 	NONSPECIFIC_CURRENT i
 }
@@ -108,14 +109,20 @@ PARAMETER {
 	E_e	= 0 	(mV)	: reversal potential of excitatory conductance
 	E_i	= -75 	(mV)	: reversal potential of inhibitory conductance
 
-	g_e0	= 0.0121 (umho)	: average excitatory conductance
+	g_e0	= 0.00605(umho)	: average excitatory conductance
 	g_i0	= 0.0573 (umho)	: average inhibitory conductance
+	g_n0    = 0.00605(umho)
 
-	std_e	= 0.0030 (umho)	: standard dev of excitatory conductance
+	std_e	= 0.0015 (umho)	: standard dev of excitatory conductance
 	std_i	= 0.0066 (umho)	: standard dev of inhibitory conductance
+	std_n	= 0.0015 (umho)
 
 	tau_e	= 2.728	(ms)	: time constant of excitatory conductance
 	tau_i	= 10.49	(ms)	: time constant of inhibitory conductance
+	tau_n	= 43.0	(ms)
+
+	mggate
+	mg = 1   (mM)  : initial concentration of mg2+
 }
 
 ASSIGNED {
@@ -123,19 +130,26 @@ ASSIGNED {
 	i 	(nA)		: fluctuating current
 	g_e	(umho)		: total excitatory conductance
 	g_i	(umho)		: total inhibitory conductance
+	g_n	(umho)
 	g_e1	(umho)		: fluctuating excitatory conductance
 	g_i1	(umho)		: fluctuating inhibitory conductance
+	g_n1	(umho)
 	D_e	(umho umho /ms) : excitatory diffusion coefficient
 	D_i	(umho umho /ms) : inhibitory diffusion coefficient
+	D_n	(umho umho /ms)
 	exp_e
 	exp_i
+	exp_n
 	amp_e	(umho)
 	amp_i	(umho)
+	amp_n	(umho)
+    rand_e
 }
 
 INITIAL {
 	g_e1 = 0
 	g_i1 = 0
+	g_n1 = 0
 	if(tau_e != 0) {
 		D_e = 2 * std_e * std_e / tau_e
 		exp_e = exp(-dt/tau_e)
@@ -146,23 +160,37 @@ INITIAL {
 		exp_i = exp(-dt/tau_i)
 		amp_i = std_i * sqrt( (1-exp(-2*dt/tau_i)) )
 	}
+	if(tau_n != 0) {
+		D_n = 2 * std_n * std_n / tau_n
+		exp_n = exp(-dt/tau_n)
+		amp_n = std_n * sqrt( (1-exp(-2*dt/tau_n)) )
+	}
 }
 
 BREAKPOINT {
 	SOLVE oup
+	mggate = 1 / (1 + exp(0.08  (/mV) * -(v)) * (mg / 3.57 (mM))) :mggate kinetics - Jahr & Stevens 1990
 	g_e = g_e0 + g_e1
 	if(g_e < 0) { g_e = 0 }
+	g_n = g_n0 + g_n1
+	if(g_n < 0) { g_n = 0 }
 	g_i = g_i0 + g_i1
 	if(g_i < 0) { g_i = 0 }
-	i = g_e * (v - E_e) + g_i * (v - E_i)
+	i = g_e * (v - E_e) + g_i * (v - E_i) + g_n * (v - E_e) * mggate
 }
 
 
 PROCEDURE oup() {		: use Scop function normrand(mean, std_dev)
+   rand_e = normrand(0,1)
    if(tau_e!=0) {
-	g_e1 =  exp_e * g_e1 + amp_e * normrand(0,1)
+	g_e1 =  exp_e * g_e1 + amp_e * rand_e
    } else {
-	g_e1 = std_e * normrand(0,1)
+	g_e1 = std_e * rand_e
+   }
+   if(tau_n!=0) {
+	g_n1 =  exp_n * g_n1 + amp_n * rand_e
+   } else {
+	g_n1 = std_n * rand_e
    }
    if(tau_i!=0) {
 	g_i1 =  exp_i * g_i1 + amp_i * normrand(0,1)
