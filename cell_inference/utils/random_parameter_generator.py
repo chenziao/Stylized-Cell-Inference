@@ -99,7 +99,7 @@ def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, num
     # Clip predicted parameters
     pred_param = {}
     for key, p_range in {**sim_p['loc_param_range'], **sim_p['geo_param_range']}.items():
-        if key in pred_dict.keys():
+        if key in pred_dict:
             pred_param[key] = np.clip(pred_dict[key], p_range[0], p_range[1])
             number_cells = pred_param[key].size
 

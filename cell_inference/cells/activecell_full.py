@@ -95,7 +95,7 @@ class ActiveFullCell(StylizedCell):
                 if set_value:
                     setattr(sec, varname, genome['value'])
         for erev in fb['conditions'][0]['erev']:
-            enames = [x for x in erev.keys() if x != 'section']
+            enames = [x for x in erev if x != 'section']
             for isec in bio_sec_ids[erev['section']]:
                 sec = self.get_sec_by_id(isec)
                 for en in enames:

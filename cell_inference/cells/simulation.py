@@ -440,7 +440,7 @@ class Simulation_stochastic(Simulation):
         }
         self.cnst_params = {'tau_e': 3., 'tau_i': 15.}
         for key, value in dens_params.items():
-            if key not in self.dens_params.keys():
+            if key not in self.dens_params:
                 self.dens_params[key] = {}
             self.dens_params[key].update(value)
         self.cnst_params.update(cnst_params)

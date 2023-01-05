@@ -19,7 +19,7 @@ class PointConductance(DensePointCurrent):
         self.setup(record)
     
     def __setup_Gfluct(self):
-        self.has_nmda = 'g_n0' in self.dens_params.keys()
+        self.has_nmda = 'g_n0' in self.dens_params
         Gfluct = h.Gfluct2NMDA if self.has_nmda else h.Gfluct2
         for seg in self.get_section():
             self.pp_obj.append(Gfluct(seg))
