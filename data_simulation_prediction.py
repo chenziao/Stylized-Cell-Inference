@@ -108,6 +108,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
 
     gen_params = generate_predicted_parameters_from_config(config_dict, pred_dict, number_locs=number_locs)
     labels, rand_param, loc_param, geo_param = [x[cell_index] for x in gen_params]
+    number_cells = labels.shape[0]
     print(loc_param.shape)
     print(geo_param.shape)
     print(rand_param.shape)
@@ -117,7 +118,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     timer_start = time.time()
     sim = SIMULATION_CLASS[simulation_class](
         cell_type = CellTypes.REDUCED_ORDER,
-        ncell = number_cells_per_batch,
+        ncell = number_cells,
         geometry = geo_standard,
         electrodes = params.ELECTRODE_POSITION,
         loc_param = loc_param,
