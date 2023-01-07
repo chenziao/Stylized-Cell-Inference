@@ -20,7 +20,8 @@ MODELS_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_models')
 LOSSES_ROOT = os.path.join(RESULTS_ROOT, 'pytorch_losses')
 FIGURE_ROOT = os.path.join(RESULTS_ROOT, 'figures')
 
-SIMULATED_DATA_FILE = os.path.join(RESOURCES_ROOT, 'active_groundtruth.h5')
+SIMULATED_DATA_PATH = os.path.join(RESOURCES_ROOT, 'simulation_data')
+INVIVO_DATA_PATH = os.path.join(RESOURCES_ROOT, 'invivo')
 MORPHOLOGY_DATA_FILE = os.path.join(RESOURCES_ROOT, 'detailed_groundtruth.h5')  # Allen Morphology Cell Data
 INVIVO_DATA_FILE = os.path.join(RESOURCES_ROOT, 'cell360LFP.h5')
 INVIVO2D_DATA_FILE = os.path.join(RESOURCES_ROOT, 'cell360LFP2D.h5')
