@@ -9,13 +9,13 @@
 #SBATCH -n 1
 #SBATCH -a 0-19%20 # job array, % limiting the number of tasks that run at once
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem-per-cpu=16G # suggest 16G for -c no more than 50
 
 
 START=$(date)
 
 unset DISPLAY
-python data_simulation_in_vivo_prediction.py ${SLURM_ARRAY_TASK_ID} -c 10 -trial Reduced_Order_stochastic_trunkLR4_LactvCa_Loc5_restrict_h -model CNN_batch256_dv --no-stats
+python data_simulation_prediction.py ${SLURM_ARRAY_TASK_ID} -c 10 -trial Reduced_Order_stochastic_trunkLR4_LactvCa_Loc5_restrict_h -model CNN_batch256_dv --no-stats
 
 END=$(date)
 
