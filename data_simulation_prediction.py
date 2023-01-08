@@ -18,12 +18,6 @@ from cell_inference.utils.data_manager import NpzFilesCollector
 TRIAL_NAME = 'Reduced_Order_stochastic_trunkLR4_LactvCa_Loc5_restrict_h' # select trial
 MODEL_NAME = 'CNN_batch256_dv'
 
-h.load_file('stdrun.hoc')
-h.nrn_load_dll(paths.COMPILED_LIBRARY_REDUCED_ORDER)
-h.dt = params.DT
-h.steps_per_ms = 1/h.dt
-geo_standard = pd.read_csv(paths.GEO_REDUCED_ORDER, index_col='id')
-
 def set_path(trial=None, model=None):
     global TRIAL_NAME, TRIAL_PATH, MODEL_NAME, MODEL_PATH, PRED_PATH, PRED_LFP_PATH, PRED_STATS_PATH
     if trial is not None:
@@ -52,6 +46,16 @@ def load_pred_data(config_dict=None):
 def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
                         batch_id=None, number_cells_per_batch=None,
                         save_stats=False, rand_seed=None):
+    ## Initialize Neuron
+    h.load_file('stdrun.hoc')
+    try:
+        h.nrn_load_dll(paths.COMPILED_LIBRARY_REDUCED_ORDER)
+    except:
+        pass
+    h.dt = params.DT
+    h.steps_per_ms = 1/h.dt
+    geo_standard = pd.read_csv(paths.GEO_REDUCED_ORDER, index_col='id')
+
     ## Select cells for batch
     number_cells = list(pred_dict.values())[0].size
     if batch_id is None or number_cells_per_batch is None:
