@@ -193,6 +193,8 @@ import torch
 
 batch_size = 256
 model_name = '_batch' + str(batch_size)
+rand_seed = 0
+torch.manual_seed(rand_seed)
 
 if isCNN:
     from cell_inference.utils.feature_extractors.convolutionalnetwork import ConvolutionalNetwork, ActivationTypes
@@ -220,7 +222,7 @@ SAVE_PATH = os.path.join(MODEL_PATH, model_name + '.txt')
 # In[9]:
 
 
-from cell_inference.utils.feature_extractors.helperfunctions import train_regression, build_dataloader_from_numpy
+from cell_inference.utils.feature_extractors.helperfunctions import train_model, build_dataloader_from_numpy
 
 if isCNN:
     train_size = 0.8 if isTrain else 0.
@@ -231,7 +233,7 @@ else:
     train_loader, test_loader = build_dataloader_from_numpy(input_arr=summ_stats, labels_arr=labels, batch_size=batch_size, shuffle=True)
 
 if isTrain:
-    history, files = train_regression(model, train_loader, test_loader, epochs=epochs, learning_rate=0.001, decay_rate=0.98)
+    history, files = train_model(model, train_loader, test_loader, epochs=epochs, learning_rate=0.001, decay_rate=0.98)
     model.eval()
     torch.save(model.state_dict(), PARAM_PATH)
     with open(SAVE_PATH, 'w') as f:

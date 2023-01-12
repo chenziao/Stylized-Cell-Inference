@@ -11,7 +11,7 @@ from cell_inference.config import params
 from cell_inference.utils.feature_extractors.SummaryStats2D import calculate_stats, build_lfp_grid
 
 from cell_inference.utils.transform.geometry_transformation import hphi2unitsphere
-from cell_inference.utils.feature_extractors.helperfunctions import train_regression, build_dataloader_from_numpy
+from cell_inference.utils.feature_extractors.helperfunctions import train_model, build_dataloader_from_numpy
 from cell_inference.utils.feature_extractors.fullyconnectednetwork import FullyConnectedNetwork
 import torch
 
@@ -118,7 +118,7 @@ class Trainer(object):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")  # torch.device("cpu")
         model.to(device)
 
-        train_regression(model, train_loader, test_loader, 300, learning_rate=0.001, decay_rate=0.98, device=device)
+        train_model(model, train_loader, test_loader, 300, learning_rate=0.001, decay_rate=0.98, device=device)
         model.eval()
         torch.save(model.state_dict(), os.path.join(self.trial_path, 'batch512_150ksamples_model.pth'))
         return model
