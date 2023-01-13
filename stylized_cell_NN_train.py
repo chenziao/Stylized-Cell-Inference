@@ -48,7 +48,7 @@ if not hasattr(__main__, 'get_ipython'):
 
 
 DATA_PATH = 'cell_inference/resources/simulation_data'
-TRIAL_PATH = os.path.join(DATA_PATH, 'Reduced_Order_stochastic_trunkLR4_LactvCa_Loc5_restrict_h')
+TRIAL_PATH = os.path.join(DATA_PATH, 'Reduced_Order_stochastic_trunkLR4_Loc5_restrict_h')
 
 CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
 LFP_PATH = os.path.join(TRIAL_PATH, 'lfp.npz')  # LFP and labels
@@ -227,10 +227,10 @@ from cell_inference.utils.feature_extractors.helperfunctions import train_model,
 if isCNN:
     train_size = 0.8 if isTrain else 0.
     train_loader, test_loader = build_dataloader_from_numpy(
-        input_arr=lfp_trans, labels_arr=labels, batch_size=batch_size, train_size=train_size, shuffle=True
+        input_arr=lfp_trans, label_arr=labels, batch_size=batch_size, train_size=train_size, shuffle=True
     )
 else:
-    train_loader, test_loader = build_dataloader_from_numpy(input_arr=summ_stats, labels_arr=labels, batch_size=batch_size, shuffle=True)
+    train_loader, test_loader = build_dataloader_from_numpy(input_arr=summ_stats, label_arr=labels, batch_size=batch_size, shuffle=True)
 
 if isTrain:
     history, files = train_model(model, train_loader, test_loader, epochs=epochs, learning_rate=0.001, decay_rate=0.98)

@@ -14,7 +14,7 @@ import h5py
 import json
 import os
 from tqdm import tqdm
-import __main__, argparse
+import __main__
 
 from cell_inference.config import paths, params
 from cell_inference.cells.simulation import SIMULATION_CLASS
@@ -47,9 +47,9 @@ number_locs = 2  # number of locations for each neuron
 if not hasattr(__main__, 'get_ipython'):
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('batch_id', type=int, help="Batch ID", nargs='?', default=None)
-    parser.add_argument('-c', type=int, help="Number of cells", nargs='?', default=number_cells)
-    parser.add_argument('-l', type=int, help="Number of locations", nargs='?', default=number_locs)
+    parser.add_argument('batch_id', type=int, nargs='?', default=None, help="Batch ID", metavar='Batch ID')
+    parser.add_argument('-c', type=int, nargs='?', default=number_cells, help="Number of cells", metavar='# Cells')
+    parser.add_argument('-l', type=int, nargs='?', default=number_locs, help="Number of locations", metavar='# Locations')
     args = parser.parse_args()
     batch_id = args.batch_id
     number_cells = args.c
@@ -71,6 +71,7 @@ else:
 # In[3]:
 
 
+TRIAL_NAME = 'Reduced_Order_stochastic_trunkLR4_Loc5_restrict_h'
 number_samples = number_cells * number_locs  # number of samples
 rand_seed = 0
 
@@ -158,7 +159,7 @@ biophys_comm = {}
 
 # whether use parameter interpreter
 interpret_params = True
-interpret_type = 3
+interpret_type = 0
 
 
 # ### Create configuration dictionary
@@ -283,7 +284,7 @@ if simulation_class == 'Simulation_stochastic':
     lfp_locs = lambda i: sim.get_eaps_by_windows(index=valid[i], spk_windows=spk_windows[valid[i]], multiple_position=True)
 else:
     timer_start = time.time()
-    start_idx = int(max(np.ceil(stim_param['start'] / h.dt) - params.PK_TR_IDX_IN_WINDOW, 0)) # ignore signal before
+    start_idx = int(max(np.ceil(sim.stim.start / h.dt) - params.PK_TR_IDX_IN_WINDOW, 0)) # ignore signal before
     lfp = sim.get_lfp(index=valid, t_index=slice(start_idx, None), multiple_position=True) # (cells x locs x channels x time)
     lfp = np.moveaxis(lfp, -2, -1) # -> (cells x locs x time x channels)
     print('LFP run time: ' + str(datetime.timedelta(seconds=time.time() - timer_start)))
@@ -345,8 +346,8 @@ for bad, indices in bad_indices.items():
 # In[15]:
 
 
-DATA_PATH = 'cell_inference/resources/simulation_data'
-TRIAL_PATH = os.path.join(DATA_PATH, 'Reduced_Order_stochastic_trunkLR4_LactvCa_Loc5_restrict_h')
+DATA_PATH = paths.SIMULATED_DATA_PATH
+TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
 
 CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
 LFP_PATH = os.path.join(TRIAL_PATH, 'lfp' + batch_suf)  # LFP and labels

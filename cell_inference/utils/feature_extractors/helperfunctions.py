@@ -96,11 +96,13 @@ def predict_gmax(input_arr: np.ndarray, clf: str = paths.RESOURCES_ROOT + "gmax_
     return classifier.predict(input_arr)
 
 
-def build_dataloader_from_numpy(input_arr: np.ndarray, labels_arr: np.ndarray,
+def build_dataloader_from_numpy(input_arr: np.ndarray, label_arr: np.ndarray, keep_dtype: bool = False,
                                 batch_size: int = 1, train_size: Union[float, int] = 0.8,
                                 shuffle: bool = False, seed: int = 0) -> Tuple[DataLoader, DataLoader]:
     input_arr - np.asarray(input_arr)
-    labels_arr - np.asarray(labels_arr)
+    label_arr - np.asarray(label_arr)
+    input_dtype = getattr(torch, str(input_arr.dtype)) if keep_dtype else torch.float32
+    label_dtype = getattr(torch, str(label_arr.dtype)) if keep_dtype else torch.float32
 
     data_size = input_arr.shape[0]
     if train_size <= 1:
@@ -116,8 +118,10 @@ def build_dataloader_from_numpy(input_arr: np.ndarray, labels_arr: np.ndarray,
         idx_train = shuffler[idx_train]
         idx_test = shuffler[idx_test]
 
-    training_dataset = TensorDataset(torch.from_numpy(input_arr[idx_train]), torch.from_numpy(labels_arr[idx_train]))
-    testing_dataset = TensorDataset(torch.from_numpy(input_arr[idx_test]), torch.from_numpy(labels_arr[idx_test]))
+    training_dataset = TensorDataset(torch.as_tensor(input_arr[idx_train], dtype=input_dtype),
+                                     torch.as_tensor(label_arr[idx_train], dtype=label_dtype))
+    testing_dataset = TensorDataset(torch.as_tensor(input_arr[idx_test], dtype=input_dtype),
+                                    torch.as_tensor(label_arr[idx_test], dtype=label_dtype))
     train_loader = DataLoader(dataset=training_dataset, batch_size=batch_size, shuffle=shuffle)
     test_loader = DataLoader(dataset=testing_dataset, batch_size=batch_size)
     return train_loader, test_loader
@@ -136,7 +140,7 @@ def build_dataloader_from_file(input_file: str, labels_file: Optional[str] = Non
         inputs = pd.read_csv(input_file).to_numpy()
         labels = pd.read_csv(labels_file).to_numpy()
 
-    data_size = input_arr.shape[0]
+    data_size = inputs.shape[0]
     if train_size <= 1:
         idx = max(int(np.floor(data_size * train_size)), 1)
     else:

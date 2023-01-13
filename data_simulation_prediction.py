@@ -15,7 +15,7 @@ from cell_inference.utils.random_parameter_generator import generate_predicted_p
 from cell_inference.utils.feature_extractors.SummaryStats2D import process_lfp
 from cell_inference.utils.data_manager import NpzFilesCollector
 
-TRIAL_NAME = 'Reduced_Order_stochastic_trunkLR4_LactvCa_Loc5_restrict_h' # select trial
+TRIAL_NAME = 'Reduced_Order_stochastic_trunkLR4_Loc5_restrict_h' # select trial
 MODEL_NAME = 'CNN_batch256_dv'
 
 def set_path(trial=None, model=None):
