@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 KEY_TYPE = {'x': 'array', 'y': 'array', 'ys': 'array', 'rand_param': 'array', 'gmax': 'array',
-            't': 'unique', 'bad_indices': 'dict_index', 'good_indices': 'index',
+            't': 'unique', 'bad_indices': 'dict_index', 'good_indices': 'index', 'firing_rate': 'array',
             'invalid_params': 'dict_array', 'valid': 'index_total', 'invalid': 'index_total'}
 # Use 'null' for 'not implemented'.
 

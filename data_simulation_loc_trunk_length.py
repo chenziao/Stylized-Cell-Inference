@@ -148,13 +148,13 @@ else:
 
 
 # Biophysical parameters
-filepath = './cell_inference/resources/biophys_parameters/ReducedOrderL5.json' # active dendrites
-# filepath = './cell_inference/resources/biophys_parameters/ReducedOrderL5_passive.json' # passive dendrites
+filepath = './cell_inference/resources/biophys_parameters/ReducedOrderL5_stochastic.json' # active dendrites
+# filepath = './cell_inference/resources/biophys_parameters/ReducedOrderL5.json' # higer gNa dendrites
 with open(filepath) as f:
     full_biophys = json.load(f)
 
 # common parameters
-biophys_param = [2.04, 0.0213, 0.0213, 0.693, 0.000261, 100., 100., 0.0000525, 0.000555, 0.0187]
+biophys_param = [2.04, np.nan, np.nan, 0.693, 0.000261, 100., 100., 0.0000525, 0.000555, 0.0187]
 biophys_comm = {}
 
 # whether use parameter interpreter
@@ -250,6 +250,7 @@ cell_idx = 0 # for verification
 if simulation_class == 'Simulation_stochastic':
     spk_windows, nspk = sim.get_spk_windows('all')
     valid = nspk > 1
+    firing_rate = 1000. * nspk / (h.tstop - sim.tstart * h.dt)
 else:
     nspk, _ = sim.get_spike_number('all')
     valid = nspk == 1
@@ -272,7 +273,11 @@ invalid_samples = (number_locs * invalid[:, np.newaxis] + np.arange(number_locs)
 number_samples -= invalid_samples.size
 labels = np.delete(labels, invalid_samples, axis=0)
 rand_param = np.delete(rand_param, invalid_samples, axis=0)
-gmax = None if sim.gmax is None else np.repeat(sim.gmax[valid], number_locs) 
+gmax = None if sim.gmax is None else np.repeat(sim.gmax[valid], number_locs)
+
+additional_save = {}
+if simulation_class == 'Simulation_stochastic':
+    additional_save['firing_rate'] = firing_rate[valid]
 
 
 # #### Get LFP for valid cells
@@ -368,7 +373,7 @@ if not os.path.exists(TRIAL_PATH):
 
 if save_lfp:
     np.savez(LFP_PATH, t=t, x=windowed_lfp, y=labels, ys=yshift, rand_param=rand_param, gmax=gmax,
-             bad_indices=bad_indices, good_indices=good_indices, invalid_params=invalid_params)
+             bad_indices=bad_indices, good_indices=good_indices, invalid_params=invalid_params, **additional_save)
 if save_stats:
     np.savez(STATS_PATH, x=summ_stats, y=labels[good_indices], ys=yshift,
              rand_param=rand_param[good_indices], gmax=None if gmax is None else gmax[good_indices])

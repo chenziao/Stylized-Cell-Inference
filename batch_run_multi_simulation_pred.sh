@@ -7,7 +7,7 @@
 
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -a 0-19%20 # job array, % limiting the number of tasks that run at once
+#SBATCH -a 0-19%30 # job array, % limiting the number of tasks that run at once
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16G # suggest 16G for -c no more than 50
 

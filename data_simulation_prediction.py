@@ -146,6 +146,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     if simulation_class == 'Simulation_stochastic':
         spk_windows, nspk = sim.get_spk_windows('all')
         valid = nspk > 1
+        firing_rate = 1000. * nspk / (h.tstop - sim.tstart * h.dt)
     else:
         nspk, _ = sim.get_spike_number('all')
         valid = nspk == 1
@@ -164,6 +165,10 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     labels = np.delete(labels, invalid, axis=0)
     rand_param = np.delete(rand_param, invalid, axis=0)
     gmax = None if sim.gmax is None else sim.gmax[valid] 
+
+    additional_save = {}
+    if simulation_class == 'Simulation_stochastic':
+        additional_save['firing_rate'] = firing_rate[valid]
 
     # Get LFP for valid cells
     if simulation_class == 'Simulation_stochastic':
@@ -219,7 +224,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     # Save result data
     np.savez(add_batch_id(PRED_LFP_PATH, batch_suf), t=t, x=windowed_lfp, y=labels, ys=yshift,
              rand_param=rand_param, gmax=gmax, bad_indices=bad_indices, good_indices=good_indices,
-             invalid_params=invalid_params, valid=valid, invalid=invalid)
+             invalid_params=invalid_params, valid=valid, invalid=invalid, **additional_save)
     if save_stats:
         np.savez(add_batch_id(PRED_STATS_PATH, batch_suf), x=summ_stats, y=labels[good_indices], ys=yshift,
                  rand_param=rand_param[good_indices], gmax=None if gmax is None else gmax[good_indices])
