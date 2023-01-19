@@ -159,14 +159,15 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
 
     if additional_stats >= 1:
         """Calculate time and the widths of the major trough and peak"""
+        # Find channel with maximum amplitude
+        max_idx = np.argmax(np.fmax(troughs, peaks))
+
         # Trough and Peak times with maximum amplitude
-        t_T = t_t[np.argmax(troughs)]
-        t_P = t_p[np.argmax(peaks)]
+        t_T = t_t[max_idx]
+        t_P = t_p[max_idx]
         t0 = min(t_T, t_P)
         t2 = max(t_T, t_P)
 
-        # Find channel with maximum amplitude
-        max_idx = np.argmax(np.amax(np.abs(g_lfp), axis=0))
         # Find time when LFP changes sign
         t_idx = np.nonzero(np.diff(np.sign(g_lfp[t0:t2, max_idx])))[0]
         t1 = t0 + 1 + t_idx[0] if t_idx.size > 0 else t0

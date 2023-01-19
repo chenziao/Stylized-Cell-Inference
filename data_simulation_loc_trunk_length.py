@@ -71,7 +71,7 @@ else:
 # In[3]:
 
 
-TRIAL_NAME = 'Reduced_Order_stochastic_trunkLR4_Loc5_restrict_h'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc5_restrict_h'
 number_samples = number_cells * number_locs  # number of samples
 rand_seed = 0
 
@@ -118,12 +118,12 @@ if simulation_class == 'Simulation_stochastic':
     tstart = 200.
     point_conductance_division = {'soma': [0], 'perisomatic': [1,4], 'basal': [2,3], 'apical': [7,8,9,10]}
     dens_params = {
-        'soma': {'g_e0': 0., 'g_i0': 15e-5, 'std_e': 1., 'std_i': 1.25},
-        'perisomatic': {'g_e0': 0., 'g_i0': 4e-5, 'std_e': 1., 'std_i': 1.25},
-        'basal': {'g_e0': 1.9e-5, 'g_i0': 2.45e-5, 'std_e': 3.4, 'std_i': 1.5},
+        'soma': {'g_e0': 0., 'g_i0': 24e-5, 'std_e': 1., 'std_i': 1.5},
+        'perisomatic': {'g_e0': 0., 'g_i0': 6e-5, 'std_e': 1., 'std_i': 1.5},
+        'basal': {'g_e0': 1.9e-5, 'g_i0': 2.45e-5, 'std_e': 3.4, 'std_i': 2.},
         'apical': {'g_e0': 1.35e-5, 'g_i0': 1e-5, 'std_e': 4., 'std_i': 3.}
     }
-    cnst_params = {'tau_e': 3., 'tau_i': 15., 'tau_n': 40.}
+    cnst_params = {'tau_e': 2., 'tau_i': 10., 'tau_n': 40.}
     has_nmda = True
     syn_params = {
         'tstart': tstart, 'point_conductance_division': point_conductance_division,
@@ -154,12 +154,13 @@ with open(filepath) as f:
     full_biophys = json.load(f)
 
 # common parameters
-biophys_param = [2.04, np.nan, np.nan, 0.693, 0.000261, 100., 100., 0.0000525, 0.000555, 0.0187]
+biophys_param = [2.04, 0.0213 * 0.6, 0.0213 * 0.6, 0.693 * 2, 0.000261 * 2, 100., 100., 0.0000525, 0.000555, 0.0187，
+                np.nan, np.nan, np.nan, np.nan, .6, 2.4]
 biophys_comm = {}
 
 # whether use parameter interpreter
 interpret_params = True
-interpret_type = 0
+interpret_type = 3
 
 
 # ### Create configuration dictionary
@@ -339,7 +340,6 @@ windowed_lfp = np.stack(lfp_list, axis=0)  # (samples x time window x channels)
 yshift = np.array(yshift)
 summ_stats = np.array(summ_stats)
 
-bad_idx = np.array([i for bad, indices in bad_indices.items() if bad>0 for i in indices])
 good_indices = np.sort([i for bad, indices in bad_indices.items() if bad<=0 for i in indices])
 print('%d good samples out of %d samples.' % (good_count, number_samples))
 for bad, indices in bad_indices.items():
@@ -410,6 +410,7 @@ if batch_id == 0:
 # from cell_inference.utils import spike_window
 # from scipy import signal
 
+# bad_idx = np.array([i for bad, indices in bad_indices.items() if bad>0 for i in indices])
 # bad_i = bad_idx[0] # check bad case
 # bad_j, bad_k = np.unravel_index(bad_i, (number_samples//number_locs, number_locs))
 # eaps = lfp_locs(bad_j)[bad_k]

@@ -15,23 +15,27 @@ from cell_inference.utils.random_parameter_generator import generate_predicted_p
 from cell_inference.utils.feature_extractors.SummaryStats2D import process_lfp
 from cell_inference.utils.data_manager import NpzFilesCollector
 
-TRIAL_NAME = 'Reduced_Order_stochastic_trunkLR4_Loc5_restrict_h' # select trial
-MODEL_NAME = 'CNN_batch256_dv'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc5_restrict_h' # select trial
+MODEL_NAME = 'CNN_batch256_dv' # select model
+INVIVO_NAME = 'all_cell_LFP2D_Analysis_SensorimotorSpikeWaveforms_NP_SUTempFilter_NPExample' # select data
 
-def set_path(trial=None, model=None):
-    global TRIAL_NAME, TRIAL_PATH, MODEL_NAME, MODEL_PATH, PRED_PATH, PRED_LFP_PATH, PRED_STATS_PATH
+def set_path(trial=None, model=None, invivo=None):
+    global TRIAL_NAME, TRIAL_PATH, MODEL_NAME, MODEL_PATH, INVIVO_NAME, INVIVO_PRED_PATH
+    global PRED_PATH, PRED_LFP_PATH, PRED_STATS_PATH
     if trial is not None:
         TRIAL_NAME = trial
         TRIAL_PATH = os.path.join(paths.SIMULATED_DATA_PATH, TRIAL_NAME)
-
     if model is not None:
         MODEL_NAME = model
         MODEL_PATH = os.path.join(TRIAL_PATH, MODEL_NAME)
-        PRED_PATH = os.path.join(MODEL_PATH, MODEL_NAME + '_prediction.csv')
-        PRED_LFP_PATH = os.path.join(MODEL_PATH, 'lfp_' + MODEL_NAME + '_pred.npz')  # LFP and labels
-        PRED_STATS_PATH = os.path.join(MODEL_PATH, 'summ_stats_' + MODEL_NAME + '_pred.npz')  # summary statistics
+    if invivo is not None:
+        INVIVO_NAME = invivo
+        INVIVO_PRED_PATH = os.path.join(MODEL_NAME, INVIVO_NAME)
+    PRED_PATH = os.path.join(INVIVO_PRED_PATH, MODEL_NAME + '_prediction.csv')
+    PRED_LFP_PATH = os.path.join(INVIVO_PRED_PATH, 'lfp_' + MODEL_NAME + '_pred.npz')  # LFP and labels
+    PRED_STATS_PATH = os.path.join(INVIVO_PRED_PATH, 'summ_stats_' + MODEL_NAME + '_pred.npz')  # summary statistics
 
-set_path(TRIAL_NAME, MODEL_NAME)
+set_path(TRIAL_NAME, MODEL_NAME, INVIVO_NAME)
 
 def load_pred_data(config_dict=None):
     if config_dict is None:
@@ -215,7 +219,6 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     yshift = np.array(yshift)
     summ_stats = np.array(summ_stats)
 
-    bad_idx = np.array([i for bad, indices in bad_indices.items() if bad>0 for i in indices])
     good_indices = np.sort([i for bad, indices in bad_indices.items() if bad<=0 for i in indices])
     print('%d good samples out of %d samples.' % (good_count, number_samples))
     for bad, indices in bad_indices.items():
@@ -237,6 +240,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-trial', type=str, nargs='?', default=TRIAL_NAME, help="Trial name", metavar='Trial')
     parser.add_argument('-model', type=str, nargs='?', default=MODEL_NAME, help="Model name", metavar='Model')
+    parser.add_argument('-invivo', type=str, nargs='?', default=INVIVO_NAME, help="In vivo data name", metavar='Invivo')
     parser.add_argument('batch_id', type=int, nargs='?', default=None, help="Batch ID", metavar='Batch ID')
     parser.add_argument('-c', type=int, nargs='?', default=None, help="Number of cells per batch", metavar='# Cells')
     parser.add_argument('-l', type=int, nargs='?', default=3, help="Number of locations per cell", metavar='# Locations')
@@ -247,7 +251,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    set_path(trial=args.trial, model=args.model)
+    set_path(trial=args.trial, model=args.model, invivo=args.invivo)
     config_dict, pred_dict = load_pred_data()
     run_pred_simulation(config_dict, pred_dict, number_locs = args.l,
                         batch_id=args.batch_id, number_cells_per_batch=args.c,

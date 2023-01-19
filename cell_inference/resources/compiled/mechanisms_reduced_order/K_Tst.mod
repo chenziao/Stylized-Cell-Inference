@@ -6,7 +6,7 @@
 NEURON	{
 	SUFFIX K_Tst
 	USEION k READ ek WRITE ik
-	RANGE gK_Tstbar, gK_Tst, ik
+	RANGE gK_Tstbar, gK_Tst, ik, v05
 }
 
 UNITS	{
@@ -17,6 +17,7 @@ UNITS	{
 
 PARAMETER	{
 	gK_Tstbar = 0.00001 (S/cm2)
+    v05 = 0.0 (mV)
 }
 
 ASSIGNED	{
@@ -59,7 +60,7 @@ PROCEDURE rates(){
 
 	UNITSOFF
 		v = v + 10
-		mInf =  1/(1 + exp(-(v+0)/19))
+		mInf =  1/(1 + exp(-(v-v05)/19))
 		mTau =  (0.34+0.92*exp(-((v+71)/59)^2))/qt
 		hInf =  1/(1 + exp(-(v+66)/-10))
 		hTau =  (8+49*exp(-((v+73)/23)^2))/qt

@@ -3,7 +3,7 @@
 NEURON	{
 	SUFFIX NaTa_t
 	USEION na READ ena WRITE ina
-	RANGE gNaTa_tbar, gNaTa_t, ina
+	RANGE gNaTa_tbar, gNaTa_t, ina, tau_scale
 }
 
 UNITS	{
@@ -14,6 +14,7 @@ UNITS	{
 
 PARAMETER	{
 	gNaTa_tbar = 0.00001 (S/cm2)
+    tau_scale = 1.0
 }
 
 ASSIGNED	{
@@ -64,7 +65,7 @@ PROCEDURE rates(){
     }
 		mAlpha = (0.182 * (v- -38))/(1-(exp(-(v- -38)/6)))
 		mBeta  = (0.124 * (-v -38))/(1-(exp(-(-v -38)/6)))
-		mTau = (1/(mAlpha + mBeta))/qt
+		mTau = (tau_scale/(mAlpha + mBeta))/qt
 		mInf = mAlpha/(mAlpha + mBeta)
 
     if(v == -66){
@@ -73,7 +74,7 @@ PROCEDURE rates(){
 
 		hAlpha = (-0.015 * (v- -66))/(1-(exp((v- -66)/6)))
 		hBeta  = (-0.015 * (-v -66))/(1-(exp((-v -66)/6)))
-		hTau = (1/(hAlpha + hBeta))/qt
+		hTau = (tau_scale/(hAlpha + hBeta))/qt
 		hInf = hAlpha/(hAlpha + hBeta)
 	UNITSON
 }

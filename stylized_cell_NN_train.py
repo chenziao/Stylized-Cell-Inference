@@ -25,6 +25,7 @@ from cell_inference.utils.data_manager import NpzFilesCollector
 isCNN = True
 isTrain = True
 epochs = 100
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc5_restrict_h'
 
 if not hasattr(__main__, 'get_ipython'):
     import argparse
@@ -36,10 +37,12 @@ if not hasattr(__main__, 'get_ipython'):
     parser.add_argument('--fcn', action='store_false', dest='cnn', help="Train with FCN")
     parser.set_defaults(cnn=True)
     parser.add_argument('-e', type=int, nargs='?', default=epochs, help="Epochs of train", metavar='Epochs')
+    parser.add_argument('-trial', type=str, nargs='?', default=TRIAL_NAME, help="Trial name", metavar='Trial')
     args = parser.parse_args()
     isTrain = args.train
     isCNN = args.cnn
     epochs = args.e
+    TRIAL_NAME = args.trial
 
 
 # ## Load simulation data
@@ -48,7 +51,7 @@ if not hasattr(__main__, 'get_ipython'):
 
 
 DATA_PATH = 'cell_inference/resources/simulation_data'
-TRIAL_PATH = os.path.join(DATA_PATH, 'Reduced_Order_stochastic_trunkLR4_Loc5_restrict_h')
+TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
 
 CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
 LFP_PATH = os.path.join(TRIAL_PATH, 'lfp.npz')  # LFP and labels

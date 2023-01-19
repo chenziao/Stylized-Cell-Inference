@@ -151,7 +151,10 @@ BIOPHYSICAL_DIVISION = {
             (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
             (1, 'Ra'), (2, 'Ra'),
             (3, 'g_pas'), (5, 'gCa_HVAbar_Ca_HVA'), (5, 'gCa_LVAstbar_Ca_LVAst'),
-            (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih')
+            (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih'),
+            (range(7), 'v05_SKv3_1'), (range(7), 'tau0_SKv3_1'),
+            (0, 'gK_Tstbar_K_Tst'), (0, 'v05_K_Tst'), (0, 'gbar_Kd'),
+            (0, 'gNap_Et2bar_Nap_Et2'), (range(7), 'tau_scale_NaTa_t')
         ],
         'default_biophys': np.array([
             -72.0, 0.0000589,
@@ -159,7 +162,10 @@ BIOPHYSICAL_DIVISION = {
             0.693, 0.000261,
             100., 100.,
             0.0000525, 0.000555, 0.0187,
-            0.00181, 0.00571, 0.00783, 0.01166 
+            0.00181, 0.00571, 0.00783, 0.01166,
+            18.700, 4.0,
+            0.0812, 0.0, 0.0,
+            0.00172, 1.0
         ])
     },
     'ReducedOrderL5Passive': {
@@ -190,18 +196,20 @@ BIOPHYSICAL_DIVISION = {
             7: [12] # passive basal
         },
         'biophys_entries': [
-            (0, 'gNaTa_tbar_NaTa_t'), ([1, 2], 'gNaTa_tbar_NaTa_t'), ([3, 4], 'gNaTa_tbar_NaTa_t'),
-            (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
+            (0, 'gNaTa_tbar_NaTa_t'), ([1, 2], 'gNaTa_tbar_NaTa_t'), ([3, 4, 5, 6], 'gNaTa_tbar_NaTa_t'),
+            (0, 'gSKv3_1bar_SKv3_1'), (range(1, 7), 'gSKv3_1bar_SKv3_1'),
             (1, 'Ra'), (2, 'Ra'),
             (3, 'g_pas'), (5, 'gCa_HVAbar_Ca_HVA'), (5, 'gCa_LVAstbar_Ca_LVAst'),
-            (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih')
+            (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih'),
+            (range(7), 'tau_scale_NaTa_t'), (range(7), 'tau0_SKv3_1'),
         ],
         'default_biophys': np.array([
             2.04, 0.0213, 0.0213,
             0.693, 0.000261,
             100., 100.,
             0.0000525, 0.000555, 0.0187,
-            0.00181, 0.00571, 0.00783, 0.01166 
+            0.00181, 0.00571, 0.00783, 0.01166,
+            1.0, 4.0
         ])
     }
 }
