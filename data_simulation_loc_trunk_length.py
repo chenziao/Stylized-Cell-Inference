@@ -154,7 +154,7 @@ with open(filepath) as f:
     full_biophys = json.load(f)
 
 # common parameters
-biophys_param = [2.04, 0.0213 * 0.6, 0.0213 * 0.6, 0.693 * 2, 0.000261 * 2, 100., 100., 0.0000525, 0.000555, 0.0187，
+biophys_param = [2.04, 0.0213 * 0.6, 0.0213 * 0.6, 0.693 * 2, 0.000261 * 2, 100., 100., 0.0000525, 0.000555, 0.0187,
                 np.nan, np.nan, np.nan, np.nan, .6, 2.4]
 biophys_comm = {}
 
