@@ -40,8 +40,8 @@ geo_standard = pd.read_csv(paths.GEO_REDUCED_ORDER, index_col='id')
 # In[2]:
 
 
-batch_id = 5
-number_cells = 5  # number of neurons
+batch_id = 0
+number_cells = 2  # number of neurons
 number_locs = 2  # number of locations for each neuron
 
 if not hasattr(__main__, 'get_ipython'):

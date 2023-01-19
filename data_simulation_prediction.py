@@ -30,7 +30,7 @@ def set_path(trial=None, model=None, invivo=None):
         MODEL_PATH = os.path.join(TRIAL_PATH, MODEL_NAME)
     if invivo is not None:
         INVIVO_NAME = invivo
-        INVIVO_PRED_PATH = os.path.join(MODEL_NAME, INVIVO_NAME)
+        INVIVO_PRED_PATH = os.path.join(MODEL_PATH, INVIVO_NAME)
     PRED_PATH = os.path.join(INVIVO_PRED_PATH, MODEL_NAME + '_prediction.csv')
     PRED_LFP_PATH = os.path.join(INVIVO_PRED_PATH, 'lfp_' + MODEL_NAME + '_pred.npz')  # LFP and labels
     PRED_STATS_PATH = os.path.join(INVIVO_PRED_PATH, 'summ_stats_' + MODEL_NAME + '_pred.npz')  # summary statistics
