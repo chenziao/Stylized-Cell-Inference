@@ -25,7 +25,7 @@ from cell_inference.utils.data_manager import NpzFilesCollector
 isCNN = True
 isTrain = True
 epochs = 100
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc5_restrict_h'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1'
 
 if not hasattr(__main__, 'get_ipython'):
     import argparse

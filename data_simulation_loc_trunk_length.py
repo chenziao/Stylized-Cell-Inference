@@ -71,11 +71,11 @@ else:
 # In[3]:
 
 
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc5_restrict_h'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1'
 number_samples = number_cells * number_locs  # number of samples
 rand_seed = 0
 
-inference_list = ['y', 'd', 'theta', 'h', 'phi', 'l_t', 'lr_pt', 'r_t', 'rr_dt']  # can use d, theta instead of x, z to represent location
+inference_list = ['y', 'd', 'theta', 'l_t', 'lr_pt', 'r_t', 'rr_dt']  # can use d, theta instead of x, z to represent location
 randomized_list = ['alpha']  # randomized parameters not to inferred
 randomized_list += inference_list
 # parameters not in the two lists above are fixed at default.
