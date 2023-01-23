@@ -417,10 +417,12 @@ class Simulation(object):
 
 class Simulation_stochastic(Simulation):
     def __init__(self, dens_params={}, cnst_params={}, L_unit=1., point_conductance_division={},
-                 has_nmda: bool = True, tstart: float = 0., randseed: int = 0,
+                 has_nmda: bool = True, lornomal_gfluct: bool = False,
+                 tstart: float = 0., randseed: int = 0,
                  biophys_type: str = 'ReducedOrderL5Stochastic', **kwargs) -> None:
         super().__init__(biophys_type=biophys_type, **kwargs)
         self.has_nmda = has_nmda
+        self.lornomal_gfluct = lornomal_gfluct
         self.__point_conductance_setting(dens_params, cnst_params, L_unit, point_conductance_division)
         self.__set_point_conductance()
         self.__set_randseed(randseed)
@@ -462,7 +464,8 @@ class Simulation_stochastic(Simulation):
                 for isec in sec_ids:
                     cell.point_conductance[isec] = PointConductance(
                         cell, sec_index=isec, L_unit=self.L_unit,
-                        dens_params=dens_params, cnst_params=self.cnst_params
+                        dens_params=dens_params, cnst_params=self.cnst_params,
+                        lornomal_gfluct=self.lornomal_gfluct
                     )
 
     def __set_randseed(self, randseed):

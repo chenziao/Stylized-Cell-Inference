@@ -11,16 +11,18 @@ if TYPE_CHECKING:
 class PointConductance(DensePointCurrent):
     def __init__(self, cell: StylizedCell, sec_index: int, L_unit: float = 1., 
                  dens_params: dict = {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
-                 cnst_params: dict = {'tau_e': 3., 'tau_i': 15.}, record: bool = False):
+                 cnst_params: dict = {'tau_e': 3., 'tau_i': 15.}, lornomal_gfluct: bool = False,
+                 record: bool = False):
         super().__init__(cell, sec_index)
         self.dens_params = dens_params # conductance/unit length, std relative to conductance
         self.L_unit = L_unit # unit length (um)
         self.cnst_params = cnst_params # constant parameters
+        self.lornomal_gfluct = lornomal_gfluct
         self.setup(record)
-    
+
     def __setup_Gfluct(self):
         self.has_nmda = 'g_n0' in self.dens_params
-        Gfluct = h.Gfluct2NMDA if self.has_nmda else h.Gfluct2
+        Gfluct = h.Gfluct2NMDAlogn if self.lornomal_gfluct else (h.Gfluct2NMDA if self.has_nmda else h.Gfluct2)
         for seg in self.get_section():
             self.pp_obj.append(Gfluct(seg))
         self.set_params()

@@ -100,6 +100,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     syn_params['dens_params'] = sim_param.get('dens_params')
     syn_params['cnst_params'] = sim_param.get('cnst_params')
     syn_params['has_nmda'] = sim_param.get('has_nmda', True)
+    syn_params['lornomal_gfluct'] = sim_param.get('lornomal_gfluct', False)
 
     # Biophysical parameters
     filepath = sim_param.get('full_biophys')
