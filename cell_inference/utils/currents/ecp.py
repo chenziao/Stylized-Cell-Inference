@@ -66,8 +66,8 @@ class EcpMod(object):
             self.im_rec = self.cell.im_rec
         else:
             h.cvode.use_fast_imem(1)
-            for sec in self.cell.all:
-                sec.insert('extracellular')  # insert extracellular
+            # for sec in self.cell.all:
+                # sec.insert('extracellular')  # (may not need)
             for inj in self.cell.injection:
                 if inj.rec_vec is None:
                     inj.setup_recorder()

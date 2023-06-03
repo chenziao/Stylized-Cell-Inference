@@ -47,7 +47,7 @@ class CurrentInjection(PointCurrent):
     def setup_current(self, current: Optional[np.ndarray, List[int]], dt: Optional[np.ndarray]) -> None:
         """Set current injection with the waveform in vector 'current'"""
         ccl = self.pp_obj
-        ccl.dur = 0
+        ccl.delay = 0
         ccl.dur = h.tstop if hasattr(h, 'tstop') else 1e30
         if dt is None:
             dt = h.dt

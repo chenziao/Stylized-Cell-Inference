@@ -388,7 +388,7 @@ filt_b, filt_a = signal.butter(params.BUTTERWORTH_ORDER,
 
 def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, dt: float = params.DT,
                 pad_spike_window: bool = False, align_at: int = params.PK_TR_IDX_IN_WINDOW,
-                y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None,
+                filter: bool = True, y_window_size: float = params.Y_WINDOW_SIZE, ycoord: float = None,
                 gauss_filt: bool = False, calc_summ_stats: bool = True, additional_stats: int = 1,
                 err_msg: bool = False, err_full = False) -> Tuple:
     """
@@ -399,6 +399,7 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
     dt: time step for generating time array. Do not generate if set to None
     pad_spike_window: whether or not to pad when LFP duration is too short for time window
     align_at: keyword argument "align_at" for the function "get_spike_window"
+    filter: whether or not to use temporal filter
     y_window_size: The width of the window along y-axis (micron)
     ycoord: the y-coordinate of the soma. Specify to calculate the y-shift
     gauss_filt: whether or not to use 3D Gaussian filter
@@ -411,18 +412,18 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
     """
     lfp = np.asarray(lfp)
     if lfp.ndim == 2:
-        bad, windowed_lfp = get_t_window(lfp, pad_spike_window, align_at, err_msg)
+        bad, windowed_lfp = get_t_window(lfp, pad_spike_window, align_at, filter, err_msg)
     elif lfp.ndim == 3:
         nspk = lfp.shape[0]
         bad = np.empty(nspk)
         windowed_lfp = [None] * nspk
         for i in range(nspk):
-            bad[i], windowed_lfp[i] = get_t_window(lfp[i], pad_spike_window, align_at, err_msg)
+            bad[i], windowed_lfp[i] = get_t_window(lfp[i], pad_spike_window, align_at, filter, err_msg)
         if err_full: bad_full = bad
         bad = 0 if np.all(bad == 0) else (-1 if pad_spike_window else 1)
         windowed_lfp = np.mean(lfp if bad == 1 else windowed_lfp, axis=0) 
     else:
-        raise ValueError('LPF array must be a 2D or 3D array.')
+        raise ValueError('LFP array must be a 2D or 3D array.')
 
     t = None if dt is None else dt * np.arange(windowed_lfp.shape[0])
     if bad < 1:
@@ -447,11 +448,11 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
         output += (bad_full,)
     return output
 
-def get_t_window(lfp, pad_spike_window=False, align_at=params.PK_TR_IDX_IN_WINDOW, err_msg=False):
+def get_t_window(lfp, pad_spike_window=False, align_at=params.PK_TR_IDX_IN_WINDOW, filter=True, err_msg=False):
     bad = -2
     while bad < 0:
         try:
-            filtered_lfp = signal.lfilter(filt_b, filt_a, lfp, axis=0) # filter along time axis
+            filtered_lfp = signal.lfilter(filt_b, filt_a, lfp, axis=0) if filter else lfp # filter along time axis
             start, end = get_spike_window(filtered_lfp, win_size=params.WINDOW_SIZE, align_at=align_at)
         except ValueError as e:
             if err_msg: print(e)
