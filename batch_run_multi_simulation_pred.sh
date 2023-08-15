@@ -15,7 +15,7 @@
 START=$(date)
 
 unset DISPLAY
-python data_simulation_prediction.py ${SLURM_ARRAY_TASK_ID} -c 10 -trial Reduced_Order_stochastic_lognG_spkwid_trunkLR4_LactvCa_Loc3_h1 -model CNN_batch256 -invivo all_cell_LFP2D_Analysis_SensorimotorSpikeWaveforms_NP_SUTempFilter_NPExample_v2 --no-stats
+python data_simulation_prediction.py ${SLURM_ARRAY_TASK_ID} -c 10 -trial Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats -model FCN_batch256 -invivo all_cell_LFP2D_Analysis_SensorimotorSpikeWaveforms_NP_SUTempFilter_NPExample_v2 --stats
 
 END=$(date)
 

@@ -71,7 +71,7 @@ else:
 # In[4]:
 
 
-TRIAL_NAME = 'Reduced_Order_stochastic_lognG_spkwid_trunkLR4_LactvCa_Loc3_h1'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats'
 number_samples = number_cells * number_locs  # number of samples
 rand_seed = 0
 
@@ -118,14 +118,14 @@ if simulation_class == 'Simulation_stochastic':
     tstart = 200.
     point_conductance_division = {'soma': [0], 'perisomatic': [1,4], 'basal': [2,3], 'apical': [7,8,9,10]}
     dens_params = {
-        'soma': {'g_e0': 0., 'g_i0': 15e-5, 'std_e': 1., 'std_i': 1.5},
-        'perisomatic': {'g_e0': 0., 'g_i0': 4e-5, 'std_e': 1., 'std_i': 1.5},
+        'soma': {'g_e0': 0., 'g_i0': 24e-5, 'std_e': 1., 'std_i': 1.5},
+        'perisomatic': {'g_e0': 0., 'g_i0': 6e-5, 'std_e': 1., 'std_i': 1.5},
         'basal': {'g_e0': 1.9e-5, 'g_i0': 2.45e-5, 'std_e': 3.4, 'std_i': 2.},
         'apical': {'g_e0': 1.35e-5, 'g_i0': 1e-5, 'std_e': 4., 'std_i': 3.}
     }
     cnst_params = {'tau_e': 2., 'tau_i': 10., 'tau_n': 40.}
     has_nmda = True
-    lornomal_gfluct = True
+    lornomal_gfluct = False
     syn_params = {
         'tstart': tstart, 'point_conductance_division': point_conductance_division,
         'dens_params': dens_params, 'cnst_params': cnst_params,
@@ -305,7 +305,8 @@ else:
 
 
 pad_spike_window = True
-bad_cases = tuple(range(-1,3)) if pad_spike_window else tuple(range(3))
+additional_stats = 3
+bad_cases = tuple(range(-1 if pad_spike_window else 0, 4 if additional_stats > 1 else 3))
 if 'y' in inference_list:
     y_idx = inference_list.index('y')
     ycoord = lambda i: labels[i, y_idx]
@@ -324,7 +325,8 @@ for j in tqdm(range(valid.size)):
     for lfp_loc in lfp_locs(j):
         bad, g_lfp, _, g_coords, _, ys, ss = process_lfp(
             lfp_loc, dt=None, pad_spike_window=pad_spike_window, ycoord=ycoord(i),
-            gauss_filt=True, calc_summ_stats=save_stats, additional_stats=1, err_msg=True
+            gauss_filt=True, calc_summ_stats=save_stats, additional_stats=additional_stats,
+            err_msg=True
         )
         bad_indices[bad].append(i)
         if bad<=0:

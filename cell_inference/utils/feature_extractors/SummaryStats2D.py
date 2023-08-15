@@ -440,7 +440,13 @@ def process_lfp(lfp: np.ndarray, coord: np.ndarray = params.ELECTRODE_POSITION, 
 
     if bad < 1:
         yshift = None if ycoord is None or y_c is None else y_c - ycoord
-        summ_stats = calculate_stats(g_lfp, additional_stats=additional_stats) if calc_summ_stats else None
+        summ_stats = None
+        if calc_summ_stats:
+            try:
+                summ_stats = calculate_stats(g_lfp, additional_stats=additional_stats)
+            except Exception as e:
+                if err_msg: print(e)
+                bad = 3
         output = (bad, g_lfp, t, g_coords, y_c, yshift, summ_stats)
     else:
         output = (bad, windowed_lfp, t, coord, None, None, None)

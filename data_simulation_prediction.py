@@ -189,7 +189,8 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
 
     # Process LFP
     pad_spike_window = True
-    bad_cases = tuple(range(-1,3)) if pad_spike_window else tuple(range(3))
+    additional_stats = 3
+    bad_cases = tuple(range(-1 if pad_spike_window else 0, 4 if additional_stats > 1 else 3))
     if 'y' in inference_list:
         y_idx = inference_list.index('y')
         ycoord = lambda i: labels[i, y_idx]
@@ -205,7 +206,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     for i in tqdm(range(number_samples)):
         bad, g_lfp, _, _, _, ys, ss = process_lfp(
             lfp_cell(i), dt=None, pad_spike_window=pad_spike_window, ycoord=ycoord(i),
-            gauss_filt=True, calc_summ_stats=save_stats, additional_stats=1, err_msg=True
+            gauss_filt=True, calc_summ_stats=save_stats, additional_stats=additional_stats, err_msg=True
         )
         bad_indices[bad].append(i)
         if bad<=0:

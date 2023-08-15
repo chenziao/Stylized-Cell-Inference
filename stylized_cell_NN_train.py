@@ -11,6 +11,7 @@ from scipy import signal
 import h5py
 import json
 import os
+from IPython.display import display
 import __main__
 
 from cell_inference.config import paths, params

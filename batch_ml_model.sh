@@ -13,7 +13,8 @@
 
 START=$(date)
 
-python stylized_cell_NN_train.py -trial Reduced_Order_stochastic_lognG_spkwid_trunkLR4_LactvCa_Loc3_h1 -e 100 --train --cnn
+unset DISPLAY
+python stylized_cell_NN_train.py -trial Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats -e 100 --train --fcn
 
 END=$(date)
 
