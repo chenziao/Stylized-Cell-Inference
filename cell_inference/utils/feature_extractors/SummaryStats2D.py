@@ -206,20 +206,16 @@ def statscalc(stats: np.ndarray, grid_shape: Tuple[int], include_min: bool = Tru
     stats = stats.ravel()
     mean = np.mean(stats)
     std = np.std(stats)
-    single_lfp_max_idx = np.argmax(stats)
-    single_lfp_max_val = stats[single_lfp_max_idx]
-    single_lfp_max_idx_x, single_lfp_max_idx_y = np.unravel_index(single_lfp_max_idx, grid_shape)
+    max_channel_idx = np.argmax(stats)
+    max_channel_val = stats[max_channel_idx]
+    max_channel_idx_x, max_channel_idx_y = np.unravel_index(max_channel_idx, grid_shape)
+    all_stats = [mean, std, max_channel_idx_x, max_channel_idx_y, max_channel_val]
     if include_min:
-        single_lfp_min_idx = np.argmin(stats)
-        single_lfp_min_val = stats[single_lfp_min_idx]
-        single_lfp_min_idx_x, single_lfp_min_idx_y = np.unravel_index(single_lfp_min_idx, grid_shape)
-        single_lfp_all_stats = np.array([ mean, std,
-            single_lfp_max_idx_x, single_lfp_max_idx_y, single_lfp_max_val,
-            single_lfp_min_idx_x, single_lfp_min_idx_y, single_lfp_min_val ])
-    else:
-        single_lfp_all_stats = np.array([ mean, std,
-            single_lfp_max_idx_x, single_lfp_max_idx_y, single_lfp_max_val ])
-    return single_lfp_all_stats
+        min_channel_idx = np.argmin(stats)
+        min_channel_val = stats[min_channel_idx]
+        min_channel_idx_x, min_channel_idx_y = np.unravel_index(min_channel_idx, grid_shape)
+        all_stats.extend((min_channel_idx_x, min_channel_idx_y, min_channel_val))
+    return np.array(all_stats)
 
 def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
     idx_left, idx_right = 0, lfp.size
@@ -342,7 +338,7 @@ def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np
     Return a boolean list if boolean is True.
     Edit this function if needed when summary statistics change.
     """
-    # mean, std, single_lfp_max_val, (single_lfp_min_val)
+    # mean, std, max_channel_val, (min_channel_val)
     n_stats = lambda include_min: 8 if include_min else 5  # number of stats across channels
     stats_idx = lambda include_min: [0, 1, 4, 7] if include_min else [0, 1, 4]
     # stats_list = [avg, t_t, t_p, std_dev, troughs, peaks]

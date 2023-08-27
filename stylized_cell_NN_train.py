@@ -17,9 +17,7 @@ import __main__
 from cell_inference.config import paths, params
 from cell_inference.utils.transform.geometry_transformation import hphi2unitsphere, unitsphere2hphi, trivarnorm2unitsphere
 from cell_inference.utils.transform.data_transform import log_moulus_nfold
-from cell_inference.utils.plotting.plot_results import plot_lfp_traces, plot_lfp_heatmap
-from cell_inference.utils.feature_extractors.SummaryStats2D import calculate_stats, build_lfp_grid, GRID_SHAPE
-from cell_inference.utils.feature_extractors.parameterprediction import ClassifierTypes, ClassifierBuilder
+from cell_inference.utils.feature_extractors.SummaryStats2D import GRID_SHAPE
 from cell_inference.utils.data_manager import NpzFilesCollector
 
 
@@ -270,7 +268,6 @@ plt.show()
 
 
 from sklearn.metrics import r2_score
-from cell_inference.utils.metrics.corrcoef import corrcoef
 
 device = torch.device('cpu')
 if not isTrain:
