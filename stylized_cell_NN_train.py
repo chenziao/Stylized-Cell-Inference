@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 import pandas as pd
@@ -20,11 +20,11 @@ from cell_inference.utils.transform.data_transform import log_moulus_nfold
 from cell_inference.utils.feature_extractors.SummaryStats2D import GRID_SHAPE
 from cell_inference.utils.data_manager import NpzFilesCollector
 
-
 isCNN = True
-isTrain = True
+isRF = True
+isTrain = False
 epochs = 100
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats'
 
 if not hasattr(__main__, 'get_ipython'):
     import argparse
@@ -34,14 +34,21 @@ if not hasattr(__main__, 'get_ipython'):
     parser.set_defaults(train=True)
     parser.add_argument('--cnn', action='store_true', help="Train with CNN")
     parser.add_argument('--fcn', action='store_false', dest='cnn', help="Train with FCN")
+    parser.add_argument('--rf', action='store_true', dest='rf', help="Train with Random Forest")
     parser.set_defaults(cnn=True)
+    parser.set_defaults(rf=False)
     parser.add_argument('-e', type=int, nargs='?', default=epochs, help="Epochs of train", metavar='Epochs')
     parser.add_argument('-trial', type=str, nargs='?', default=TRIAL_NAME, help="Trial name", metavar='Trial')
     args = parser.parse_args()
     isTrain = args.train
+    isRF = args.rf
     isCNN = args.cnn
     epochs = args.e
     TRIAL_NAME = args.trial
+else:
+    get_ipython().run_line_magic('matplotlib', 'inline')
+
+isCNN = isCNN and not isRF
 
 
 # ## Load simulation data
@@ -49,7 +56,7 @@ if not hasattr(__main__, 'get_ipython'):
 # In[2]:
 
 
-DATA_PATH = 'cell_inference/resources/simulation_data'
+DATA_PATH = paths.SIMULATED_DATA_PATH
 TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
 
 CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
@@ -176,7 +183,7 @@ with pd.option_context('display.max_rows',10):
 
 
 if isCNN:
-    n_fold = 30
+    n_fold = 31
     max_logmod = np.ceil(np.log2(n_fold))  # max value after transform
     n_fold = 2**max_logmod - 1
     
@@ -191,22 +198,28 @@ if isCNN:
 # In[8]:
 
 
-import torch
-
-batch_size = 256
-model_name = '_batch' + str(batch_size)
-rand_seed = 0
-torch.manual_seed(rand_seed)
-
-if isCNN:
-    from cell_inference.utils.feature_extractors.convolutionalnetwork import ConvolutionalNetwork, ActivationTypes
-    model_name = 'CNN' + model_name
-    num_filters = [8, 16, 16, 32, 32, 64, 64, 64, 32, 8]
-    model = ConvolutionalNetwork(in_channels=lfp_trans.shape[1], out_features=len(label_list), num_filters=num_filters)
+if isRF:
+    from sklearn.ensemble import RandomForestRegressor
+    
+    model_name = 'RF'
+    model = RandomForestRegressor()
 else:
-    from cell_inference.utils.feature_extractors.fullyconnectednetwork import FullyConnectedNetwork, ActivationTypes
-    model_name = 'FCN' + model_name
-    model = FullyConnectedNetwork(in_features=summ_stats.shape[1], out_features=len(label_list))
+    import torch
+
+    batch_size = 256
+    model_name = '_batch' + str(batch_size)
+    rand_seed = 0
+    torch.manual_seed(rand_seed)
+
+    if isCNN:
+        from cell_inference.utils.feature_extractors.convolutionalnetwork import ConvolutionalNetwork, ActivationTypes
+        model_name = 'CNN' + model_name
+        num_filters = [8, 16, 16, 32, 32, 64, 64, 64, 32, 8]
+        model = ConvolutionalNetwork(in_channels=lfp_trans.shape[1], out_features=len(label_list), num_filters=num_filters)
+    else:
+        from cell_inference.utils.feature_extractors.fullyconnectednetwork import FullyConnectedNetwork, ActivationTypes
+        model_name = 'FCN' + model_name
+        model = FullyConnectedNetwork(in_features=summ_stats.shape[1], out_features=len(label_list))
 
 if direction_vec:
     model_name += '_dv'
@@ -215,7 +228,7 @@ if isTrain and not os.path.exists(MODEL_PATH):
     os.makedirs(MODEL_PATH)
     print("The new model directory is created!")
 
-PARAM_PATH = os.path.join(MODEL_PATH, model_name + '.pth')
+PARAM_PATH = os.path.join(MODEL_PATH, model_name + ('.joblib' if isRF else '.pth'))
 SAVE_PATH = os.path.join(MODEL_PATH, model_name + '.txt')
 
 
@@ -224,40 +237,51 @@ SAVE_PATH = os.path.join(MODEL_PATH, model_name + '.txt')
 # In[9]:
 
 
-from cell_inference.utils.feature_extractors.helperfunctions import train_model, build_dataloader_from_numpy
+train_size = 0.8
+if isRF:
+    from sklearn.model_selection import train_test_split
+    import joblib
 
-if isCNN:
-    train_size = 0.8 if isTrain else 0.
-    train_loader, test_loader = build_dataloader_from_numpy(
-        input_arr=lfp_trans, label_arr=labels, batch_size=batch_size, train_size=train_size, shuffle=True
-    )
+    summ_stats_train, summ_stats_test, labels_train, labels_test = train_test_split(
+        summ_stats, labels, train_size=train_size, random_state=0)
+    if isTrain:
+        model.fit(summ_stats_train, labels_train)
+        joblib.dump(model, PARAM_PATH)
 else:
-    train_loader, test_loader = build_dataloader_from_numpy(input_arr=summ_stats, label_arr=labels, batch_size=batch_size, shuffle=True)
+    from cell_inference.utils.feature_extractors.helperfunctions import train_model, build_dataloader_from_numpy
 
-if isTrain:
-    history, files = train_model(model, train_loader, test_loader, epochs=epochs, learning_rate=0.001, decay_rate=0.98)
-    model.eval()
-    torch.save(model.state_dict(), PARAM_PATH)
-    with open(SAVE_PATH, 'w') as f:
-        f.writelines(s + '\n' for s in files)
+    if isCNN:
+        train_loader, test_loader = build_dataloader_from_numpy(
+            input_arr=lfp_trans, label_arr=labels, batch_size=batch_size, train_size=train_size, shuffle=True
+        )
+    else:
+        train_loader, test_loader = build_dataloader_from_numpy(input_arr=summ_stats, label_arr=labels, batch_size=batch_size, shuffle=True)
+
+    if isTrain:
+        history, files = train_model(model, train_loader, test_loader, epochs=epochs, learning_rate=0.001, decay_rate=0.98)
+        model.eval()
+        torch.save(model.state_dict(), PARAM_PATH)
+        with open(SAVE_PATH, 'w') as f:
+            f.writelines(s + '\n' for s in files)
 
 
 # In[10]:
 
 
-if not isTrain:
-    with open(SAVE_PATH, 'r') as f:
-        loss_file = f.read().splitlines()[1]
-        loss_file = loss_file.split(os.path.sep)[-1].split('/')[-1]
-        loss_file = os.path.join(paths.LOSSES_ROOT, loss_file)
-    history = pd.read_csv(loss_file).to_dict(orient='list')
-plt.figure()
-plt.plot(history['Epochs'],history['Training_Loss'],label='Training Loss')
-plt.plot(history['Epochs'],history['Validation_Loss'],label='Validation Loss')
-plt.legend()
-plt.xlabel('Epochs')
-plt.ylabel('MSE')
-plt.show()
+if not isRF:
+    if not isTrain:
+        with open(SAVE_PATH, 'r') as f:
+            loss_file = f.read().splitlines()[1]
+            loss_file = loss_file.split(os.path.sep)[-1].split('/')[-1]
+            loss_file = os.path.join(paths.LOSSES_ROOT, loss_file)
+        history = pd.read_csv(loss_file).to_dict(orient='list')
+    plt.figure()
+    plt.plot(history['Epochs'],history['Training_Loss'],label='Training Loss')
+    plt.plot(history['Epochs'],history['Validation_Loss'],label='Validation Loss')
+    plt.legend()
+    plt.xlabel('Epochs')
+    plt.ylabel('MSE')
+    plt.show()
 
 
 # ## Evaluate model
@@ -267,21 +291,31 @@ plt.show()
 # In[11]:
 
 
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error
 
-device = torch.device('cpu')
-if not isTrain:
-    model.load_state_dict(torch.load(PARAM_PATH, map_location=torch.device('cpu')))
-model.to(device)
-model.eval()
+if isRF:
+    if not isTrain:
+        model = joblib.load(PARAM_PATH)
+    y = labels_test.copy()
+    output = model.predict(summ_stats_test)
+else:
+    device = torch.device('cpu')
+    if not isTrain:
+        model.load_state_dict(torch.load(PARAM_PATH, map_location=torch.device('cpu')))
+    model.to(device)
+    model.eval()
 
-y = []
-output = []
-for X, Y in test_loader:
-    y.append(Y.to("cpu").detach().numpy())
-    output.append(model(X.to(device)).to("cpu").detach().numpy())
-y = np.concatenate(y, axis=0)
-output = np.concatenate(output, axis=0)
+    y = []
+    output = []
+    for X, Y in test_loader:
+        y.append(Y.to("cpu").detach().numpy())
+        output.append(model(X.to(device)).to("cpu").detach().numpy())
+    y = np.concatenate(y, axis=0)
+    output = np.concatenate(output, axis=0)
+
+# RMSE of normalized outputs
+rmse = mean_squared_error(y, output, squared=False)
+print(f'RMSE: {rmse: .4g}')
 
 # back to original scale
 for i, lb in enumerate(label_list):
@@ -300,7 +334,7 @@ for i, p in enumerate(display_list):
     print('{:10} {:.3f}'.format(p+',', r2_score(y[:, i], output[:, i])))
 
 
-# In[16]:
+# In[12]:
 
 
 nlb = len(display_list)
@@ -325,12 +359,13 @@ for i, lb in enumerate(display_list):
 plt.tight_layout()
 plt.show()
 
-fig.savefig(os.path.join(MODEL_PATH, 'test_result.png'))
+if isTrain:
+    fig.savefig(os.path.join(MODEL_PATH, 'test_result.pdf'))
 
 
 # #### Check prediction on orientation
 
-# In[17]:
+# In[13]:
 
 
 if check_orient:
@@ -400,8 +435,9 @@ if check_orient:
         plt.ylim([0, 90])
         plt.xlabel('true trunk length')
         plt.ylabel('angle error (deg)')
-        
-        fig2.savefig(os.path.join(MODEL_PATH, 'angle_error_vs_trunk_length.png'))
+
+        if isTrain:
+            fig2.savefig(os.path.join(MODEL_PATH, 'angle_error_vs_trunk_length.png'))
 
     # angle error distribution
     fig3 = plt.figure(figsize=(10, 6))
@@ -419,8 +455,9 @@ if check_orient:
 
     print("RMSE of angle: %.1f" % np.mean(angle ** 2) ** .5)
 
-    fig1.savefig(os.path.join(MODEL_PATH, 'angle_error_vs_h.png'))
-    fig3.savefig(os.path.join(MODEL_PATH, 'angle_error_distribution.png'))
+    if isTrain:
+        fig1.savefig(os.path.join(MODEL_PATH, 'angle_error_vs_h.png'))
+        fig3.savefig(os.path.join(MODEL_PATH, 'angle_error_distribution.png'))
 
 
 # In[ ]:

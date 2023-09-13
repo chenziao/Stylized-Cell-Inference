@@ -9,6 +9,7 @@ from typing import Tuple, List, Optional, Union
 # Project Imports
 import cell_inference.config.params as params
 from cell_inference.utils.spike_window import get_spike_window
+from cell_inference.utils.transform.data_transform import log_modulus
 
 GRID = params.ELECTRODE_GRID
 GRID_SHAPE = tuple(v.size for v in GRID)
@@ -185,16 +186,40 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         lambda_troughs, pts_troughs, tr_max_idx = get_decay(get_max_val_y(troughs, grid_shape))
         lambda_peaks, pts_peaks, pk_max_idx = get_decay(get_max_val_y(peaks, grid_shape))
         ss.append(lambda_troughs + lambda_peaks)
-        if additional_stats >= 3:
-            max_mag = max(ss[4][4], ss[5][4])  # Global maximum
-            tr_avg_mag, _ = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape, max_mag=max_mag)
-            pk_avg_mag, _ = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape, max_mag=max_mag)
-            ss += pts_troughs + pts_peaks
-            ss.append(tr_avg_mag + pk_avg_mag)
+
+    if additional_stats >= 3:
+        """Add decay break point and average magnitude around it"""
+        max_mag = max(ss[4][4], ss[5][4])  # Global maximum
+        tr_avg_mag, _ = volume_average(g_lfp, t_t, troughs, pts_troughs, tr_max_idx, grid_shape, max_mag=max_mag)
+        pk_avg_mag, _ = volume_average(g_lfp, t_p, peaks, pts_peaks, pk_max_idx, grid_shape, max_mag=max_mag)
+        ss.extend(pts_troughs + pts_peaks)
+        ss.append(tr_avg_mag + pk_avg_mag)
+
+    if additional_stats >= 4:
+        """Time of trough and peak propogation along y direction from the center to the break point"""
+        t_t_m = get_max_val_t(t_t, troughs, grid_shape)
+        t_p_m = get_max_val_t(t_p, peaks, grid_shape)
+        prop_pts_tr, prop_time_tr, prop_y2_tr = get_prop_time(t_t_m, tr_max_idx, pts_troughs)
+        prop_pts_pk, prop_time_pk, prop_y2_pk = get_prop_time(t_p_m, pk_max_idx, pts_peaks)
+        ss.extend(prop_pts_tr + prop_pts_pk)
+        ss.append(prop_time_tr + prop_time_pk)
+
+    if additional_stats >= 5:
+        """Statistics after logmodulus transform on LFP"""
+        n_fold = 31
+        ref_mag = max(troughs[max_idx], peaks[max_idx]) / n_fold
+        lfp_logmod = log_modulus(g_lfp, ref_mag)
+        log_avg = np.mean(lfp_logmod, axis=0)  # average voltage of each channel
+        log_std_dev = np.std(lfp_logmod, axis=0)  # stDev of the voltage of each channel
+        log_troughs = -np.take_along_axis(lfp_logmod, t_t[np.newaxis], axis=0).ravel()  # trough magnitude
+        log_peaks = np.take_along_axis(lfp_logmod, t_p[np.newaxis], axis=0).ravel()  # peak magnitude
+        log_stats_list = [log_avg, log_std_dev, log_troughs, log_peaks]
+        ss.extend([statscalc(x, grid_shape, include_max=False) for x in log_stats_list])
 
     return np.concatenate(ss)
 
-def statscalc(stats: np.ndarray, grid_shape: Tuple[int], include_min: bool = True) -> np.ndarray:
+def statscalc(stats: np.ndarray, grid_shape: Tuple[int],
+              include_min: bool = True, include_max: bool = True) -> np.ndarray:
     """
     Helper functions for calculating statistics across channels and searching for
     a specified height
@@ -206,15 +231,17 @@ def statscalc(stats: np.ndarray, grid_shape: Tuple[int], include_min: bool = Tru
     stats = stats.ravel()
     mean = np.mean(stats)
     std = np.std(stats)
-    max_channel_idx = np.argmax(stats)
-    max_channel_val = stats[max_channel_idx]
-    max_channel_idx_x, max_channel_idx_y = np.unravel_index(max_channel_idx, grid_shape)
-    all_stats = [mean, std, max_channel_idx_x, max_channel_idx_y, max_channel_val]
-    if include_min:
-        min_channel_idx = np.argmin(stats)
-        min_channel_val = stats[min_channel_idx]
-        min_channel_idx_x, min_channel_idx_y = np.unravel_index(min_channel_idx, grid_shape)
-        all_stats.extend((min_channel_idx_x, min_channel_idx_y, min_channel_val))
+    all_stats = [mean, std]
+    if include_max:
+        max_channel_idx = np.argmax(stats)
+        max_channel_val = stats[max_channel_idx]
+        max_channel_idx_x, max_channel_idx_y = np.unravel_index(max_channel_idx, grid_shape)
+        all_stats.extend([max_channel_idx_x, max_channel_idx_y, max_channel_val])
+        if include_min:
+            min_channel_idx = np.argmin(stats)
+            min_channel_val = stats[min_channel_idx]
+            min_channel_idx_x, min_channel_idx_y = np.unravel_index(min_channel_idx, grid_shape)
+            all_stats.extend((min_channel_idx_x, min_channel_idx_y, min_channel_val))
     return np.array(all_stats)
 
 def searchheights(lfp: np.ndarray, height: Union[float, int, np.ndarray], idx: int) -> Tuple[int, int]:
@@ -245,15 +272,26 @@ def half_height_width_wrt_y(lfp: np.ndarray, grid_shape: Tuple[int]) -> Tuple[in
 def get_tr_pk(g_lfp: np.ndarray) -> Tuple:
     t_t = np.argmin(g_lfp, axis=0)  # trough time
     t_p = np.argmax(g_lfp, axis=0)  # peak time
-    troughs = -np.take_along_axis(g_lfp, t_t[np.newaxis], axis=0)  # trough magnitude
-    peaks = np.take_along_axis(g_lfp, t_p[np.newaxis], axis=0)  # peak magnitude
+    troughs = -np.take_along_axis(g_lfp, t_t[np.newaxis], axis=0).ravel()  # trough magnitude
+    peaks = np.take_along_axis(g_lfp, t_p[np.newaxis], axis=0).ravel()  # peak magnitude
     return t_t, t_p, troughs, peaks
+
+def get_max_idx_x(m: np.ndarray) -> np.ndarray:
+    """Get index of maximum values of input m along x for each y"""
+    return np.argmax(m, axis=0)
 
 def get_max_val_y(m: np.ndarray, grid_shape: Tuple[int]) -> np.ndarray:
     """Get maximum values of input m along x for each y"""
     m = m.reshape(grid_shape)  # variable for each channel in 2D array
-    my = np.take_along_axis(m, np.argmax(m, axis=0)[np.newaxis], axis=0).ravel()
+    my = np.take_along_axis(m, get_max_idx_x(m)[np.newaxis], axis=0).ravel()
     return my
+
+def get_max_val_t(t, m: np.ndarray, grid_shape: Tuple[int]) -> np.ndarray:
+    """Get time of maximum values of input m along x for each y"""
+    t = t.reshape(grid_shape)
+    m = m.reshape(grid_shape)
+    mt = np.take_along_axis(t, get_max_idx_x(m)[np.newaxis], axis=0).ravel()
+    return mt
 
 def line(y, y1, w1, y2, w2):
     """Two-point form of a line"""
@@ -287,16 +325,18 @@ def get_decay(my, bound=7.0):
     for my_one_side in (my[max_idx::-1], my[max_idx:]):
         bounds = ((.1, .1, 1.), (bound, bound, min(my_one_side.size - 1, y2) - 1.))
         log_my = np.log(my_one_side[0]) - np.log(np.fmax(my_one_side, my_one_side[0] * np.exp(-bound)))  # e^-7 < 1/1000
-        pts, _ = curve_fit(fn, np.arange(my_one_side.size, dtype=float), log_my, p0=np.mean(np.array(bounds), axis=0), bounds=bounds,
+        pts, _ = curve_fit(fn, np.arange(my_one_side.size, dtype=float), log_my,
+                           p0=np.mean(np.array(bounds), axis=0), bounds=bounds,
                            method='dogbox', loss='huber', f_scale=bound / 2)
         PTS.append(pts)
         Lambda.append(pts[2] / pts[0])
         Slope.append(y2 / pts[1])
     return Lambda + Slope, PTS, max_idx
 
-def get_fit(my, PTS):
+def get_fit(my, PTS, max_idx=None):
     """Get fit lines and breakpoints index and magnitude (log scale)"""
-    max_idx = np.argmax(my)
+    if max_idx is None:
+        max_idx = np.argmax(my)
     log_max = np.log(my[max_idx])
     fn = lambda y, pts: log_max - two_line_segments(y, *pts, y2=np.floor(my.size / 2))
     w = (fn(np.arange(max_idx, 0, -1, dtype=float), PTS[0]), fn(np.arange(0, my.size - max_idx, dtype=float), PTS[1]))
@@ -332,6 +372,39 @@ def volume_average(lfp, t_m, m, PTS, max_idx, grid_shape, max_mag=None):
         brkpnt_idx.append((t, x, y))
     return avg_mag, brkpnt_idx
 
+def line2pt_func(y1, y2):
+    def line2pt(y, w1, w2):
+        return line(y, y1, w1, y2, w2)
+    return line2pt
+
+def get_prop_time(mt, max_idx, PTS, t_margin=0.2/params.DT):
+    side = np.array([-1, 1])
+    y1 = max_idx + side
+    y2 = max_idx + side * np.array([int(pts[2]) for pts in PTS])
+    TPTS = []
+    prop_time = []
+    for i in range(2):
+        y_dist = (y2[i] - y1[i]) * side[i]
+        if y_dist < 1:
+            y2[i] = y1[i] + 1 * side[i]
+        y_idx = np.arange(y1[i], y2[i] + side[i], side[i])
+        fn = line2pt_func(max_idx, y2[i])
+        pts, _ = curve_fit(fn, y_idx.astype(float), mt[y_idx],
+                           p0=mt[y_idx[[0, -1]]], bounds=(0, float(params.WINDOW_SIZE)),
+                           method='dogbox', loss='huber', f_scale=t_margin)
+        TPTS.append(pts)
+        prop_time.append((pts[1] - pts[0]) / y_dist)
+    return TPTS, prop_time, y2
+
+def get_prop_fit(max_idx, y2, TPTS):
+    side = np.array([-1, 1])
+    y_idx = []
+    time_lines = []
+    for i in range(2):
+        y_idx.append(np.arange(max_idx, y2[i] + side[i], side[i])[::side[i]])
+        time_lines.append(line(y_idx[i].astype(float), max_idx, TPTS[i][0], y2[i], TPTS[i][1]))
+    return np.concatenate(time_lines), np.concatenate(y_idx)
+
 def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np.ndarray:
     """
     Return indices of summary statistics that scales with LFP magnitude.
@@ -357,6 +430,10 @@ def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np
         n += 8
     if additional_stats >= 3:
         n += 16
+    if additional_stats >= 4:
+        n += 12
+    if additional_stats >= 5:
+        n += 8
     indices = np.array(indices)
     if boolean:
         indices_bool = np.full(n, False)

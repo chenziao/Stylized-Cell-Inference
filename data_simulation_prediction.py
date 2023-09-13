@@ -189,7 +189,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
 
     # Process LFP
     pad_spike_window = True
-    additional_stats = 3
+    additional_stats = 5
     bad_cases = tuple(range(-1 if pad_spike_window else 0, 4 if additional_stats > 1 else 3))
     if 'y' in inference_list:
         y_idx = inference_list.index('y')
