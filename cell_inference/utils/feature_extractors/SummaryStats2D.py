@@ -378,6 +378,7 @@ def line2pt_func(y1, y2):
     return line2pt
 
 def get_prop_time(mt, max_idx, PTS, t_margin=0.2/params.DT):
+    min_dist = 1
     side = np.array([-1, 1])
     y1 = max_idx + side
     y2 = max_idx + side * np.array([int(pts[2]) for pts in PTS])
@@ -385,8 +386,9 @@ def get_prop_time(mt, max_idx, PTS, t_margin=0.2/params.DT):
     prop_time = []
     for i in range(2):
         y_dist = (y2[i] - y1[i]) * side[i]
-        if y_dist < 1:
-            y2[i] = y1[i] + 1 * side[i]
+        if y_dist < min_dist:
+            y2[i] = y1[i] + min_dist * side[i]
+            y_dist = min_dist
         y_idx = np.arange(y1[i], y2[i] + side[i], side[i])
         fn = line2pt_func(max_idx, y2[i])
         pts, _ = curve_fit(fn, y_idx.astype(float), mt[y_idx],

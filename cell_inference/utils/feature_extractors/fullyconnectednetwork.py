@@ -28,7 +28,7 @@ class FullyConnectedNetwork(nn.Module):
         self.activation = activation_mapping[activation]
 
         if hidden_layer_size is None:
-            hidden_layer_size = [64, 124, 64, 32, 16]
+            hidden_layer_size = [124, 124, 64, 32, 16]
         if hasattr(hidden_layer_size, '__len__'):
             hidden_layers = len(hidden_layer_size)
         else:
