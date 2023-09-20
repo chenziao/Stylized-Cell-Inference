@@ -216,6 +216,24 @@ def calculate_stats(g_lfp: np.ndarray, additional_stats: int = 1,
         log_stats_list = [log_avg, log_std_dev, log_troughs, log_peaks]
         ss.extend([statscalc(x, grid_shape, include_max=False) for x in log_stats_list])
 
+    if additional_stats >= 6:
+        """Magnitude statistics of LFP divided into blocks along y direction"""
+        _, _, y_slices = get_coarse_grids(grid_shape, n_parts_y=4)
+        part_list = []
+        for stats in [avg, std_dev, log_avg, log_std_dev]:
+            g_stats = stats.reshape(grid_shape)
+            for y_slice in y_slices:
+                part_list.append(g_stats[:, y_slice])
+        ss.extend([statscalc(x, grid_shape, include_max=False) for x in part_list])
+
+    if additional_stats >= 7:
+        """Magnitude statistics of LFP divided into grids along t, x, y"""
+        slices = get_coarse_grids(grid_shape, t_edges=[0.25, 0.825, 1.25, 2, 3.5], n_parts_x=1, n_parts_y=4)
+        G_lfp = get_channel_in_grid(g_lfp, grid_shape, slices)
+        ss.extend([statscalc(G, grid_shape, include_max=False) for G in G_lfp])
+        G_lfp_log = get_channel_in_grid(lfp_logmod, grid_shape, slices)
+        ss.extend([statscalc(G, grid_shape, include_max=False) for G in G_lfp_log])
+
     return np.concatenate(ss)
 
 def statscalc(stats: np.ndarray, grid_shape: Tuple[int],
@@ -407,6 +425,24 @@ def get_prop_fit(max_idx, y2, TPTS):
         time_lines.append(line(y_idx[i].astype(float), max_idx, TPTS[i][0], y2[i], TPTS[i][1]))
     return np.concatenate(time_lines), np.concatenate(y_idx)
 
+def get_coarse_grids(grid_shape, t_edges=None, n_parts_x=None, n_parts_y=None):
+    t_grids = x_grids = y_grids = np.array([0, None])
+    if t_edges is not None:
+        t_grids = (np.asarray(t_edges) / params.DT).astype(int)
+    if n_parts_x is not None:
+        x_grids = np.round(np.linspace(0, grid_shape[0], n_parts_x + 1)).astype(int)
+    if n_parts_y is not None:
+        y_grids = np.round(np.linspace(0, grid_shape[1], n_parts_y + 1)).astype(int)
+    slices = []
+    for grids in [t_grids, x_grids, y_grids]:
+        slices.append([slice(grids[i], grids[i + 1]) for i in range(grids.size - 1)])
+    return slices
+
+def get_channel_in_grid(lfp, grid_shape, slices):
+    lfp = lfp.reshape(lfp.shape[0], grid_shape[0], grid_shape[1])
+    mesh_slices = np.meshgrid(*slices, indexing='ij')
+    return [lfp[t, x, y] for t, x, y in zip(*map(np.ravel, mesh_slices))]
+
 def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np.ndarray:
     """
     Return indices of summary statistics that scales with LFP magnitude.
@@ -436,6 +472,12 @@ def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np
         n += 12
     if additional_stats >= 5:
         n += 8
+    if additional_stats >= 6:
+        indices.extend(range(n, n + 16))
+        n += 32
+    if additional_stats >= 7:
+        indices.extend(range(n, n + 32))
+        n += 64
     indices = np.array(indices)
     if boolean:
         indices_bool = np.full(n, False)

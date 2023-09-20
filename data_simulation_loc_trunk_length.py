@@ -71,7 +71,7 @@ else:
 # In[4]:
 
 
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7'
 number_samples = number_cells * number_locs  # number of samples
 rand_seed = 0
 
@@ -305,7 +305,7 @@ else:
 
 
 pad_spike_window = True
-additional_stats = 5
+additional_stats = 7
 bad_cases = tuple(range(-1 if pad_spike_window else 0, 4 if additional_stats > 1 else 3))
 if 'y' in inference_list:
     y_idx = inference_list.index('y')

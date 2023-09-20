@@ -14,7 +14,7 @@
 START=$(date)
 
 unset DISPLAY
-python stylized_cell_NN_train.py -trial Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats -e 100 --train --rf
+python stylized_cell_NN_train.py -trial Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7 -e 100 --train --rf
 
 END=$(date)
 
