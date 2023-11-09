@@ -36,75 +36,27 @@ SPIKE_WINDOW = [-1.5, 4.] # spike time window for stochastic EAPs
 START_IDX = 320 # for passive model
 SOMA_INJECT_SCALING_FACTOR = 1085.  # 2.55
 
-# INFERENCE MODEL
-"""
-from sbi.utils.user_input_checks_utils import MultipleIndependent
-import pyro.distributions as dists
-import torch
-from cell_inference.utils.feature_extractors.SummaryNet import SummaryNet3D
-
-IM_Y_DISTANCE = ELECTRODE_POSITION[:, 1].ravel()
-IM_EMBEDDED_NETWORK = SummaryNet3D(IM_Y_DISTANCE.size, WINDOW_SIZE)
-IM_ALPHA_BOUNDS = [0, np.pi]
-
-IM_PARAMETER_BOUNDS = [
-    [torch.Tensor([-500]), torch.Tensor([500])],  # y
-    [torch.Tensor([20]), torch.Tensor([200])],  # d
-    [torch.Tensor([-(np.pi / 3)]), torch.Tensor([np.pi / 3])],  # theta
-    [torch.Tensor([-1]), torch.Tensor([1])],  # h
-    [torch.Tensor([0]), torch.Tensor([np.pi])],  # phi
-    [
-        torch.Tensor([(np.log(3) + np.log(12)) / 2]),
-        torch.Tensor([(np.log(12) - np.log(3)) / 6])
-    ],  # r_s
-    [torch.Tensor([20]), torch.Tensor([800])],  # l_t
-    [
-        torch.Tensor([(np.log(0.2) + np.log(1.0)) / 2]),
-        torch.Tensor([(np.log(1.0) - np.log(0.2)) / 4])
-    ],  # r_t
-    [
-        torch.Tensor([(np.log(0.2) + np.log(1.0)) / 2]),
-        torch.Tensor([(np.log(1.0) - np.log(0.2)) / 4])
-    ],  # r_d
-    [
-        torch.Tensor([(np.log(0.2) + np.log(1.0)) / 2]),
-        torch.Tensor([(np.log(1.0) - np.log(0.2)) / 4])
-    ],  # r_tu
-    [
-        torch.Tensor([(np.log(100) + np.log(300)) / 2]),
-        torch.Tensor([(np.log(300) - np.log(100)) / 4])
-    ]  # l_d
-]
-
-PRIOR_LIST = [
-    dists.Uniform(IM_PARAMETER_BOUNDS[0][0], IM_PARAMETER_BOUNDS[0][1]),        #y
-    dists.Uniform(IM_PARAMETER_BOUNDS[1][0], IM_PARAMETER_BOUNDS[1][1]),        #d
-    dists.Uniform(IM_PARAMETER_BOUNDS[2][0], IM_PARAMETER_BOUNDS[2][1]),        #theta
-    dists.Uniform(IM_PARAMETER_BOUNDS[3][0], IM_PARAMETER_BOUNDS[3][1]),  # h
-    dists.Uniform(IM_PARAMETER_BOUNDS[4][0], IM_PARAMETER_BOUNDS[4][1]),        #phi
-    dists.LogNormal(IM_PARAMETER_BOUNDS[5][0], IM_PARAMETER_BOUNDS[5][1]),  # r_s
-    dists.Uniform(IM_PARAMETER_BOUNDS[6][0], IM_PARAMETER_BOUNDS[6][1]),  # l_t
-    dists.LogNormal(IM_PARAMETER_BOUNDS[7][0], IM_PARAMETER_BOUNDS[7][1]),      #r_t
-    dists.LogNormal(IM_PARAMETER_BOUNDS[8][0], IM_PARAMETER_BOUNDS[8][1]),      #r_d
-    dists.LogNormal(IM_PARAMETER_BOUNDS[9][0], IM_PARAMETER_BOUNDS[9][1]),      #r_tu
-    dists.LogNormal(IM_PARAMETER_BOUNDS[10][0], IM_PARAMETER_BOUNDS[10][1]),    #l_d
-]
-
-IM_PRIOR_DISTRIBUTION = MultipleIndependent(PRIOR_LIST, validate_args=False)
-
-IM_PARAMETER_LOWS = torch.tensor([b[0] for b in IM_PARAMETER_BOUNDS], dtype=float)
-IM_PARAMETER_HIGHS = torch.tensor([b[1] for b in IM_PARAMETER_BOUNDS], dtype=float)
-IM_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
-IM_LOC_PRIOR_DISTRIBUTION = utils.BoxUniform(low=IM_PARAMETER_LOWS, high=IM_PARAMETER_HIGHS)
-IM_GEO_PRIOR_DISTRIBUTION = MultivariateNormal(loc=torch.zeros(6), covariance_matrix=torch.diag(torch.ones(6)))
-IM_PRIOR_DISTRIBUTION = StackedDistribution(IM_LOC_PRIOR_DISTRIBUTION, IM_GEO_PRIOR_DISTRIBUTION)
-
-IM_RANDOM_SAMPLE = IM_PRIOR_DISTRIBUTION.sample()
-IM_NUMBER_OF_ROUNDS = 1
-IM_NUMBER_OF_SIMULATIONS = 500
-IM_POSTERIOR_MODEL_ESTIMATOR = 'maf'
-IM_POSTERIOR_MODEL_HIDDEN_LAYERS = 12
-IM_SAVE_X0 = None
-IM_GRAPHING_LABELS = [r'y', r'd', r'theta', r'h', r'$\phi$', r'soma radius', r'trunk length', r'trunk radius',
-                      r'basal radius', r'tuft radius', r'basal length']
-"""
+# SUMMARY STATISTICS LIST
+SUMM_STATS_NAMES = np.array([
+    'avg_mean', 'avg_std', 'avg_max_idx_x', 'avg_max_idx_y', 'avg_max_val', 'avg_min_idx_x', 'avg_min_idx_y', 'avg_min_val', # 8
+    't_tr_mean', 't_tr_std', 't_tr_max_idx_x', 't_tr_max_idx_y', 't_tr_max_val', 't_tr_min_idx_x', 't_tr_min_idx_y', 't_tr_min_val', # 16
+    't_pk_mean', 't_pk_std', 't_pk_max_idx_x', 't_pk_max_idx_y', 't_pk_max_val', 't_pk_min_idx_x', 't_pk_min_idx_y', 't_pk_min_val', # 24
+    'stdev_mean', 'stdev_std', 'stdev_max_idx_x', 'stdev_max_idx_y', 'stdev_max_val', # 29
+    'tr_mean', 'tr_std', 'tr_max_idx_x', 'tr_max_idx_y', 'tr_max_val', # 34
+    'pk_mean', 'pk_std', 'pk_max_idx_x', 'pk_max_idx_y', 'pk_max_val', # 39
+    't0', 't1', 't2', 't0_half_l_idx_y', 't0_half_r_idx_y', 't2_half_l_idx_y', 't2_half_r_idx_y', 't1_max_idx_y', 't1_min_idx_y', # 48
+    'tr_lambda_l', 'tr_lambda_r', 'tr_slope_l', 'tr_slope_r', # 52
+    'pk_lambda_l', 'pk_lambda_r', 'pk_slope_l', 'pk_slope_r', # 56
+    'tr_l_w1', 'tr_l_w2', 'tr_l_y1', 'tr_r_w1', 'tr_r_w2', 'tr_r_y1', # 62
+    'pk_l_w1', 'pk_l_w2', 'pk_l_y1', 'pk_r_w1', 'pk_r_w2', 'pk_r_y1', # 68
+    'tr_l_avg_mag', 'tr_r_avg_mag', 'pk_l_avg_mag', 'pk_r_avg_mag', # 72
+    'tr_l_t1', 'tr_l_t2', 'tr_r_t1', 'tr_r_t2', # 76
+    'pk_l_t1', 'pk_l_t2', 'pk_r_t1', 'pk_r_t2', # 80
+    'tr_l_tprop', 'tr_r_tprop', 'pk_l_tprop', 'pk_r_tprop', # 84
+    'log_avg_mean', 'log_avg_std', 'log_stdev_mean', 'log_stdev_std', # 88
+    'log_tr_mean', 'log_tr_std', 'log_pk_mean', 'log_pk_std', # 92
+    'avg_mean_p1', 'avg_std_p1', 'avg_mean_p2', 'avg_std_p2', 'avg_mean_p3', 'avg_std_p3', 'avg_mean_p4', 'avg_std_p4', # 100
+    'stdev_mean_p1', 'stdev_std_p1', 'stdevg_mean_p2', 'stdev_std_p2', 'stdev_mean_p3', 'stdev_std_p3', 'stdev_mean_p4', 'stdev_std_p4', # 108
+    'log_avg_mean_p1', 'log_avg_std_p1', 'log_avg_mean_p2', 'log_avg_std_p2', 'log_avg_mean_p3', 'log_avg_std_p3', 'log_avg_mean_p4', 'log_avg_std_p4', # 116
+    'log_stdev_mean_p1', 'log_stdev_std_p1', 'log_stdev_mean_p2', 'log_stdev_std_p2', 'log_stdev_mean_p3', 'log_stdev_std_p3', 'log_stdev_mean_p4', 'log_stdev_std_p4', # 124
+])

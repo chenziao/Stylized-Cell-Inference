@@ -44,7 +44,7 @@ batch_id = 0
 number_cells = 2  # number of neurons
 number_locs = 2  # number of locations for each neuron
 
-if not hasattr(__main__, 'get_ipython'):
+if not 'get_ipython' in globals():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('batch_id', type=int, nargs='?', default=None, help="Batch ID", metavar='Batch ID')

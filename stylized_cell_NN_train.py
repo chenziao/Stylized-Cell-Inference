@@ -12,7 +12,6 @@ import h5py
 import json
 import os
 from IPython.display import display
-import __main__
 
 from cell_inference.config import paths, params
 from cell_inference.utils.transform.geometry_transformation import hphi2unitsphere, unitsphere2hphi, trivarnorm2unitsphere
@@ -27,7 +26,7 @@ epochs = 100
 TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7'
 STATS_SET = None
 
-if not hasattr(__main__, 'get_ipython'):
+if not 'get_ipython' in globals():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', action='store_true', help="Train model")
