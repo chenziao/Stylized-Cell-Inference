@@ -44,11 +44,10 @@ def generate_parameters_from_config(config: Dict):
     """ Generate parameters from configuration dictionary """
     tr_p = config['Trial_Parameters']
     sim_p = config['Simulation_Parameters']
-    n_sigma = sim_p.get('n_sigma')
-    if n_sigma is None: n_sigma = 3.0
-    batch_id = sim_p.get('batch_id')
-    if batch_id is None: batch_id = 0
-    rpg = Random_Parameter_Generator(seed=tr_p['rand_seed'] + batch_id, n_sigma=n_sigma)
+    rand_seed = tr_p.get('rand_seed', 0)
+    n_sigma = sim_p.get('n_sigma', 3.0)
+    batch_id = sim_p.get('batch_id', 0)
+    rpg = Random_Parameter_Generator(seed=rand_seed + batch_id, n_sigma=n_sigma)
     
     # Location paramters
     loc_param_gen = sim_p['loc_param_list'].copy()
@@ -92,9 +91,9 @@ def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, num
     """ Generate parameters from configuration and prediction dictionary """
     tr_p = config['Trial_Parameters']
     sim_p = config['Simulation_Parameters']
-    n_sigma = sim_p.get('n_sigma')
-    if n_sigma is None: n_sigma = 3.0
-    rpg = Random_Parameter_Generator(seed=tr_p['rand_seed'], n_sigma=n_sigma)
+    rand_seed = tr_p.get('rand_seed', 0)
+    n_sigma = sim_p.get('n_sigma', 3.0)
+    rpg = Random_Parameter_Generator(seed=rand_seed, n_sigma=n_sigma)
 
     # Clip predicted parameters
     pred_param = {}
