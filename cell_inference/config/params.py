@@ -60,3 +60,12 @@ SUMM_STATS_NAMES = np.array([
     'log_avg_mean_p1', 'log_avg_std_p1', 'log_avg_mean_p2', 'log_avg_std_p2', 'log_avg_mean_p3', 'log_avg_std_p3', 'log_avg_mean_p4', 'log_avg_std_p4', # 116
     'log_stdev_mean_p1', 'log_stdev_std_p1', 'log_stdev_mean_p2', 'log_stdev_std_p2', 'log_stdev_mean_p3', 'log_stdev_std_p3', 'log_stdev_mean_p4', 'log_stdev_std_p4', # 124
 ])
+# additional_stats 7
+def additional_stats_7():
+    n_parts_t, n_parts_y = 4, 4
+    mag_scale = ['linear', 'log']
+    stats_type = ['avg', 'stdev']
+    mesh_parts = np.meshgrid(mag_scale, range(1, n_parts_t + 1), range(1, n_parts_y + 1), stats_type, indexing='ij')
+    stats_grid = [log + '_' + st + f'_t{pt:d}_y{py:d}' for log, pt, py, st in zip(*map(np.ravel, mesh_parts))]
+    return stats_grid
+SUMM_STATS_NAMES = np.concatenate((SUMM_STATS_NAMES, additional_stats_7()))

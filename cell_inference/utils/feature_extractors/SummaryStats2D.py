@@ -457,11 +457,12 @@ def scaled_stats_indices(boolean: bool = False, additional_stats: int = 1) -> np
     scale_stats = np.array([1, 0, 0, 1, 1, 1], dtype=bool)  # whether stats (for each channel) in the list scales
     n = 0
     indices = []
-    for i, scale in enumerate(scale_stats):
-        if scale:
-            for j in stats_idx(i < i_min):
-                indices.append(n + j)
-        n += n_stats(i < i_min)
+    if additional_stats >= 0:
+        for i, scale in enumerate(scale_stats):
+            if scale:
+                for j in stats_idx(i < i_min):
+                    indices.append(n + j)
+            n += n_stats(i < i_min)
     if additional_stats >= 1:
         n += 9
     if additional_stats >= 2:

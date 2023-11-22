@@ -6,6 +6,7 @@ from cell_inference.utils.transform.geometry_transformation import pol2cart
 class Random_Parameter_Generator(object):
     def __init__(self, seed: Optional[int] = None, n_sigma: float = 3.0 ):
         """ Random simulation parameter generator """
+        print(f'Generator random seed: {seed:d}')
         self.rng = np.random.default_rng(seed)
         self.n_sigma = n_sigma
 
@@ -45,8 +46,8 @@ def generate_parameters_from_config(config: Dict):
     tr_p = config['Trial_Parameters']
     sim_p = config['Simulation_Parameters']
     rand_seed = tr_p.get('rand_seed', 0)
+    batch_id = tr_p.get('batch_id', 0)
     n_sigma = sim_p.get('n_sigma', 3.0)
-    batch_id = sim_p.get('batch_id', 0)
     rpg = Random_Parameter_Generator(seed=rand_seed + batch_id, n_sigma=n_sigma)
     
     # Location paramters
