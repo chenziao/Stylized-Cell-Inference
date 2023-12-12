@@ -20,11 +20,11 @@ from cell_inference.utils.feature_extractors.SummaryStats2D import GRID_SHAPE
 from cell_inference.utils.data_manager import NpzFilesCollector
 
 isCNN = True
-isRF = True
+isRF = False
 isTrain = False
-epochs = 100
+epochs = 150
 TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7'
-STATS_SET = None
+STATS_SET = 'FullStats5'
 
 if not 'get_ipython' in globals():
     import argparse
@@ -96,31 +96,25 @@ print(inference_list)
 
 # ### Select summary statistics
 
-# In[7]:
+# In[3]:
 
 
-create_new_set = True
-
-if STATS_SET is None:
-    if create_new_set:
-        stats_set_name = 'GridStats'
-        summ_stats_id = np.arange(124, 188)
-        np.savetxt(os.path.join(TRIAL_PATH, stats_set_name + '_id.txt'), summ_stats_id, fmt='%d')
+if not isCNN:
+    if STATS_SET is None:
+            stats_set_name = ''
+            summ_stats_id = slice(None)
     else:
-        stats_set_name = ''
-        summ_stats_id = slice(None)
-else:
-    stats_set_name = STATS_SET
-    summ_stats_id = np.loadtxt(os.path.join(TRIAL_PATH, stats_set_name + '_id.txt'), dtype=int)
+        stats_set_name = STATS_SET
+        summ_stats_id = np.loadtxt(os.path.join(TRIAL_PATH, stats_set_name + '_id.txt'), dtype=int)
 
-summ_stats = summ_stats[:, summ_stats_id]
+    summ_stats = summ_stats[:, summ_stats_id]
 
 
 # ### Transform labels
 
 # #### Orientation
 
-# In[5]:
+# In[4]:
 
 
 check_orient = 'h' in inference_list and 'phi' in inference_list
@@ -152,7 +146,7 @@ if direction_vec:
 
 # #### y shift
 
-# In[6]:
+# In[5]:
 
 
 has_yshift = 'y' in label_list and ys.size != 0
@@ -173,7 +167,7 @@ with pd.option_context('display.max_rows',10):
 
 # #### Set bounds for y shift
 
-# In[7]:
+# In[6]:
 
 
 if has_yshift:
@@ -186,7 +180,7 @@ print(json.dumps(ranges))
 
 # #### Normalization
 
-# In[8]:
+# In[7]:
 
 
 feature_range = (-1, 1)
@@ -203,7 +197,7 @@ with pd.option_context('display.max_rows',10):
 
 # ## Build model
 
-# In[9]:
+# In[8]:
 
 
 if isCNN:
@@ -219,7 +213,7 @@ if isCNN:
     lfp_trans = lfp_trans.reshape(lfp_trans.shape[:3] + (GRID_SHAPE[0], -1))
 
 
-# In[10]:
+# In[9]:
 
 
 if isRF:
@@ -244,8 +238,9 @@ else:
         from cell_inference.utils.feature_extractors.fullyconnectednetwork import FullyConnectedNetwork, ActivationTypes
         model_name = 'FCN'
         model = FullyConnectedNetwork(in_features=summ_stats.shape[1], out_features=len(label_list))
+#     model_name += f'_batch{batch_size: d}'
 
-if not isCNN:
+if not isCNN and stats_set_name:
     model_name += '_' + stats_set_name
 
 if direction_vec:
@@ -261,7 +256,7 @@ SAVE_PATH = os.path.join(MODEL_PATH, model_name + '.txt')
 
 # ## Train model
 
-# In[11]:
+# In[10]:
 
 
 train_size = 0.8
@@ -292,7 +287,7 @@ else:
             f.writelines(s + '\n' for s in files)
 
 
-# In[12]:
+# In[11]:
 
 
 if not isRF:
@@ -315,7 +310,7 @@ if not isRF:
 
 # ### Perform on stylized model
 
-# In[13]:
+# In[12]:
 
 
 from sklearn.metrics import r2_score, mean_squared_error
@@ -361,7 +356,7 @@ for i, p in enumerate(display_list):
     print('{:10} {:.3f}'.format(p+',', r2_score(y[:, i], output[:, i])))
 
 
-# In[14]:
+# In[13]:
 
 
 nlb = len(display_list)
@@ -392,7 +387,7 @@ if isTrain:
 
 # #### Check prediction on orientation
 
-# In[15]:
+# In[14]:
 
 
 if check_orient:

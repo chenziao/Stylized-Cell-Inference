@@ -57,7 +57,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     except:
         pass
     h.dt = params.DT
-    h.steps_per_ms = 1/h.dt
+    h.steps_per_ms = 1 / h.dt
     geo_standard = pd.read_csv(paths.GEO_REDUCED_ORDER, index_col='id')
 
     ## Select cells for batch
@@ -79,41 +79,36 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     ## Set up simulation parameters
     inference_list = config_dict['Trial_Parameters']['inference_list']
     rand_seed = config_dict['Trial_Parameters']['rand_seed'] if rand_seed is None else int(rand_seed)
-    sim_param = config_dict['Simulation_Parameters']
-    syn_params = {}
+    sim_p = config_dict['Simulation_Parameters']
 
     # Simulation parameters
-    simulation_class = sim_param.get('simulation_class', 'Simulation')
-    h.tstop = sim_param.get('tstop', params.DT)
+    simulation_class = sim_p.get('simulation_class', 'Simulation')
+    h.tstop = sim_p.get('tstop', getattr(params, 'TSTOP' if simulation_class == 'Simulation' else 'STOCHASTIC_TSTOP'))
 
     # Synapse parameters
-    if sim_param.get('gmax_mapping') is None:
-        syn_params['gmax'] = sim_param.get('gmax')
+    if simulation_class == 'Simulation':
+        syn_params = dict(stim_param={}, gmax_mapping=None, gmax=None, syn_sec=0, syn_loc=.5)
+    elif simulation_class == 'Simulation_stochastic':
+        syn_params = dict(tstart=params.TSTART, point_conductance_division={},
+                          dens_params={}, cnst_params={}, has_nmda=True, lornomal_gfluct=False)
     else:
-        pass # TODO
-    syn_params['syn_sec'] = sim_param.get('syn_sec', 0)
-    syn_params['syn_loc'] = sim_param.get('syn_loc', .5)
-    syn_params['stim_param'] = sim_param.get('stim_param', {})
-
-    syn_params['tstart'] = sim_param.get('tstart')
-    syn_params['point_conductance_division'] = sim_param.get('point_conductance_division')
-    syn_params['dens_params'] = sim_param.get('dens_params')
-    syn_params['cnst_params'] = sim_param.get('cnst_params')
-    syn_params['has_nmda'] = sim_param.get('has_nmda', True)
-    syn_params['lornomal_gfluct'] = sim_param.get('lornomal_gfluct', False)
+        raise ValueError('Simulation class does not exist')
+    syn_params = {key: sim_p.get(key, value) for key, value in syn_params.items()}
+    if simulation_class == 'Simulation' and sim_p.get('gmax_mapping') is not None:
+        pass  # TODO
 
     # Biophysical parameters
-    filepath = sim_param.get('full_biophys')
+    filepath = sim_p.get('full_biophys')
     with open(filepath) as f:
         full_biophys = json.load(f)
 
     # Common parameters
-    biophys_param = sim_param.get('biophys_param', [])
-    biophys_comm = sim_param.get('biophys_comm', {})
+    biophys_param = sim_p.get('biophys_param', [])
+    biophys_comm = sim_p.get('biophys_comm', {})
 
     # Whether use parameter interpreter
-    interpret_params = sim_param.get('interpret_params', False)
-    interpret_type = sim_param.get('interpret_type', 0)
+    interpret_params = sim_p.get('interpret_params', False)
+    interpret_type = sim_p.get('interpret_type', 0)
 
     gen_params = generate_predicted_parameters_from_config(config_dict, pred_dict, number_locs=number_locs)
     labels, rand_param, loc_param, geo_param = [x[cell_index] for x in gen_params]
@@ -224,7 +219,7 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     good_indices = np.sort([i for bad, indices in bad_indices.items() if bad<=0 for i in indices])
     print('%d good samples out of %d samples.' % (good_count, number_samples))
     for bad, indices in bad_indices.items():
-        print('Bad case %d bad: %d samples.' % (bad, len(indices)))
+        print('Bad case %d: %d samples.' % (bad, len(indices)))
 
     # Save result data
     np.savez(add_batch_id(PRED_LFP_PATH, batch_suf), t=t, x=windowed_lfp, y=labels, ys=yshift,

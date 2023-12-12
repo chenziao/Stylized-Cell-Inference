@@ -14,7 +14,6 @@ import h5py
 import json
 import os
 from tqdm import tqdm
-import __main__
 
 from cell_inference.config import paths, params
 from cell_inference.cells.simulation import SIMULATION_CLASS
@@ -26,23 +25,24 @@ from cell_inference.utils.plotting.plot_results import plot_lfp_traces, plot_lfp
 
 h.load_file('stdrun.hoc')
 h.nrn_load_dll(paths.COMPILED_LIBRARY_REDUCED_ORDER)
-h.tstop = params.TSTOP
 h.dt = params.DT
-h.steps_per_ms = 1/h.dt
+h.steps_per_ms = 1 / h.dt
 
 geo_standard = pd.read_csv(paths.GEO_REDUCED_ORDER, index_col='id')
 
 
 # ## Set up configuration
 
-# #### Set batch
+# #### Set input parameters
 
-# In[2]:
+# In[3]:
 
 
 batch_id = 0
 number_cells = 2  # number of neurons
 number_locs = 2  # number of locations for each neuron
+rand_seed = 0  # random seed
+CONFIG_PATH = None  # load from config file if specified
 
 if not 'get_ipython' in globals():
     import argparse
@@ -50,13 +50,19 @@ if not 'get_ipython' in globals():
     parser.add_argument('batch_id', type=int, nargs='?', default=None, help="Batch ID", metavar='Batch ID')
     parser.add_argument('-c', type=int, nargs='?', default=number_cells, help="Number of cells", metavar='# Cells')
     parser.add_argument('-l', type=int, nargs='?', default=number_locs, help="Number of locations", metavar='# Locations')
+    parser.add_argument('-seed', type=int, nargs='?', default=rand_seed, help="Random Seed", metavar='Random Seed')
+    parser.add_argument('-config', type=str, nargs='?', default=CONFIG_PATH, help="Configuration file path", metavar='Config File')
     args = parser.parse_args()
     batch_id = args.batch_id
     number_cells = args.c
     number_locs = args.l
+    rand_seed = args.seed
+    CONFIG_PATH = args.config
+else:
+    get_ipython().run_line_magic('matplotlib', 'inline')
 
 
-# In[3]:
+# In[4]:
 
 
 if batch_id is None:
@@ -66,44 +72,51 @@ else:
     batch_suf = '_%d' % batch_id
 
 
+# In[6]:
+
+
+# load from config file if specified
+use_config = CONFIG_PATH is not None
+if use_config:
+    with open(CONFIG_PATH, 'r') as f:
+        config_dict = json.load(f)
+
+
 # #### Trial configurations
-
-# In[4]:
-
-
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7'
-number_samples = number_cells * number_locs  # number of samples
-rand_seed = 0
-
-inference_list = ['y', 'd', 'theta', 'l_t', 'lr_pt', 'r_t', 'rr_dt']  # can use d, theta instead of x, z to represent location
-randomized_list = ['alpha']  # randomized parameters not to inferred
-randomized_list += inference_list
-# parameters not in the two lists above are fixed at default.
-
-
-# #### Simulation configurations
 
 # In[5]:
 
 
-loc_param_list = ['x', 'y', 'z', 'alpha', 'h', 'phi']
-geo_param_list = ['l_t', 'lr_pt', 'r_t', 'rr_dt']
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7'
 
-loc_param_default = {'x': 0., 'y': 0., 'z': 50., 
-                     'alpha': np.pi/4, 'h': 1., 'phi': 0.}
-loc_param_default['d'], loc_param_default['theta'] = cart2pol(loc_param_default['x'], loc_param_default['z'])
-geo_param_default = {'l_t': 950., 'lr_pt': 0.142, 'r_t': 1.0, 'rr_dt': 0.59}
+DATA_PATH = paths.SIMULATED_DATA_PATH
+TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
 
-loc_param_range = {'x': (-50, 50), 'y': (-750., 750.), 'z': (50., 200.), 
-                   'alpha': (0, np.pi), 'h': (.7071, 1.) ,'phi': (-np.pi, np.pi), 
-                   'd': (50., 200.), 'theta': (-np.pi/3, np.pi/3)}
-geo_param_range = {'l_t': (100., 1200.), 'lr_pt': (0.02, 0.35), 'r_t': (0.4, 1.5), 'rr_dt': (0.4, 0.8)}
+CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
+LFP_PATH = os.path.join(TRIAL_PATH, 'lfp' + batch_suf)  # LFP and labels
+STATS_PATH = os.path.join(TRIAL_PATH, 'summ_stats' + batch_suf)  # summary statistics
+MEM_VOLT_PATH = os.path.join(TRIAL_PATH, 'mem_volt' + batch_suf)  # membrane voltage and spike times
 
-loc_param_dist = {'x': 'unif', 'y': 'unif', 'z': 'unif', 
-                  'alpha': 'unif', 'h': 'unif','phi': 'unif', 'd': 'unif', 'theta': 'norm'}
-geo_param_dist = {'l_t': 'unif', 'lr_pt': 'unif', 'r_t': 'unif', 'rr_dt': 'unif'}
 
-n_sigma = 3.  # range parameter for normal type distributions
+# In[4]:
+
+
+if use_config:
+    tr_p = config_dict['Trial_Parameters']
+    number_cells = tr_p.get('number_cells', number_cells)
+    number_locs = tr_p.get('number_locs', number_locs)
+    number_samples = tr_p.get('number_samples', number_cells * number_locs)
+    rand_seed = tr_p.get('rand_seed', rand_seed)
+    inference_list = tr_p['inference_list']
+    randomized_list = tr_p['randomized_list']
+    tr_p['batch_id'] = batch_id
+else:
+    number_samples = number_cells * number_locs  # number of samples
+
+    inference_list = ['y', 'd', 'theta', 'l_t', 'lr_pt', 'r_t', 'rr_dt']  # can use d, theta instead of x, z to represent location
+    randomized_list = ['alpha']  # randomized parameters not to inferred
+    randomized_list += inference_list
+    # parameters not in the two lists above are fixed at default.
 
 
 # #### Synapse parameters
@@ -111,37 +124,47 @@ n_sigma = 3.  # range parameter for normal type distributions
 # In[6]:
 
 
-simulation_class = 'Simulation_stochastic' # 'Simulation_stochastic'
-syn_params = {}
-if simulation_class == 'Simulation_stochastic':
-    h.tstop = 2000.
-    tstart = 200.
-    point_conductance_division = {'soma': [0], 'perisomatic': [1,4], 'basal': [2,3], 'apical': [7,8,9,10]}
-    dens_params = {
-        'soma': {'g_e0': 0., 'g_i0': 24e-5, 'std_e': 1., 'std_i': 1.5},
-        'perisomatic': {'g_e0': 0., 'g_i0': 6e-5, 'std_e': 1., 'std_i': 1.5},
-        'basal': {'g_e0': 1.9e-5, 'g_i0': 2.45e-5, 'std_e': 3.4, 'std_i': 2.},
-        'apical': {'g_e0': 1.35e-5, 'g_i0': 1e-5, 'std_e': 4., 'std_i': 3.}
-    }
-    cnst_params = {'tau_e': 2., 'tau_i': 10., 'tau_n': 40.}
-    has_nmda = True
-    lornomal_gfluct = False
-    syn_params = {
-        'tstart': tstart, 'point_conductance_division': point_conductance_division,
-        'dens_params': dens_params, 'cnst_params': cnst_params,
-        'has_nmda': has_nmda, 'lornomal_gfluct': lornomal_gfluct
-    }
+simulation_class = 'Simulation_stochastic' # 'Simulation_stochastic' or 'Simulation'
+if use_config:
+    sim_p = config_dict['Simulation_Parameters']
+    simulation_class = sim_p.get('simulation_class', simulation_class)
+    h.tstop = sim_p['tstop']
 else:
-    stim_param = params.STIM_PARAM
-    # Fixed gmax, not using gmax mapping file
-    gmax_mapping = None
-    gmax = [[0.005, 0.05]]
-    syn_sec = [0, 8]
-    syn_loc = .5
-    syn_params = {
-        'stim_param': stim_param, 'gmax_mapping': gmax_mapping,
-        'gmax': gmax, 'syn_sec': syn_sec, 'syn_loc': syn_loc
-    }
+    h.tstop = getattr(params, 'TSTOP' if simulation_class == 'Simulation' else 'STOCHASTIC_TSTOP')
+
+if simulation_class == 'Simulation':
+    syn_params = dict(
+        stim_param = params.STIM_PARAM,
+        gmax_mapping = None,  # Fixed gmax, not using gmax mapping file
+        gmax = [[0.005, 0.05]],
+        syn_sec = [0, 8],
+        syn_loc = .5
+    )
+elif simulation_class == 'Simulation_stochastic':
+    syn_params = dict(
+        tstart = params.TSTART,
+        point_conductance_division = {'soma': [0], 'perisomatic': [1,4], 'basal': [2,3], 'apical': [7,8,9,10]},
+        dens_params = {
+            'soma': {'g_e0': 0., 'g_i0': 24e-5, 'std_e': 1., 'std_i': 1.5},
+            'perisomatic': {'g_e0': 0., 'g_i0': 6e-5, 'std_e': 1., 'std_i': 1.5},
+            'basal': {'g_e0': 1.9e-5, 'g_i0': 2.45e-5, 'std_e': 3.4, 'std_i': 2.},
+            'apical': {'g_e0': 1.35e-5, 'g_i0': 1e-5, 'std_e': 4., 'std_i': 3.}
+        },
+        cnst_params = {'tau_e': 2., 'tau_i': 10., 'tau_n': 40.},
+        has_nmda = True,
+        lornomal_gfluct = False
+    )
+else:
+    raise ValueError('Simulation class does not exist')
+
+if use_config:
+    if simulation_class == 'Simulation' and sim_p.get('gmax_mapping') is not None:
+        pass  # TODO
+    for key in syn_params:
+        if key in sim_p:
+            syn_params[key] = sim_p[key]
+        else:
+            sim_p[key] = syn_params[key]
 
 
 # #### Fixed biophysical parameters
@@ -152,41 +175,71 @@ else:
 # Biophysical parameters
 filepath = './cell_inference/resources/biophys_parameters/ReducedOrderL5_stochastic.json' # active dendrites
 # filepath = './cell_inference/resources/biophys_parameters/ReducedOrderL5.json' # higer gNa dendrites
-with open(filepath) as f:
-    full_biophys = json.load(f)
 
-# common parameters
+# Common parameters
 biophys_param = [2.04, 0.0213 * 0.6, 0.0213 * 0.6, 0.693 * 2, 0.000261 * 2, 100., 100., 0.0000525, 0.000555, 0.0187,
                 np.nan, np.nan, np.nan, np.nan, .6, 2.4]
 biophys_comm = {}
 
-# whether use parameter interpreter
+# Whether use parameter interpreter
 interpret_params = True
 interpret_type = 3
+
+if use_config:
+    filepath = sim_p.get('full_biophys')
+    biophys_param = sim_p.get('biophys_param', biophys_param)
+    biophys_comm = sim_p.get('biophys_comm', biophys_comm)
+    interpret_params = sim_p.get('interpret_params', interpret_params)
+    interpret_type = sim_p.get('interpret_type', interpret_type)
+
+with open(filepath) as f:
+    full_biophys = json.load(f)
 
 
 # ### Create configuration dictionary
 
-# In[8]:
+# In[5]:
 
 
-config_dict = { 
-    'Trial_Parameters': {
-        'number_cells': number_cells, 'number_locs': number_locs, 
-        'number_samples': number_samples, 'rand_seed': rand_seed, 'batch_id': batch_id,
-        'inference_list': inference_list, 'randomized_list': randomized_list
-    }, 
-    'Simulation_Parameters': {
-        'loc_param_list': loc_param_list, 'geo_param_list': geo_param_list, 
-        'loc_param_default': loc_param_default, 'geo_param_default': geo_param_default, 
-        'loc_param_range': loc_param_range, 'geo_param_range': geo_param_range, 
-        'loc_param_dist': loc_param_dist, 'geo_param_dist': geo_param_dist,
-        'n_sigma': n_sigma, 'simulation_class': simulation_class, 'tstop': h.tstop,
-        'full_biophys': filepath, 'biophys_param': biophys_param, 'biophys_comm': biophys_comm,
-        'interpret_params': interpret_params, 'interpret_type': interpret_type
+if not use_config:
+    # Simulation configurations
+    loc_param_list = ['x', 'y', 'z', 'alpha', 'h', 'phi']
+    geo_param_list = ['l_t', 'lr_pt', 'r_t', 'rr_dt']
+
+    loc_param_default = {'x': 0., 'y': 0., 'z': 50., 
+                         'alpha': np.pi/4, 'h': 1., 'phi': 0.}
+    loc_param_default['d'], loc_param_default['theta'] = cart2pol(loc_param_default['x'], loc_param_default['z'])
+    geo_param_default = {'l_t': 950., 'lr_pt': 0.142, 'r_t': 1.0, 'rr_dt': 0.59}
+
+    loc_param_range = {'x': (-50, 50), 'y': (-750., 750.), 'z': (50., 200.), 
+                       'alpha': (0, np.pi), 'h': (.7071, 1.) ,'phi': (-np.pi, np.pi), 
+                       'd': (50., 200.), 'theta': (-np.pi/3, np.pi/3)}
+    geo_param_range = {'l_t': (100., 1200.), 'lr_pt': (0.02, 0.35), 'r_t': (0.4, 1.5), 'rr_dt': (0.4, 0.8)}
+
+    loc_param_dist = {'x': 'unif', 'y': 'unif', 'z': 'unif', 
+                      'alpha': 'unif', 'h': 'unif','phi': 'unif', 'd': 'unif', 'theta': 'norm'}
+    geo_param_dist = {'l_t': 'unif', 'lr_pt': 'unif', 'r_t': 'unif', 'rr_dt': 'unif'}
+
+    n_sigma = 3.  # range parameter for normal type distributions
+
+    # Create configuration dictionary
+    config_dict = { 
+        'Trial_Parameters': {
+            'number_cells': number_cells, 'number_locs': number_locs, 
+            'number_samples': number_samples, 'rand_seed': rand_seed, 'batch_id': batch_id,
+            'inference_list': inference_list, 'randomized_list': randomized_list
+        }, 
+        'Simulation_Parameters': {
+            'loc_param_list': loc_param_list, 'geo_param_list': geo_param_list, 
+            'loc_param_default': loc_param_default, 'geo_param_default': geo_param_default, 
+            'loc_param_range': loc_param_range, 'geo_param_range': geo_param_range, 
+            'loc_param_dist': loc_param_dist, 'geo_param_dist': geo_param_dist,
+            'n_sigma': n_sigma, 'simulation_class': simulation_class, 'tstop': h.tstop,
+            'full_biophys': filepath, 'biophys_param': biophys_param, 'biophys_comm': biophys_comm,
+            'interpret_params': interpret_params, 'interpret_type': interpret_type
+        }
     }
-}
-config_dict['Simulation_Parameters'].update(syn_params)
+    config_dict['Simulation_Parameters'].update(syn_params)
 
 
 # ## Generate random samples
@@ -347,21 +400,13 @@ summ_stats = np.array(summ_stats)
 good_indices = np.sort([i for bad, indices in bad_indices.items() if bad<=0 for i in indices])
 print('%d good samples out of %d samples.' % (good_count, number_samples))
 for bad, indices in bad_indices.items():
-    print('Bad case %d bad: %d samples.' % (bad, len(indices)))
+    print('Bad case %d: %d samples.' % (bad, len(indices)))
 
 
 # ## Save configurations and simulation data
 
 # In[16]:
 
-
-DATA_PATH = paths.SIMULATED_DATA_PATH
-TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
-
-CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
-LFP_PATH = os.path.join(TRIAL_PATH, 'lfp' + batch_suf)  # LFP and labels
-STATS_PATH = os.path.join(TRIAL_PATH, 'summ_stats' + batch_suf)  # summary statistics
-MEM_VOLT_PATH = os.path.join(TRIAL_PATH, 'mem_volt' + batch_suf)  # membrane voltage and spike times
 
 if not os.path.exists(DATA_PATH):
     os.makedirs(DATA_PATH)
@@ -393,16 +438,14 @@ if batch_id == 0:
 # In[18]:
 
 
-# get_ipython().run_line_magic('matplotlib', 'inline')
+ix = 1
+x_dist = np.unique(coords[:,0])
+e_idx = coords[:,0]==x_dist[ix]
 
-# ix = 1
-# x_dist = np.unique(coords[:,0])
-# e_idx = coords[:,0]==x_dist[ix]
+_ = plot_lfp_heatmap(t, coords[e_idx, 1], windowed_lfp[cell_idx][:, e_idx], vlim='auto',
+                        fontsize=15, labelpad=-10, ticksize=12, tick_length=5, nbins=5)
 
-# _ = plot_lfp_heatmap(t, coords[e_idx, 1], windowed_lfp[cell_idx][:, e_idx], vlim='auto',
-                     # fontsize=15, labelpad=-10, ticksize=12, tick_length=5, nbins=5)
-
-# _ = plot_lfp_traces(t, windowed_lfp[cell_idx], fontsize=15, labelpad=-10, ticksize=12, tick_length=5, nbins=5)
+_ = plot_lfp_traces(t, windowed_lfp[cell_idx], fontsize=15, labelpad=-10, ticksize=12, tick_length=5, nbins=5)
 
 
 # In[19]:

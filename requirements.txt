@@ -6,7 +6,7 @@ attrs==20.3.0
 Babel==2.9.1
 backcall==0.2.0
 bleach==3.3.0
-bmtk==0.0.9
+bmtk==1.0.6
 cachetools==4.2.1
 certifi==2020.12.5
 cffi==1.14.5
@@ -95,7 +95,7 @@ rsa==4.7.2
 sbi==0.17.0
 scikit-image==0.18.3
 scikit-learn==0.24.1
-scipy==1.6.1
+scipy==1.10.0
 Send2Trash==1.5.0
 simplejson==3.17.3
 six==1.15.0
@@ -119,3 +119,7 @@ webencodings==0.5.1
 websocket-client==1.1.0
 Werkzeug==1.0.1
 widgetsnbextension==3.5.1
+-f https://download.pytorch.org/whl/cpu
+torch==1.12.1
+torchvision==0.13.1
+torchaudio==0.12.1

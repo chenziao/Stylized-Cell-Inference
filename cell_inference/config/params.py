@@ -5,10 +5,12 @@ import cell_inference.config.paths as paths
 ACTIVE_CELL = False
 
 # GENERAL PARAMETERS USED ACROSS RUNS
-TSTOP = 20.  # ms
 DT = 0.025  # ms. Change with h.steps_per_ms = 1/h.dt
+TSTOP = 20.  # ms. single action potential
 STIM_PARAM = {'start': 2.}
-SPIKE_THRESHOLD = -30.
+STOCHASTIC_TSTOP = 2000.  # ms. stochastic action potentials
+TSTART = 200.  # ms. stochastic action potentials
+SPIKE_THRESHOLD = -30.  # mV
 
 # ELECTRODE_POSITION = np.column_stack((np.zeros(96),np.linspace(-1900,1900,96),np.zeros(96)))
 hf = h5py.File(paths.ELECTRODES, 'r')
