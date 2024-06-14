@@ -46,9 +46,8 @@ class ActiveFullCell(StylizedCell):
             self.grp_ids[grp_id] = [isec for i in ids for isec in self.sec_id_lookup[i]]
         biophys = self.default_biophys.copy()
         if self.biophys is not None:
-            for i in range(len(self.biophys)):
-                if not np.isnan(self.biophys[i]):
-                    biophys[i] = self.biophys[i]
+            idx = np.nonzero(~np.isnan(self.biophys))[0]
+            biophys[idx] = self.biophys[idx]
         self.biophys = biophys
 
     # PUBLIC METHODS
@@ -196,12 +195,13 @@ BIOPHYSICAL_DIVISION = {
             7: [12] # passive basal
         },
         'biophys_entries': [
-            (0, 'gNaTa_tbar_NaTa_t'), ([1, 2], 'gNaTa_tbar_NaTa_t'), ([3, 4, 5, 6], 'gNaTa_tbar_NaTa_t'),
-            (0, 'gSKv3_1bar_SKv3_1'), (range(1, 7), 'gSKv3_1bar_SKv3_1'),
+            (0, 'gNaTa_tbar_NaTa_t'), (1, 'gNaTa_tbar_NaTa_t'), (range(2, 7), 'gNaTa_tbar_NaTa_t'),
+            (0, 'gSKv3_1bar_SKv3_1'), (1, 'gSKv3_1bar_SKv3_1'),
             (1, 'Ra'), (2, 'Ra'),
             (3, 'g_pas'), (5, 'gCa_HVAbar_Ca_HVA'), (5, 'gCa_LVAstbar_Ca_LVAst'),
             (3, 'gIhbar_Ih'), (4, 'gIhbar_Ih'), (5, 'gIhbar_Ih'), (6, 'gIhbar_Ih'),
             (range(7), 'tau_scale_NaTa_t'), (range(7), 'tau0_SKv3_1'),
+            (range(2, 7), 'gSKv3_1bar_SKv3_1'), (range(2, 7), 'gImbar_Im')
         ],
         'default_biophys': np.array([
             2.04, 0.0213, 0.0213,
@@ -209,7 +209,8 @@ BIOPHYSICAL_DIVISION = {
             100., 100.,
             0.0000525, 0.000555, 0.0187,
             0.00181, 0.00571, 0.00783, 0.01166,
-            1.0, 4.0
+            1.0, 4.0,
+            0.000522, 0.0000675,
         ])
     }
 }

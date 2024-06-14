@@ -77,16 +77,31 @@ def generate_parameters_from_config(config: Dict):
     )
 
     geo_param = np.column_stack([geo_param_samples[key] for key in sim_p['geo_param_list']])
-
     # repeat to match number_samples
     for key, value in geo_param_samples.items():
         geo_param_samples[key] = np.repeat(value, tr_p['number_locs'])
+
+    params = [loc_param, geo_param]
+
+    # Biophysical parameters
+    if 'bio_param_list' in sim_p:
+        bio_param_samples = rpg.generate_parameters(
+            tr_p['number_cells'], sim_p['bio_param_list'], tr_p['randomized_list'],
+            sim_p['bio_param_default'], sim_p['bio_param_range'], sim_p['bio_param_dist']
+        )
+        params.append(np.column_stack([bio_param_samples[key] for key in sim_p['bio_param_list']]))
+        # repeat to match number_samples
+        for key, value in bio_param_samples.items():
+            bio_param_samples[key] = np.repeat(value, tr_p['number_locs'])
+    else:
+        bio_param_samples = {}
     
     # Gather parameters as labels
-    samples = {**geo_param_samples, **loc_param_samples}
-    labels = np.column_stack([ samples[key] for key in tr_p['inference_list'] ])
-    rand_param = np.column_stack([ samples[key] for key in tr_p['randomized_list'][:-len(tr_p['inference_list'])] ])
-    return labels, rand_param, loc_param, geo_param
+    samples = {**geo_param_samples, **loc_param_samples, **bio_param_samples}
+    labels = np.column_stack([samples[key] for key in tr_p['inference_list']])
+    rand_param = np.column_stack([samples[key] for key in tr_p['randomized_list'][:-len(tr_p['inference_list'])]])
+    return tuple([labels, rand_param] + params)
+
 
 def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, number_locs: int = 1):
     """ Generate parameters from configuration and prediction dictionary """

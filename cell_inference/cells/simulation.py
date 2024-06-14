@@ -50,7 +50,6 @@ class Simulation(object):
         cell_kwargs: dictionary of extra common keyword arguments for cell object
         record_soma_v: whether or not to record soma membrane voltage
         spike_threshold: membrane voltage threshold for recording spikes, if not specified, do not record
-
         """
         self.cell_type = cell_type
         # Common properties
@@ -118,7 +117,7 @@ class Simulation(object):
                 self.lfp.append(EcpMod(cell, self.electrodes, move_cell=self.loc_param[i,0],
                                        scale=self.scale[i], min_distance=self.min_distance))
 
-    def __create_netstim(self, stim_param: Optional[dict] = {}) -> h.NetStim:
+    def __create_netstim(self, stim_param: Optional[dict] = {}):
         """Setup synaptic input event"""
         stim = h.NetStim()
         stim.number = 1  # only one event
@@ -355,12 +354,14 @@ class Simulation(object):
         return v.copy()
 
     def get_lfp(self, index: Union[np.ndarray, List[int], int, str] = 0,
-                t_index: Optional = None, multiple_position: bool = False) -> np.ndarray:
+                t_index: Optional[Union[slice, List[int]]] = None,
+                multiple_position: bool = False) -> np.ndarray:
         """
         Return LFP array of the cell by index (indices), (cells-by-)channels-by-time
 
         Parameters
         index: index of the cell to retrieve the LFP from, use 'all' to get from all cells
+        t_index: slice or index of time to retrieve the LFP from
         multiple_position: get from multiple positions for each cell along second dimension of the LFP array
         """
         if multiple_position:

@@ -128,7 +128,7 @@ class EcpMod(object):
         tr *= scale / (4 * np.pi * sigma)
         return tr
 
-    def calc_im(self, index: Optional = None) -> np.ndarray:
+    def calc_im(self, index: Optional[Union[slice, List[int]]] = None) -> np.ndarray:
         """Calculate transmembrane current after simulation. Unit: nA."""
         index = slice(None) if index is None else index
         im = self.im_rec.as_numpy(copy=False)[:, index].copy()
@@ -136,7 +136,7 @@ class EcpMod(object):
             im[inj.get_segment_id(), :] -= inj.rec_vec.as_numpy()[index]
         return im
 
-    def calc_ecp(self, index: Optional = None, **kwargs) -> np.ndarray:
+    def calc_ecp(self, index: Optional[Union[slice, List[int]]] = None, **kwargs) -> np.ndarray:
         """Calculate ECP after simulation. Unit: mV."""
         kwargs0 = {
                     'move_cell': self.move_cell,
@@ -148,7 +148,8 @@ class EcpMod(object):
         im = self.calc_im(index=index)
         return tr @ im
 
-    def calc_ecps(self, move_cell: Optional[List] = None, index: Optional = None, **kwargs) -> np.ndarray:
+    def calc_ecps(self, move_cell: Optional[List] = None,
+                  index: Optional[Union[slice, List[int]]] = None, **kwargs) -> np.ndarray:
         """Calculate ECP with multiple positions after simulation. Unit: mV."""
         kwargs0 = {
                     'scale': self.scale,

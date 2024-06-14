@@ -50,11 +50,10 @@ class ActiveCell(StylizedCell):
         self.grp_ids = {}
         for grp_id, ids in self.grp_sec_type_ids.items():
             self.grp_ids[grp_id] = [isec for i in ids for isec in self.sec_id_lookup[i]]
-        biophys = self.default_biophys
+        biophys = self.default_biophys.copy()
         if self.biophys is not None:
-            for i in range(len(self.biophys)):
-                if not np.isnan(self.biophys[i]):
-                    biophys[i] = self.biophys[i]
+            idx = np.nonzero(~np.isnan(self.biophys))[0]
+            biophys[idx] = self.biophys[idx]
         self.biophys = biophys
 
     # PUBLIC METHODS

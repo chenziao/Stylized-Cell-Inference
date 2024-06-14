@@ -93,8 +93,8 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
                           dens_params={}, cnst_params={}, has_nmda=True, lornomal_gfluct=False)
     else:
         raise ValueError('Simulation class does not exist')
-    syn_params = {key: sim_p.get(key, value) for key, value in syn_params.items()}
-    if simulation_class == 'Simulation' and sim_p.get('gmax_mapping') is not None:
+    syn_params = {key: sim_p['syn_params'].get(key, value) for key, value in syn_params.items()}
+    if simulation_class == 'Simulation' and sim_p['syn_params'].get('gmax_mapping') is not None:
         pass  # TODO
 
     # Biophysical parameters
