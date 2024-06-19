@@ -83,6 +83,10 @@ pred_params = df_pred.loc[select_ID, inference_pred_list].to_dict()
 # ## Setup
 
 # %%
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_Bio2'
+TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
+
+# %%
 batch_id = 0
 number_cells = 5  # number of neurons
 number_locs = 1  # number of locations for each neuron
@@ -104,7 +108,7 @@ if not 'get_ipython' in globals():
     rand_seed = args.seed
     CONFIG_PATH = args.config
 else:
-    %matplotlib inline
+    get_ipython().run_line_magic('matplotlib', 'inline')
 
 # %%
 if batch_id is None:
@@ -117,6 +121,8 @@ else:
 # load from config file if specified
 use_config = CONFIG_PATH is not None
 if use_config:
+    if not os.path.isfile(CONFIG_PATH):
+        CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')
     with open(CONFIG_PATH, 'r') as f:
         config_dict = json.load(f)
 else:
@@ -129,9 +135,6 @@ sim_p = config_dict['Simulation_Parameters']
 # #### Trial configurations
 
 # %%
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_Bio2_sumstats7'
-TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
-
 CONFIG_PATH = os.path.join(TRIAL_PATH, 'config.json')  # trial configuration
 LFP_PATH = os.path.join(TRIAL_PATH, 'lfp' + batch_suf)  # LFP and labels
 STATS_PATH = os.path.join(TRIAL_PATH, 'summ_stats' + batch_suf)  # summary statistics
@@ -292,7 +295,7 @@ save_nspk = True
 cell_idx = 0 # for verification
 
 # %% [markdown]
-# #### Remove cells with invalid firing pattern
+# #### Find cells with invalid firing pattern
 
 # %%
 nspk_range = (2, np.inf)
@@ -309,13 +312,37 @@ if simulation_class == 'Simulation_stochastic':
 else:
     nspk, _ = sim.get_spike_number('all')
     valid = nspk == 1
-nspk_vars.update(y=labels[::,number_locs], nspk=nspk, nspk_range=nspk_range, fr_range=fr_range)
+nspk_vars.update(y=labels[::number_locs], nspk=nspk, nspk_range=nspk_range, fr_range=fr_range)
 
 invalid = np.nonzero(~valid)[0]
 valid = np.nonzero(valid)[0]
 invalid_nspk = nspk[invalid]
 for n in np.unique(invalid_nspk):
     print('%d cells fire %d times.' % (np.count_nonzero(invalid_nspk==n), n))
+
+# %% [markdown]
+# #### Save configurations
+
+# %%
+if not os.path.exists(DATA_PATH):
+    os.makedirs(DATA_PATH)
+    print("The new data directory is created!")
+
+if not os.path.exists(TRIAL_PATH):
+    os.makedirs(TRIAL_PATH)
+    print("The new trial directory is created!")
+
+# %%
+if batch_id == 0:
+    with open(CONFIG_PATH, 'w') as fout:
+        json.dump(config_dict, fout, indent=2)
+
+# %%
+if not (save_lfp or save_stats):
+    raise SystemExit('Exit without processing LFP')
+
+# %% [markdown]
+# #### Remove invalid cells 
 
 # %%
 invalid_params = {}
@@ -396,16 +423,7 @@ for bad, indices in bad_indices.items():
     print('Bad case %d: %d samples.' % (bad, len(indices)))
 
 # %% [markdown]
-# ## Save configurations and simulation data
-
-# %%
-if not os.path.exists(DATA_PATH):
-    os.makedirs(DATA_PATH)
-    print("The new data directory is created!")
-
-if not os.path.exists(TRIAL_PATH):
-    os.makedirs(TRIAL_PATH)
-    print("The new trial directory is created!")
+# #### Save simulation data
 
 # %%
 if save_nspk:
@@ -417,9 +435,6 @@ if save_stats:
     np.savez(STATS_PATH, x=summ_stats, y=labels[good_indices], ys=yshift,
              rand_param=rand_param[good_indices], gmax=None if gmax is None else gmax[good_indices])
 # np.savez(MEM_VOLT_PATH, v=mem_volt, spk=tspk)
-if batch_id == 0:
-    with open(CONFIG_PATH, 'w') as fout:
-        json.dump(config_dict, fout, indent=2)
 
 # %% [markdown]
 # ## Verify LFPs

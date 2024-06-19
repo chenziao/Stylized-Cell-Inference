@@ -3,7 +3,8 @@ import numpy as np
 
 KEY_TYPE = {'x': 'array', 'y': 'array', 'ys': 'array', 'rand_param': 'array', 'gmax': 'array',
             't': 'unique', 'bad_indices': 'dict_index', 'good_indices': 'index', 'firing_rate': 'array',
-            'invalid_params': 'dict_array', 'valid': 'index_total', 'invalid': 'index_total'}
+            'invalid_params': 'dict_array', 'valid': 'index_total', 'invalid': 'index_total',
+            'nspk': 'array', 'duration': 'unique', 'nspk_range': 'unique', 'fr_range': 'unique'}
 # Use 'null' for 'not implemented'.
 
 class NpzFilesCollector(object):

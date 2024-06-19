@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
+# %%
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,7 +18,7 @@ isCNN = True
 isRF = False
 isTrain = False
 epochs = 150
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_sumstats7'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_Bio2'
 STATS_SET = 'FullStats5'
 
 if not 'get_ipython' in globals():
@@ -52,12 +47,10 @@ else:
 
 isCNN = isCNN and not isRF
 
-
+# %% [markdown]
 # ## Load simulation data
 
-# In[2]:
-
-
+# %%
 DATA_PATH = paths.SIMULATED_DATA_PATH
 TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
 
@@ -88,17 +81,15 @@ with open(CONFIG_PATH, 'r') as f:
     config_dict = json.load(f)
 
 inference_list = config_dict['Trial_Parameters']['inference_list']
-ranges = config_dict['Simulation_Parameters']['loc_param_range']
-ranges.update(config_dict['Simulation_Parameters']['geo_param_range'])
+ranges = {k: v.copy() for p in ['loc', 'geo', 'bio'] \
+    for k, v in config_dict['Simulation_Parameters'].get(p + '_param_range', {}).items()}
 
 print(inference_list)
 
-
+# %% [markdown]
 # ### Select summary statistics
 
-# In[3]:
-
-
+# %%
 if not isCNN:
     if STATS_SET is None:
             stats_set_name = ''
@@ -109,14 +100,13 @@ if not isCNN:
 
     summ_stats = summ_stats[:, summ_stats_id]
 
-
+# %% [markdown]
 # ### Transform labels
 
+# %% [markdown]
 # #### Orientation
 
-# In[4]:
-
-
+# %%
 check_orient = 'h' in inference_list and 'phi' in inference_list
 if check_orient:
     orient_idx0 = [inference_list.index(x) for x in ['h', 'phi']]
@@ -143,12 +133,10 @@ if direction_vec:
     display_list[orient_idx1[1]] = 'vy / h'
     display_list.append('phi')
 
-
+# %% [markdown]
 # #### y shift
 
-# In[5]:
-
-
+# %%
 has_yshift = 'y' in label_list and ys.size != 0
 if has_yshift:
     ys_idx = label_list.index('y')
@@ -162,14 +150,13 @@ df_la.sort_values(by=df_la.columns[0],inplace=True)
 with pd.option_context('display.max_rows',10):
     display(df_la)
 
-
+# %% [markdown]
 # ### Normalizing labels
 
+# %% [markdown]
 # #### Set bounds for y shift
 
-# In[6]:
-
-
+# %%
 if has_yshift:
     ranges['ys'] = [-150, 150] # set bound for normalization
     df_la_idx = df_la[df_la['ys'].between(*ranges['ys'])].index.values
@@ -177,12 +164,10 @@ if has_yshift:
 
 print(json.dumps(ranges))
 
-
+# %% [markdown]
 # #### Normalization
 
-# In[7]:
-
-
+# %%
 feature_range = (-1, 1)
 norm_scale = lambda x, r: (x - r[0]) / (r[1] - r[0]) * (feature_range[1] - feature_range[0]) + feature_range[0]
 org_scale = lambda x, r: (x - feature_range[0]) / (feature_range[1] - feature_range[0]) *  (r[1] - r[0]) + r[0]
@@ -194,12 +179,10 @@ df_la = pd.DataFrame(labels, columns=label_list)
 with pd.option_context('display.max_rows',10):
     display(df_la)
 
-
+# %% [markdown]
 # ## Build model
 
-# In[8]:
-
-
+# %%
 if isCNN:
     n_fold = 31
     max_logmod = np.ceil(np.log2(n_fold))  # max value after transform
@@ -212,10 +195,7 @@ if isCNN:
     lfp_trans = np.stack((lfp, lfp_trans), axis=1)
     lfp_trans = lfp_trans.reshape(lfp_trans.shape[:3] + (GRID_SHAPE[0], -1))
 
-
-# In[9]:
-
-
+# %%
 if isRF:
     from sklearn.ensemble import RandomForestRegressor
 
@@ -253,12 +233,10 @@ if isTrain and not os.path.exists(MODEL_PATH):
 PARAM_PATH = os.path.join(MODEL_PATH, model_name + ('.joblib' if isRF else '.pth'))
 SAVE_PATH = os.path.join(MODEL_PATH, model_name + '.txt')
 
-
+# %% [markdown]
 # ## Train model
 
-# In[10]:
-
-
+# %%
 train_size = 0.8
 if isRF:
     from sklearn.model_selection import train_test_split
@@ -286,10 +264,7 @@ else:
         with open(SAVE_PATH, 'w') as f:
             f.writelines(s + '\n' for s in files)
 
-
-# In[11]:
-
-
+# %%
 if not isRF:
     if not isTrain:
         with open(SAVE_PATH, 'r') as f:
@@ -305,14 +280,13 @@ if not isRF:
     plt.ylabel('MSE')
     plt.show()
 
-
+# %% [markdown]
 # ## Evaluate model
 
+# %% [markdown]
 # ### Perform on stylized model
 
-# In[12]:
-
-
+# %%
 from sklearn.metrics import r2_score, mean_squared_error
 
 if isRF:
@@ -355,10 +329,7 @@ print('R2 Score:')
 for i, p in enumerate(display_list):
     print('{:10} {:.3f}'.format(p+',', r2_score(y[:, i], output[:, i])))
 
-
-# In[13]:
-
-
+# %%
 nlb = len(display_list)
 nrows = int(np.ceil(nlb/3))
 
@@ -384,12 +355,10 @@ plt.show()
 if isTrain:
     fig.savefig(os.path.join(MODEL_PATH, 'test_result.pdf'))
 
-
+# %% [markdown]
 # #### Check prediction on orientation
 
-# In[14]:
-
-
+# %%
 if check_orient:
     def cosine_similarity(hphi1, hphi2):
         np.clip(hphi1[:,0], -1, 1, out=hphi1[:,0])
@@ -481,9 +450,7 @@ if check_orient:
         fig1.savefig(os.path.join(MODEL_PATH, 'angle_error_vs_h.png'))
         fig3.savefig(os.path.join(MODEL_PATH, 'angle_error_distribution.png'))
 
-
-# In[ ]:
-
+# %%
 
 
 

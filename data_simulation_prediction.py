@@ -111,10 +111,14 @@ def run_pred_simulation(config_dict, pred_dict, number_locs = 3,
     interpret_type = sim_p.get('interpret_type', 0)
 
     gen_params = generate_predicted_parameters_from_config(config_dict, pred_dict, number_locs=number_locs)
-    labels, rand_param, loc_param, geo_param = [x[cell_index] for x in gen_params]
+    gen_params = [x[cell_index] for x in gen_params]
+    labels, rand_param, loc_param, geo_param = gen_params[:4]
     number_cells = labels.shape[0]
     print(loc_param.shape)
     print(geo_param.shape)
+    if len(gen_params) > 4:
+        biophys_param = gen_params[4]
+        print(biophys_param.shape)
     print(rand_param.shape)
     print(labels.shape)
 

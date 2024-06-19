@@ -47,7 +47,7 @@ if not 'get_ipython' in globals():
     rand_seed = args.seed
     CONFIG_PATH = args.config
 else:
-    %matplotlib inline
+    get_ipython().run_line_magic('matplotlib', 'inline')
 
 # %%
 if batch_id is None:
@@ -92,7 +92,7 @@ else:
 
     inference_list = ['y', 'd', 'theta', 'l_t', 'lr_pt', 'r_t', 'rr_dt']  # can use d, theta instead of x, z to represent location
     randomized_list = ['alpha']  # randomized parameters not to inferred
-    randomized_list += inference_list
+    randomized_list += inference_list  # inference list comes after randomized
     # parameters not in the two lists above are fixed at default.
 
 # %% [markdown]

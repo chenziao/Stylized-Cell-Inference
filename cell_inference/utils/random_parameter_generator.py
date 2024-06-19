@@ -113,10 +113,11 @@ def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, num
 
     # Clip predicted parameters
     pred_param = {}
-    for key, p_range in {**sim_p['loc_param_range'], **sim_p['geo_param_range']}.items():
-        if key in pred_dict:
-            pred_param[key] = np.clip(pred_dict[key], p_range[0], p_range[1])
-            number_cells = pred_param[key].size
+    for p in ['loc', 'geo', 'bio']:
+        for key, p_range in sim_p.get(p + '_param_range', {}).items():
+            if key in pred_dict:
+                pred_param[key] = np.clip(pred_dict[key], p_range[0], p_range[1])
+                number_cells = pred_param[key].size
 
     # Location paramters
     loc_param_gen = sim_p['loc_param_list'].copy()
@@ -161,10 +162,33 @@ def generate_predicted_parameters_from_config(config: Dict, pred_dict: Dict, num
     # repeat to match number_samples
     for key, value in geo_param_samples.items():
         geo_param_samples[key] = np.repeat(value, number_locs)
-    
+
+    params = [loc_param, geo_param]
+
+    # Biophysical parameters
+    if 'bio_param_list' in sim_p:
+        bio_param_gen = sim_p['bio_param_list'].copy()
+        bio_param_samples = {}
+        for key, value in pred_param.items():
+            if key in bio_param_gen:
+                bio_param_samples[key] = value
+                bio_param_gen.remove(key)
+        bio_param_samples.update(rpg.generate_parameters(
+            number_cells, bio_param_gen, tr_p['randomized_list'],
+            sim_p['bio_param_default'], sim_p['bio_param_range'], sim_p['bio_param_dist']
+        ))
+
+        params.append(np.column_stack([bio_param_samples[key] for key in sim_p['bio_param_list']]))
+
+        # repeat to match number_samples
+        for key, value in bio_param_samples.items():
+            bio_param_samples[key] = np.repeat(value, tr_p['number_locs'])
+    else:
+        bio_param_samples = {}
+
     # Gather parameters as labels
-    samples = {**geo_param_samples, **loc_param_samples}
-    labels = np.column_stack([ samples[key] for key in tr_p['inference_list'] ])[::number_locs, :]
-    rand_param = np.column_stack([ samples[key] for key in tr_p['randomized_list'][:-len(tr_p['inference_list'])] ])
+    samples = {**geo_param_samples, **loc_param_samples, **bio_param_samples}
+    labels = np.column_stack([samples[key] for key in tr_p['inference_list']])[::number_locs, :]
+    rand_param = np.column_stack([samples[key] for key in tr_p['randomized_list'][:-len(tr_p['inference_list'])]])
     rand_param = rand_param.reshape(number_cells, number_locs, -1)
-    return labels, rand_param, loc_param, geo_param
+    return tuple([labels, rand_param] + params)
