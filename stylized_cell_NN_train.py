@@ -18,7 +18,7 @@ isCNN = True
 isRF = False
 isTrain = False
 epochs = 150
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_Bio2'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_Bio5_cell146'
 STATS_SET = 'FullStats5'
 
 if not 'get_ipython' in globals():
@@ -34,7 +34,7 @@ if not 'get_ipython' in globals():
     parser.set_defaults(rf=False)
     parser.add_argument('-e', type=int, nargs='?', default=epochs, help="Epochs of train", metavar='Epochs')
     parser.add_argument('-trial', type=str, nargs='?', default=TRIAL_NAME, help="Trial name", metavar='Trial')
-    parser.add_argument('-stats', type=str, nargs='?', default=None, help="Summary statistics set name", metavar='Stats')
+    parser.add_argument('-stats', type=str, nargs='?', default=STATS_SET, help="Summary statistics set name", metavar='Stats')
     args = parser.parse_args()
     isTrain = args.train
     isRF = args.rf

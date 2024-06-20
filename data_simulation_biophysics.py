@@ -61,11 +61,17 @@ df_pred = pd.read_csv(PRED_PATH, index_col=0)
 pred_idx = df_pred.index.get_indexer(IDs)
 df_pred = df_pred.iloc[pred_idx]
 
-# corr_type = 'Coss'  # 'Log_Coss'
-# df_corr = pd.read_csv(CORR_PATH, index_col='cell id').loc[IDs]
-# df_corr = df_corr.sort_values(by=corr_type)
+corr_type = 'Coss'  # 'Log_Coss'
+df_corr = pd.read_csv(CORR_PATH, index_col='cell id').loc[IDs]
+df_corr = df_corr.sort_values(by=corr_type)
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     display(pd.concat((df_corr, df_pred), axis=1))
+
+# %% [markdown]
+# ### Choose cell
+
+# %%
+select_ID = 146 # 531
 
 # %%
 CONFIG_PRED_PATH = os.path.join(TRIAL_PRED_PATH, 'config.json')  # trial configuration
@@ -75,15 +81,11 @@ with open(CONFIG_PRED_PATH, 'r') as f:
 inference_pred_list = config_pred_dict['Trial_Parameters']['inference_list']
 print(inference_pred_list)
 
-# %%
-select_ID = 236 # 531
-pred_params = df_pred.loc[select_ID, inference_pred_list].to_dict()
-
 # %% [markdown]
 # ## Setup
 
 # %%
-TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_Bio2'
+TRIAL_NAME = 'Reduced_Order_stochastic_spkwid_trunkLR4_LactvCa_Loc3_h1_Bio5_cell146'
 TRIAL_PATH = os.path.join(DATA_PATH, TRIAL_NAME)
 
 # %%
@@ -131,6 +133,21 @@ else:
 tr_p = config_dict['Trial_Parameters']
 sim_p = config_dict['Simulation_Parameters']
 
+if not use_config or 'Prediction_Parameters' not in config_dict:
+    pred_p = dict(
+        cell_id = select_ID,
+        predictions = df_pred.loc[select_ID, inference_pred_list].to_dict(),
+        correlation = df_corr.loc[select_ID].drop('layer').to_dict()
+    )
+
+    MAG_SCALE_PATH = os.path.join(TRIAL_PRED_PATH, 'magnitude_scale.json')
+    with open(MAG_SCALE_PATH, 'r') as f:
+        pred_p.update(json.load(f))
+
+    config_dict['Prediction_Parameters'] = pred_p
+else:
+    pred_p = config_dict['Prediction_Parameters']
+
 # %% [markdown]
 # #### Trial configurations
 
@@ -150,17 +167,18 @@ if use_config:
     inference_list = tr_p['inference_list']
     randomized_list = tr_p['randomized_list']
 else:
-    number_samples = number_cells * number_locs  # number of samples
-    inference_list = ['s_nat', 's_kv3.1']  # + ['a_nat', 'a_kv3.1', 'a_m']
+    inference_list = ['s_nat', 's_kv3.1', 'a_nat', 'a_kv3.1', 'a_m']  # + ['a_nat', 'a_kv3.1', 'a_m']
     randomized_list = ['alpha']  # randomized parameters not to inferred
+
     randomized_list = list(set(config_dict['Trial_Parameters']['randomized_list'])\
         - set(config_dict['Trial_Parameters']['inference_list']) | set(randomized_list))
-    randomized_list += inference_list
+    randomized_list += inference_list  # inference list comes after randomized
+    number_samples = number_cells * number_locs  # number of samples
     # parameters not in the two lists above are fixed at default.
 tr_p.update({
     'number_cells': number_cells, 'number_locs': number_locs, 
     'number_samples': number_samples, 'rand_seed': rand_seed, 'batch_id': batch_id,
-    'inference_list': inference_list, 'randomized_list': randomized_list, 'cell_id': select_ID 
+    'inference_list': inference_list, 'randomized_list': randomized_list
 })
 
 # %% [markdown]
@@ -205,10 +223,10 @@ with open(filepath) as f:
 # %%
 # Update simulation configurations
 loc_param_default = sim_p['loc_param_default']
-loc_param_default.update({k: v for k, v in pred_params.items() if k in loc_param_default})
+loc_param_default.update({k: v for k, v in pred_p['predictions'].items() if k in loc_param_default})
 
 geo_param_default = sim_p['geo_param_default']
-geo_param_default.update({k: v for k, v in pred_params.items() if k in geo_param_default})
+geo_param_default.update({k: v for k, v in pred_p['predictions'].items() if k in geo_param_default})
 
 bio_param_list = ['s_nat', 'b_nat', 'a_nat', 's_kv3.1', 'b_kv3.1', 'b_ra', 'pt_ra',
                     'mt_leak', 'ptf_ca_hva', 'ptf_ca_lva', 'mt_h', 'dt_h', 'ptf_h', 'mdtf_h',
