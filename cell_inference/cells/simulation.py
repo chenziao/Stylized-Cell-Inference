@@ -440,14 +440,14 @@ class Simulation_stochastic(Simulation):
             'perisomatic': {'g_e0': 0., 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
             'basal': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.},
             'apical': {'g_e0': 1e-5, 'g_i0': 3e-5, 'std_e': 1., 'std_i': 2.}
-        }
-        self.cnst_params = {'tau_e': 3., 'tau_i': 15.}
+        } # g (uohm), std (scaling)
+        self.cnst_params = {'tau_e': 3., 'tau_i': 15.} # tau (ms)
         for key, value in dens_params.items():
             if key not in self.dens_params:
                 self.dens_params[key] = {}
             self.dens_params[key].update(value)
         self.cnst_params.update(cnst_params)
-        self.L_unit = L_unit
+        self.L_unit = L_unit # um
         if self.has_nmda:
             for param in self.dens_params.values():
                 g_e0 = param.get('g_e0', 0.)
